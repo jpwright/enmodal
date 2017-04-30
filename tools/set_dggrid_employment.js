@@ -37,8 +37,8 @@ pool.connect(function(err, client, done) {
         if (err) {
             return console.error('error running query', err);
         } else {
-            
-            var sel_result = client.query("SELECT id, gid, ST_AsText(geo) FROM dggrid WHERE id > 0 ORDER BY id ASC LIMIT 100000;", function(sel_err, sel_result) {        
+
+            var sel_result = client.query("SELECT id, gid, ST_AsText(geo) FROM dggrid WHERE id > 0 ORDER BY id ASC LIMIT 100000;", function(sel_err, sel_result) {
                 if (sel_err) {
                     console.error('error running query', sel_err);
                 }
@@ -48,20 +48,20 @@ pool.connect(function(err, client, done) {
                     width: 100,
                     total: sel_result.rows.length
                 });
-                
+
                 console.log(sel_result.rows.length.toString() + " dggrids found.");
                 for (var i = 0; i < sel_result.rows.length; i++) {
                     var row = sel_result.rows[i];
                     db_sync(client, bar, row);
                 }
-                
+
                 /*if (sel_result.rows.length >= 1) {
                     client.query("UPDATE dggrid SET population = "+s_population+" WHERE gid = "+s_gid+";", function(psd_err, psd_result) {
-                        
+
                         if (psd_err) {
                             console.error('error running query', psd_err);
                         }
-                        
+
                         dggrids_queried += 1;
                         //console.log("Query done for dggrid "+dggrids_queried+" of "+dggrids_with_overlap);
                         if (dggrids_queried == dggrids_with_overlap) {
@@ -69,20 +69,20 @@ pool.connect(function(err, client, done) {
                         }
                     });
                 } else {
-                
+
                     client.query("INSERT INTO dggrid (gid, geo, population) VALUES("+s_gid+", ST_GeomFromText('"+s_wkt+"'), "+s_population+");", function(psd_err, psd_result) {
-                        
+
                         if (psd_err) {
                             console.error('error running query', psd_err);
                         }
-                        
+
                         dggrids_queried += 1;
                         //console.log("Query done for dggrid "+dggrids_queried+" of "+dggrids_with_overlap);
                         if (dggrids_queried == dggrids_with_overlap) {
                             process.exit();
                         }
                     });
-                    
+
                 }*/
             });
         }
@@ -104,7 +104,7 @@ function db_sync(client, bar, row) {
         var dggrid_obj = wellknown.parse(dggrid_geo);
         var dggrid_employment = 0.0;
         for (var j = 0; j < psd_result.rows.length; j++) {
-            
+
             var zip_obj = wellknown.parse(psd_result.rows[j].st_astext);
             var overlap_polygon = turf.intersect(zip_obj, dggrid_obj);
             //console.log(zip_obj.coordinates[0][0])
@@ -121,17 +121,17 @@ function db_sync(client, bar, row) {
             }
         }
         //console.log("Setting gid "+dggrid_gid.toString()+" employment to "+dggrid_employment.toString());
-        
+
         bar.tick();
         set_employment(client, bar, dggrid_gid, dggrid_employment);
     });
 }
 
 function set_employment(client, bar, gid, emp) {
-    
+
     client.query("UPDATE dggrid \
         SET employment = "+Math.round(emp).toString()+" WHERE gid = "+gid+";", function(psd_err, psd_result) {
-        
+
         if (psd_err) {
             console.error('error running query', psd_err);
         }

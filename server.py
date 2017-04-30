@@ -12,7 +12,7 @@ import datetime
 from lzstring import LZString
 
 import sys
-sys.path.append(os.path.abspath('server/flask'))
+sys.path.append(os.path.abspath('lib/transit'))
 import Transit
 import TransitGIS
 import TransitModel
@@ -123,7 +123,7 @@ def route_session_push():
     e = check_for_session_errors()
     if e:
         return e
-    
+
     data = request.get_data()
     charset = request.mimetype_params.get('charset') or 'UTF-8'
     jd = LZString().decompressFromUTF16(data.decode(charset, 'utf-16'))
@@ -134,9 +134,9 @@ def route_session_push():
     m.from_json(d)
     m.sidf_state = 0
     session_to_map[session['id']] = m
-    
+
     return json.dumps({"result": "OK"})
-    
+
 
 @app.route('/station-add')
 def route_station_add():
@@ -151,7 +151,7 @@ def route_station_add():
     lng = request.args.get('lng')
     station_id = request.args.get('station-id')
     m = session_to_map[session['id']]
-    
+
     for service in m.services:
         if service_id == str(service.sid):
             station = TransitGIS.station_constructor(int(station_id), lat, lng)
@@ -352,14 +352,14 @@ def route_line_update():
 
 @app.route('/line-info')
 def route_line_info():
-    
+
     e = check_for_session_errors()
     if e:
         return e
 
     line_id = request.args.get('line-id')
     line_name = request.args.get('line-name')
-    
+
     sid = request.args.get('id')
     m = session_to_map[session['id']]
     for s in m.services:
@@ -451,7 +451,7 @@ def route_service_add():
     service_id = request.args.get('service-id')
 
     m = session_to_map[session['id']]
-    
+
     service = Transit.Service(int(service_id), name)
     m.add_service(service)
 
@@ -485,7 +485,7 @@ def route_map_info():
 @app.route('/graphviz')
 def route_graphviz():
     return app.send_static_file('graphviz.html')
-    
+
 @app.route('/hexagons')
 def route_hexagons():
 
@@ -499,31 +499,31 @@ def route_hexagons():
 
 @app.route('/get-hexagons')
 def route_get_hexagons():
-    
+
     e = check_for_session_errors()
     if e:
         return e
-    
+
     m = session_to_map[session['id']]
     bb = TransitGIS.BoundingBox(m)
     bb.min_lat -= 0.2;
     bb.max_lat += 0.2;
     bb.min_lng -= 0.2;
     bb.max_lng += 0.2;
-    
+
     hexagons = TransitGIS.hexagons_bb(bb)
     return hexagons.to_json()
 
 @app.route('/transit-model')
 def route_transit_model():
-    
+
     e = check_for_session_errors()
     if e:
         return e
-    
+
     m = session_to_map[session['id']]
     model = TransitModel.map_analysis(m)
-    
+
     return model.to_json()
 
 @app.route('/clear-settings')
@@ -552,7 +552,7 @@ def route_station_pair_info():
     # Check that both stations exist
     stations_found = 0
     stations = []
-    
+
     m = session_to_map[session['id']]
     for s in m.services:
         if service_id == str(s.sid):
@@ -561,12 +561,12 @@ def route_station_pair_info():
                 if (station_id_1 == station.sid) or (station_id_2 == station.sid):
                     stations_found += 1
                     stations.append(station)
-    
+
     #if stations_found != 2:
         #return json.dumps({"error": "Invalid ID"})
-    
+
     m.settings.set_user_control_points(station_id_1, station_id_2, ucp_0_lat, ucp_0_lng, ucp_1_lat, ucp_1_lng)
-    
+
     return json.dumps({"result": "OK"})
 
 def check_for_session_errors():

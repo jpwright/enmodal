@@ -27,7 +27,7 @@ var WATER_FILE = settings["w"];
 var config = {
     user: 'postgres',
     database: 'transit',
-    password: 'metr0n0m3',
+    password: 'nostrand',
     host: 'localhost',
     port: 5432,
     max: 10,
@@ -56,7 +56,7 @@ pool.connect(function(err, client, done) {
             return console.error('error running query', err);
         } else {
             fs.readFile(POPULATION_FILE, function(pop_err, pop_data) {
-                
+
                 if (pop_err) {
                     return console.log(pop_err);
                 }
@@ -64,9 +64,9 @@ pool.connect(function(err, client, done) {
                 //console.log(population_records[0]);
                 var populations = {};
                 var land_area = {};
-                
-                
-                
+
+
+
                 jsonfile.readFile(DGGRID_FILE, function(dggrid_err, dggrid_data) {
                     console.log('Loaded DGGrid file '+DGGRID_FILE);
 
@@ -76,7 +76,7 @@ pool.connect(function(err, client, done) {
                         width: 100,
                         total: dggrid_data.features.length
                     });
-                    
+
                     jsonfile.readFile(WATER_FILE, function(water_err, water_data) {
 
                         jsonfile.readFile(CENSUS_FILE, function(census_err, census_data) {
@@ -97,7 +97,7 @@ pool.connect(function(err, client, done) {
                                 turf_polygons[tract_index] = turf_polygon;
                             }
 
-                            
+
                             var population_density = {};
                             var dense_enough = 0;
                             for (var k = 0; k < population_records.length; k++) {
@@ -115,13 +115,13 @@ pool.connect(function(err, client, done) {
                                 }
                             }
                             console.log(dense_enough + " of " + population_records.length + " tracts are dense enough for consideration");
-                            
+
                             console.log("Calculating centroids");
                             var centroids = [];
                             var water_centroids = [];
                             for (tract_index = 0; tract_index < census_data.features.length; tract_index++) {
                                 var turf_centroid = turf.centroid(turf_polygons[tract_index]);
-                                
+
                                 //var tract_area = turf.area(turf_polygons[tract_index]);
                                 centroids[tract_index] = turf_centroid;
                             }
@@ -129,8 +129,8 @@ pool.connect(function(err, client, done) {
                                 var water_centroid = turf.centroid(water_data.features[w]);
                                 water_centroids[w] = water_centroid;
                             }
-                
-                            
+
+
                             var dggrids_with_overlap = 0;
                             var dggrids_queried = 0;
 
@@ -164,18 +164,18 @@ pool.connect(function(err, client, done) {
 
                                 var has_overlap = false;
                                 var all_water = false;
-                                
+
                                 var water_features_checked = 0;
-                                
+
                                 //console.log("Checked "+water_features_checked+" of "+water_data.features.length+" water features");
-                                
+
                                 if (!all_water) {
                                     var dggrid_population = 0.0;
                                     for (tract_index = 0; tract_index < census_data.features.length; tract_index++) {
                                         var tract = census_data.features[tract_index];
                                         var tract_centroid = centroids[tract_index];
                                         var geoid = tract.properties["STATEFP10"] + tract.properties["COUNTYFP10"] + tract.properties["TRACTCE10"];
-                                        
+
                                         if (population_density[geoid] > 1000.0) {
                                             var distance = turf.distance(dggrid_centroid, tract_centroid, 'miles');
                                             //console.log(dggrid_centroid);
@@ -196,7 +196,7 @@ pool.connect(function(err, client, done) {
                                     }
                                     //console.log("\n"+dggrid_population+"\n");
                                     if (has_overlap && (dggrid_population > 10)) {
-                                        
+
                                         /*for (var w = 0; w < water_data.features.length; w++) {
                                             if (!all_water) {
                                                 var water_centroid = water_centroids[w];
@@ -213,10 +213,10 @@ pool.connect(function(err, client, done) {
                                                 }
                                             }
                                         }*/
-                                        
+
                                         if (!all_water) {
                                             dggrids_with_overlap += 1;
-                                            
+
                                             client.query("INSERT INTO dggrid (gid, geo) \
                                                 VALUES("+feature.properties.global_id+", ST_GeomFromText('"+wkt+"')); INSERT INTO demographics (dggrid_id, population) \
                                                 VALUES("+feature.properties.global_id+", "+Math.round(dggrid_population)+"); ", function(psd_err, psd_result) {
@@ -224,12 +224,12 @@ pool.connect(function(err, client, done) {
                                                     console.error('error running query', psd_err);
                                                 }
                                                 done();
-                                                
+
                                                 dggrids_queried += 1;
                                                 console.log("Query done for dggrid "+dggrids_queried+" of "+dggrids_with_overlap);
                                             });
                                         }
-                                        
+
                                     }
                                 }
 
@@ -241,7 +241,7 @@ pool.connect(function(err, client, done) {
                         });
 
                     }); //jsonfile (water)
-                        
+
                 }); // jsonfile (dggrid)
             }); //fs.readFile
         }

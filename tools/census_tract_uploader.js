@@ -25,7 +25,7 @@ var WATER_FILE = settings["w"];
 var config = {
     user: 'postgres',
     database: 'transit',
-    password: 'metr0n0m3',
+    password: 'nostrand',
     host: 'localhost',
     port: 5432,
     max: 10,
@@ -50,7 +50,7 @@ pool.connect(function(err, client, done) {
             return console.error('error running query', err);
         } else {
             fs.readFile(POPULATION_FILE, function(pop_err, pop_data) {
-                
+
                 if (pop_err) {
                     return console.log(pop_err);
                 }
@@ -60,22 +60,22 @@ pool.connect(function(err, client, done) {
                 jsonfile.readFile(CENSUS_FILE, function(census_err, census_data) {
                     console.log('Loaded census file '+CENSUS_FILE);
                     console.log(census_data.features.length + ' total features');
-                    
+
                     var bar = new ProgressBar('  processing [:bar] :percent :etas', {
                         complete: '=',
                         incomplete: ' ',
                         width: 100,
                         total: census_data.features.length
                     });
-                    
+
                     for (var k = 0; k < population_records.length; k++) {
                         var record = population_records[k];
                         populations[record["GEOID"]] = record["POP10"];
                     }
-                    
+
                     for (var i = 0; i < census_data.features.length; i++) {
                         var feature = census_data.features[i];
-                        
+
                         var wkt = 'POLYGON((';
                         for (var j = 0; j < feature["geometry"]["coordinates"][0].length; j++) {
                             var coordinate = feature["geometry"]["coordinates"][0][j];
@@ -88,9 +88,9 @@ pool.connect(function(err, client, done) {
                                 wkt += '))';
                             }
                         }
-                        
+
                         var geoid = feature.properties["STATEFP10"] + feature.properties["COUNTYFP10"] + feature.properties["TRACTCE10"];
-                    
+
                         //console.log("geoid: "+geoid+", wkt: ..., population: "+populations[geoid]);
                         //console.log(wkt);
                         client.query("INSERT INTO census (tract_id, geo, population) \
@@ -101,15 +101,15 @@ pool.connect(function(err, client, done) {
                             }
                             done();
                         });
-                        
+
 
 
                     }
-                    
+
                     bar.tick();
 
                 });
-                        
+
             }); //fs.readFile
         }
     });
