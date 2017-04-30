@@ -1,0 +1,13 @@
+[postgres]
+host: localhost
+port: 5432
+dbname: DB_NAME_HERE
+user: DB_USER_HERE
+password: DB_PASSWORD_HERE
+
+[pg_sessions]
+host: localhost
+port: 5432
+dbname: DB_NAME_HERE
+user: DB_USER_HERE
+password: DB_PASSWORD_HERE
