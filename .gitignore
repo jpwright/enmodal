@@ -1,0 +1,15 @@
+*.out
+*~
+node_modules/
+.DS_Store
+ftp.py
+static/geojson/*
+static/graphviz.html
+transit.gz
+venv/*
+*.cfg
+*.kate-swp
+*.pyc
+server/vm_setup.sh
+*.csv
+data/*
