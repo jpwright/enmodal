@@ -13,3 +13,4 @@ venv/*
 server/vm_setup.sh
 *.csv
 data/*
+*.png
