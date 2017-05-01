@@ -531,13 +531,20 @@ ul.ui-autocomplete {
     vertical-align: middle;
 }
 
-#starter-inner {
+.starter-inner {
     margin: 10px;
     padding: 10px;
     width: auto;
-    height: 9em;
     background: rgba(0, 0, 0, 0.65);
     border: 1px solid #777;
+}
+
+#starter-city-picker {
+    height: 9em;
+}
+
+#starter-share {
+    height: 15em;
 }
 
 .game-start-choice-large {

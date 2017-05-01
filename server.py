@@ -119,7 +119,7 @@ def route_session_status():
         a = session_manager.auth_by_hash(s.private_hash)
         session['id'] = s.private_hash
 
-    return json.dumps({"id": a.returnable_hash()})
+    return json.dumps({"id": a.returnable_hash(), "private": a.editable})
 
 @app.route('/session-links')
 def route_session_links():

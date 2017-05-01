@@ -112,7 +112,7 @@ function initialize_game_state() {
                     NS_map = new Map();
                     NS_map.sid = jdata.sid;
                     NS_map.from_json(jdata);
-                    
+
                     NS_interface.active_service = NS_map.primary_service();
                     NS_interface.active_line = NS_map.primary_service().lines[0];
                     NS_interface.update_line_selector(NS_interface.active_line.sid);
@@ -131,7 +131,7 @@ function initialize_game_state() {
                         var line = NS_map.primary_service().lines[i];
                         NS_interface.draw_line(line, false, false);
                     }
-                    
+
                     // use user settings where appropriate
                     var user_settings = jdata.settings;
                     for (var i = 0; i < user_settings.station_pairs.length; i++) {
@@ -144,7 +144,7 @@ function initialize_game_state() {
                             sp_real[0].set_user_control_points([new BezierControlPoint(ucp[0][0], ucp[0][1]), new BezierControlPoint(ucp[1][0], ucp[1][1])]);
                         }
                     }
-                    
+
                     for (var i = 0; i < NS_map.primary_service().lines.length; i++) {
                         var line = NS_map.primary_service().lines[i];
                         NS_interface.draw_line(line, false, true);
@@ -152,6 +152,7 @@ function initialize_game_state() {
                     NS_interface.station_marker_layer.bringToFront();
                     NS_interface.map.closePopup();
                     NS_interface.get_ridership();
+                    $("#starter-city-picker").hide();
                     $("#starter").hide();
                 }
             }
@@ -247,6 +248,7 @@ $(function() {
 
     // Starter screen
     $("#game-start-scratch").click(function() {
+        $("#starter-city-picker").hide();
         $("#starter").hide();
     });
 
@@ -321,12 +323,12 @@ $(function() {
         if (NS_interface.active_tool != "station") {
             $(".tool-button").removeClass("game-button-active");
             $("#tool-station").addClass("game-button-active");
-            
+
             $("#option-section-lines").show();
             $("#option-section-route").show();
             $("#option-section-visual").hide();
             $("#option-section-data").hide();
-            
+
             NS_interface.preview_path_layer.clearLayers();
             NS_interface.bezier_layer.clearLayers();
             //NS_interface.hexagons = {};
@@ -338,12 +340,12 @@ $(function() {
         if (NS_interface.active_tool != "line") {
             $(".tool-button").removeClass("game-button-active");
             $("#tool-line").addClass("game-button-active");
-            
+
             $("#option-section-lines").hide();
             $("#option-section-route").hide();
             $("#option-section-visual").show();
             $("#option-section-data").hide();
-            
+
             NS_interface.preview_path_layer.clearLayers();
             NS_interface.station_for_bezier_edits = null;
             NS_interface.moving_station_marker = null;
@@ -356,12 +358,12 @@ $(function() {
         if (NS_interface.active_tool != "data") {
             $(".tool-button").removeClass("game-button-active");
             $("#tool-data").addClass("game-button-active");
-            
+
             $("#option-section-lines").hide();
             $("#option-section-route").hide();
             $("#option-section-visual").hide();
             $("#option-section-data").show();
-            
+
             NS_interface.preview_path_layer.clearLayers();
             NS_interface.bezier_layer.clearLayers();
             NS_interface.active_tool = "data";
@@ -380,8 +382,13 @@ $(function() {
             NS_interface.map.removeLayer(NS_interface.data_layer);
         }
     });
-    
+
     $("#tool-save").click(function(e) {
         sync_with_server(false);
+    });
+
+    $("#tool-share").click(function(e) {
+        $("#starter-share").show();
+        $("#starter").show();
     });
 });

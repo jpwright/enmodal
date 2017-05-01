@@ -65,9 +65,24 @@
     <div id="map"></div>
     <div id="starter">
         <div id="starter-middle">
-            <div id="starter-inner">
+            <div class="starter-inner" id="starter-city-picker">
                 <div id="game-start-city-picker"><input id="city-picker-input" type="text" placeholder="New York City" /></div>
                 <div id="game-start-scratch"><div id="game-start-scratch-button">Start</div></div>
+            </div>
+            <div class="starter-inner" id="starter-share" style="display: none;">
+                <div class="share-header">Sharing</div>
+                <div class="share-link">
+                    <div class="share-link-header">Public link</div>
+                    <div class="share-link-content" id="share-link-public"></div>
+                    <div class="share-link-copy-button">copy</div>
+                    <div class="share-link-footer">This link is a read-only copy of your map that can be shared publicly.</div>
+                </div>
+                <div class="share-link">
+                    <div class="share-link-header">Private link</div>
+                    <div class="share-link-content" id="share-link-private"></div>
+                    <div class="share-link-copy-button">copy</div>
+                    <div class="share-link-footer">This link allows you to edit your map later. Bookmark it and keep it secret!</div>
+                </div>
             </div>
         </div>
 
@@ -124,10 +139,9 @@
     </div>
 
     <div id="option-section-status">
-        <div id="saving-row">
-            <div id="tool-save" class="tool-button game-button-large">Save</div>
-            <div id="save-message" style="display: none;">Saved!</div>
-        </div>
+        <div id="tool-save" class="tool-button game-button-large">Save</div>
+        <div id="save-message" style="display: none;">Saved!</div>
+        <div id="tool-share" class="tool-button game-button-large">Share</div>
         <div class="attribution"><a href="http://leafletjs.com/">Leaflet</a> | Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ</div>
     </div>
 
