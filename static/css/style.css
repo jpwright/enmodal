@@ -687,6 +687,8 @@ ul.ui-autocomplete {
     color: #fff;
     text-decoration: none;
     padding: 5px;
+    width: 50px;
+    text-align: center;
 }
 
 .game-button-active {

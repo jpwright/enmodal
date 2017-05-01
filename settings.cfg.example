@@ -5,9 +5,12 @@ dbname: DB_NAME_HERE
 user: DB_USER_HERE
 password: DB_PASSWORD_HERE
 
-[pg_sessions]
+[sessions]
 host: localhost
 port: 5432
 dbname: DB_NAME_HERE
 user: DB_USER_HERE
 password: DB_PASSWORD_HERE
+secret_key_public: aaaaaaaaaaaaaaaa
+secret_key_private: bbbbbbbbbbbbbbbb
+expiration_time: 7200

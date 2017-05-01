@@ -9,6 +9,7 @@ import re
 import os
 import uuid
 import datetime
+import hashlib
 from lzstring import LZString
 
 import sys
@@ -21,10 +22,81 @@ import TransitSettings
 import ConfigParser
 
 app = Flask(__name__, static_url_path='/static')
-app.secret_key = 'F12Yr58j4zX T~Y%C!efJ]Gxd/,?KT'
+app.secret_key = 'F12Yr58j4zX T~Y%C!efJ]Gxe/,?KT'
 
-sessions = []
-session_to_map = {}
+config = ConfigParser.RawConfigParser()
+config.read('settings.cfg')
+SESSIONS_SECRET_KEY_PUBLIC = config.get('sessions', 'secret_key_public')
+SESSIONS_SECRET_KEY_PRIVATE = config.get('sessions', 'secret_key_private')
+SESSION_EXPIRATION_TIME = config.get('sessions', 'expiration_time')
+
+class SessionManager(object):
+    def __init__(self):
+        self.sessions = []
+
+    def get_by_sid(self, sid):
+        for s in self.sessions:
+            if s.sid == sid:
+                return s
+        return None
+
+    def get_by_public_hash(self, h):
+        for s in self.sessions:
+            if s.public_hash == h:
+                return s
+        return None
+
+    def get_by_private_hash(self, h):
+        for s in self.sessions:
+            if s.private_hash == h:
+                return s
+        return None
+
+    def add(self, s):
+        self.sessions.append(s)
+
+    def remove_by_sid(self, sid):
+        s = self.get_by_sid(sid)
+        if s is not None:
+            self.sessions.remove(s)
+
+    def auth_by_hash(self, h):
+        public_session = self.get_by_public_hash(h)
+        if public_session is not None:
+            a = SessionAuthentication(public_session, False)
+            return a
+        private_session = self.get_by_private_hash(h)
+        if private_session is not None:
+            a = SessionAuthentication(private_session, True)
+            return a
+        return None
+
+class Session(object):
+    def __init__(self):
+        self.sid = '{:16x}'.format(uuid.uuid4().int & (1<<63)-1)
+        self.public_hash = hashlib.sha256(self.sid + SESSIONS_SECRET_KEY_PUBLIC).hexdigest()
+        self.private_hash = hashlib.sha256(self.sid + SESSIONS_SECRET_KEY_PRIVATE).hexdigest()
+        self.map = Transit.Map(0)
+        self.last_edit_time = datetime.datetime.now()
+
+    def keep_alive(self):
+        self.last_edit_time = datetime.datetime.now()
+
+    def is_expired(self):
+        return (datetime.datetime.now() - self.last_edit_time) > SESSION_EXPIRATION_TIME
+
+class SessionAuthentication(object):
+    def __init__(self, s, editable):
+        self.session = s
+        self.editable = editable
+
+    def returnable_hash(self):
+        if self.editable:
+            return self.session.private_hash
+        else:
+            return self.session.public_hash
+
+session_manager = SessionManager()
 
 @app.route('/')
 def route_main():
@@ -32,22 +104,22 @@ def route_main():
 
 @app.route('/session')
 def route_session_status():
-
     create_new_session = False
 
     if 'id' not in session:
         create_new_session = True
-    elif session['id'] not in sessions:
-        create_new_session = True
+    else:
+        a = session_manager.auth_by_hash(session['id'])
+        if a is None:
+            create_new_session = True
 
     if create_new_session:
-        # Get a new session ID
-        session['id'] = '{:16x}'.format(uuid.uuid4().int & (1<<63)-1)
-        sessions.append(session['id'])
-        # Create a new Map object and keep it
-        session_to_map[session['id']] = Transit.Map(0)
+        s = Session()
+        session_manager.add(s)
+        a = session_manager.auth_by_hash(s.private_hash)
+        session['id'] = s.private_hash
 
-    return json.dumps({"id": session['id']})
+    return json.dumps({"id": a.returnable_hash()})
 
 @app.route('/session-links')
 def route_session_links():
@@ -62,42 +134,47 @@ def route_session_save():
 
     config = ConfigParser.RawConfigParser()
     config.read('settings.cfg')
-    host = config.get('pg_sessions', 'host')
-    port = config.get('pg_sessions', 'port')
-    dbname = config.get('pg_sessions', 'dbname')
-    user = config.get('pg_sessions', 'user')
-    password = config.get('pg_sessions', 'password')
+    host = config.get('sessions', 'host')
+    port = config.get('sessions', 'port')
+    dbname = config.get('sessions', 'dbname')
+    user = config.get('sessions', 'user')
+    password = config.get('sessions', 'password')
     conn_string = "host='"+host+"' port='"+port+"' dbname='"+dbname+"' user='"+user+"' password='"+password+"'"
 
     conn = psycopg2.connect(conn_string)
     cursor = conn.cursor()
 
-    sid = int(session['id'], 16)
-    sdata = session_to_map[session['id']].to_json().replace("'", "''")
-    sdt = datetime.datetime.now()
+    a = session_manager.auth_by_hash(request.args.get('id'))
+    if a.editable:
+        sid = a.session.sid
+        sdata = a.session.map.to_json().replace("'", "''")
+        sdt = datetime.datetime.now()
 
-    cursor.execute("SELECT id FROM sessions WHERE id = %s LIMIT 1" % (sid))
-    if (cursor.rowcount > 0):
-        cursor.execute("UPDATE sessions SET data = '%s', updated = '%s' WHERE id = %s" % (sdata, sdt, sid))
+        cursor.execute("SELECT id FROM sessions WHERE id = %s LIMIT 1" % (sid))
+        if (cursor.rowcount > 0):
+            cursor.execute("UPDATE sessions SET data = '%s', updated = '%s' WHERE id = %s" % (sdata, sdt, sid))
+        else:
+            cursor.execute("INSERT INTO sessions (id, data, updated) VALUES (%s, '%s', '%s')" % (sid, sdata, sdt))
+
+        conn.commit()
+
+        return json.dumps({"result": "OK"})
     else:
-        cursor.execute("INSERT INTO sessions (id, data, updated) VALUES (%s, '%s', '%s')" % (sid, sdata, sdt))
-
-    conn.commit()
-
-    return json.dumps({"result": "OK"})
+        return json.dumps({"error": "Non-editable session"})
 
 @app.route('/session-load')
 def route_session_load():
-    sid = int(request.args.get('id'), 16)
+    a = session_manager.auth_by_hash(request.args.get('id'))
+    sid = a.session.sid
     session['id'] = request.args.get('id')
 
     config = ConfigParser.RawConfigParser()
     config.read('settings.cfg')
-    host = config.get('pg_sessions', 'host')
-    port = config.get('pg_sessions', 'port')
-    dbname = config.get('pg_sessions', 'dbname')
-    user = config.get('pg_sessions', 'user')
-    password = config.get('pg_sessions', 'password')
+    host = config.get('sessions', 'host')
+    port = config.get('sessions', 'port')
+    dbname = config.get('sessions', 'dbname')
+    user = config.get('sessions', 'user')
+    password = config.get('sessions', 'password')
     conn_string = "host='"+host+"' port='"+port+"' dbname='"+dbname+"' user='"+user+"' password='"+password+"'"
 
     conn = psycopg2.connect(conn_string)
@@ -133,7 +210,7 @@ def route_session_push():
     m = Transit.Map(0)
     m.from_json(d)
     m.sidf_state = 0
-    session_to_map[session['id']] = m
+    session_manager.auth_by_hash(session['id']).session.map = m
 
     return json.dumps({"result": "OK"})
 
@@ -150,7 +227,7 @@ def route_station_add():
     lat = request.args.get('lat')
     lng = request.args.get('lng')
     station_id = request.args.get('station-id')
-    m = session_to_map[session['id']]
+    m = session_manager.auth_by_hash(session['id']).session.map
 
     for service in m.services:
         if service_id == str(service.sid):
@@ -182,7 +259,7 @@ def route_station_remove():
     service_id = request.args.get('service-id')
     station_id = request.args.get('station-id')
 
-    m = session_to_map[session['id']]
+    m = session_manager.auth_by_hash(session['id']).session.map
     for s in m.services:
         if service_id == str(s.sid):
 
@@ -209,7 +286,7 @@ def route_station_update():
     locality = request.args.get('locality')
     region = request.args.get('region')
 
-    m = session_to_map[session['id']]
+    m = session_manager.auth_by_hash(session['id']).session.map
     for s in m.services:
         if service_id == str(s.sid):
 
@@ -246,7 +323,7 @@ def route_stop_add():
     station_id = request.args.get('station-id')
     stop_id = request.args.get('stop-id')
 
-    m = session_to_map[session['id']]
+    m = session_manager.auth_by_hash(session['id']).session.map
     for service in m.services:
         if service_id == str(service.sid):
             line_exists = False
@@ -276,7 +353,7 @@ def route_stop_remove():
     line_id = request.args.get('line-id')
     stop_id = request.args.get('stop-id')
 
-    m = session_to_map[session['id']]
+    m = session_manager.auth_by_hash(session['id']).session.map
     for s in m.services:
         if service_id == str(s.sid):
 
@@ -305,7 +382,7 @@ def route_line_add():
     service_id = request.args.get('service-id')
     line_id = request.args.get('line-id')
 
-    m = session_to_map[session['id']]
+    m = session_manager.auth_by_hash(session['id']).session.map
     line = Transit.Line(int(line_id), name)
     line.full_name = full_name
     line.color_bg = color_bg
@@ -331,7 +408,7 @@ def route_line_update():
     color_bg = request.args.get('color-bg')
     color_fg = request.args.get('color-fg')
 
-    m = session_to_map[session['id']]
+    m = session_manager.auth_by_hash(session['id']).session.map
     for s in m.services:
         if service_id == str(s.sid):
 
@@ -361,7 +438,7 @@ def route_line_info():
     line_name = request.args.get('line-name')
 
     sid = request.args.get('id')
-    m = session_to_map[session['id']]
+    m = session_manager.auth_by_hash(session['id']).session.map
     for s in m.services:
         for l in s.lines:
             if line_id == str(l.sid) or line_name == l.name:
@@ -385,7 +462,7 @@ def route_edge_add():
     if (stop_1_id == stop_2_id):
         return json.dumps({"error": "Duplicate Stop IDs"})
 
-    m = session_to_map[session['id']]
+    m = session_manager.auth_by_hash(session['id']).session.map
     for s in m.services:
         if service_id == str(s.sid):
 
@@ -426,7 +503,7 @@ def route_edge_remove():
     line_id = request.args.get('line-id')
     edge_id = request.args.get('edge-id')
 
-    m = session_to_map[session['id']]
+    m = session_manager.auth_by_hash(session['id']).session.map
     for s in m.services:
         if service_id == str(s.sid):
 
@@ -450,8 +527,7 @@ def route_service_add():
     name = request.args.get('name')
     service_id = request.args.get('service-id')
 
-    m = session_to_map[session['id']]
-
+    m = session_manager.auth_by_hash(session['id']).session.map
     service = Transit.Service(int(service_id), name)
     m.add_service(service)
 
@@ -464,10 +540,10 @@ def route_service_info():
     if e:
         return e
 
-    id = request.args.get('id')
-    m = session_to_map[session['id']]
+    service_id = request.args.get('id')
+    m = session_manager.auth_by_hash(session['id']).session.map
     for s in m.services:
-        if id == str(s.sid):
+        if service_id == str(s.sid):
             return s.to_json()
 
     return json.dumps({"error": "Invalid ID"})
@@ -479,7 +555,7 @@ def route_map_info():
     if e:
         return e
 
-    m = session_to_map[session['id']]
+    m = session_manager.auth_by_hash(session['id']).session.map
     return m.to_json()
 
 @app.route('/graphviz')
@@ -504,7 +580,7 @@ def route_get_hexagons():
     if e:
         return e
 
-    m = session_to_map[session['id']]
+    m = session_manager.auth_by_hash(session['id']).session.map
     bb = TransitGIS.BoundingBox(m)
     bb.min_lat -= 0.2;
     bb.max_lat += 0.2;
@@ -521,7 +597,7 @@ def route_transit_model():
     if e:
         return e
 
-    m = session_to_map[session['id']]
+    m = session_manager.auth_by_hash(session['id']).session.map
     model = TransitModel.map_analysis(m)
 
     return model.to_json()
@@ -532,7 +608,7 @@ def route_clear_settings():
     if e:
         return e
 
-    m = session_to_map[session['id']]
+    m = session_manager.auth_by_hash(session['id']).session.map
     m.settings = TransitSettings.Settings()
 
 @app.route('/station-pair-info')
@@ -553,7 +629,7 @@ def route_station_pair_info():
     stations_found = 0
     stations = []
 
-    m = session_to_map[session['id']]
+    m = session_manager.auth_by_hash(session['id']).session.map
     for s in m.services:
         if service_id == str(s.sid):
             # Look for matching station.
@@ -572,7 +648,7 @@ def route_station_pair_info():
 def check_for_session_errors():
     if 'id' not in session:
         return json.dumps({"error": "Create session first"})
-    elif session['id'] not in sessions:
+    elif session_manager.auth_by_hash(session['id']) is None:
         return json.dumps({"error": "Invalid session"})
 
     return 0
