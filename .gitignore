@@ -4,7 +4,6 @@ node_modules/
 .DS_Store
 ftp.py
 static/geojson/*
-static/graphviz.html
 transit.gz
 venv/*
 *.cfg

@@ -1,0 +1,127 @@
+
+<!doctype html>
+<html>
+<head>
+  <title>Network | Basic usage</title>
+
+  <script type="text/javascript" src="static/js/vis.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+  
+  <link href="static/css/vis.css" rel="stylesheet" type="text/css" />
+  <script type="text/javascript" src="static/js/TransitUtils.js"></script>
+
+  <style type="text/css">
+    #mynetwork {
+      width: 600px;
+      height: 400px;
+      border: 1px solid lightgray;
+    }
+  </style>
+</head>
+<body>
+
+<script type="text/javascript">
+  
+    var url_params = get_url_parameter("line");
+    console.log(url_params);
+  
+    if (url_params) {
+        $.ajax({ url: "line-info?line-name="+url_params,
+            async: false,
+            dataType: 'json',
+            success: function(data, status) {
+                console.log(data);
+                var line = data["line"]
+                var stations = data["stations"];
+                
+                var node_comps = [];
+                for (var i = 0; i < line["stops"].length; i++) {
+                    var stop = line["stops"][i];
+                    for (var j = 0; j < stations.length; j++) {
+                        if (stations[j].id == stop["station_id"]) {
+                            var node_comp = {id: stop["id"], label: stations[j]["name"]};
+                            node_comps.push(node_comp);
+                        }
+                    }
+                }
+                
+                var nodes = new vis.DataSet(node_comps);
+                
+                var edge_comps = [];
+                for (var i = 0; i < line["edges"].length; i++) {
+                    var edge = line["edges"][i];
+                    var edge_comp = {from: edge["stop_ids"][0], to: edge["stop_ids"][1]};
+                    edge_comps.push(edge_comp);
+                }
+                
+                var edges = new vis.DataSet(edge_comps);
+                
+                // create a network
+                var networkdiv = $('<div style="position: relative; border: 2px solid #aaa; height: 300px; width: 45%; float: left;" id="network-line-'+line["id"]+'"></div>');
+                $("body").append(networkdiv);
+                var container = document.getElementById('network-line-'+line["id"]);
+                var data = {
+                    nodes: nodes,
+                    edges: edges
+                };
+                var options = {};
+                var network = new vis.Network(container, data, options);
+                networkdiv.append("<div style=\"position: absolute; top: 0; left: 0; width: 100%; background-color: "+line["color_bg"]+"; color: "+line["color_fg"]+"; font-weight: bold;\">"+line["name"]+"</div>");
+                
+            }
+        });
+    } else {
+        $.ajax({ url: "map-info",
+            async: false,
+            dataType: 'json',
+            success: function(data, status) {
+                var service = data["services"][0];
+                for (var k = 0; k < service["lines"].length; k++) {
+                
+                    var line = service["lines"][k];
+                    var stations = service["stations"];
+                    
+                    var node_comps = [];
+                    for (var i = 0; i < line["stops"].length; i++) {
+                        var stop = line["stops"][i];
+                        for (var j = 0; j < stations.length; j++) {
+                            if (stations[j].sid == stop["station_id"]) {
+                                var node_comp = {id: stop["sid"], label: stations[j]["name"] + " (" + stop["station_id"] + ":" + stop["sid"].toString() + ")"};
+                                node_comps.push(node_comp);
+                            }
+                        }
+                    }
+                    
+                    var nodes = new vis.DataSet(node_comps);
+                    
+                    var edge_comps = [];
+                    for (var i = 0; i < line["edges"].length; i++) {
+                        var edge = line["edges"][i];
+                        var edge_comp = {from: edge["stop_ids"][0], to: edge["stop_ids"][1]};
+                        edge_comps.push(edge_comp);
+                    }
+                    
+                    var edges = new vis.DataSet(edge_comps);
+                    
+                    // create a network
+                    var networkdiv = $('<div style="position: relative; border: 2px solid #aaa; height: 300px; width: 45%; float: left;" id="network-line-'+line["sid"]+'"></div>');
+                    $("body").append(networkdiv);
+                    var container = document.getElementById('network-line-'+line["sid"]);
+                    var data = {
+                        nodes: nodes,
+                        edges: edges
+                    };
+                    var options = {};
+                    var network = new vis.Network(container, data, options);
+                    networkdiv.append("<div style=\"position: absolute; top: 0; left: 0; width: 100%; background-color: "+line["color_bg"]+"; color: "+line["color_fg"]+"; font-weight: bold;\">"+line["name"]+"</div>");
+                }
+                
+            }
+        });
+    }
+
+   
+</script>
+
+</body>
+</html>
