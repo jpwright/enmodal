@@ -9,7 +9,6 @@ import re
 import os
 import uuid
 import datetime
-import hashlib
 from lzstring import LZString
 
 import sys
@@ -26,9 +25,9 @@ app.secret_key = 'F12Yr58j4zX T~Y%C!efJ]Gxe/,?KT'
 
 config = ConfigParser.RawConfigParser()
 config.read('settings.cfg')
-SESSIONS_SECRET_KEY_PUBLIC = config.get('sessions', 'secret_key_public')
-SESSIONS_SECRET_KEY_PRIVATE = config.get('sessions', 'secret_key_private')
-SESSION_EXPIRATION_TIME = config.get('sessions', 'expiration_time')
+SESSIONS_SECRET_KEY_PUBLIC = int(config.get('sessions', 'secret_key_public'), 16)
+SESSIONS_SECRET_KEY_PRIVATE = int(config.get('sessions', 'secret_key_private'), 16)
+SESSION_EXPIRATION_TIME = int(config.get('sessions', 'expiration_time'))
 
 class SessionManager(object):
     def __init__(self):
@@ -40,17 +39,23 @@ class SessionManager(object):
                 return s
         return None
 
-    def get_by_public_hash(self, h):
+    def get_by_public_key(self, h):
         for s in self.sessions:
-            if s.public_hash == h:
+            if s.public_key() == h:
                 return s
         return None
 
-    def get_by_private_hash(self, h):
+    def get_by_private_key(self, h):
         for s in self.sessions:
-            if s.private_hash == h:
+            if s.private_key() == h:
                 return s
         return None
+
+    def get_sid_from_public_key(self, h):
+        return h ^ SESSIONS_SECRET_KEY_PUBLIC
+    
+    def get_sid_from_private_key(self, h):
+        return h ^ SESSIONS_SECRET_KEY_PRIVATE
 
     def add(self, s):
         self.sessions.append(s)
@@ -60,12 +65,12 @@ class SessionManager(object):
         if s is not None:
             self.sessions.remove(s)
 
-    def auth_by_hash(self, h):
-        public_session = self.get_by_public_hash(h)
+    def auth_by_key(self, h):
+        public_session = self.get_by_public_key(h)
         if public_session is not None:
             a = SessionAuthentication(public_session, False)
             return a
-        private_session = self.get_by_private_hash(h)
+        private_session = self.get_by_private_key(h)
         if private_session is not None:
             a = SessionAuthentication(private_session, True)
             return a
@@ -73,11 +78,15 @@ class SessionManager(object):
 
 class Session(object):
     def __init__(self):
-        self.sid = '{:16x}'.format(uuid.uuid4().int & (1<<63)-1)
-        self.public_hash = hashlib.sha256(self.sid + SESSIONS_SECRET_KEY_PUBLIC).hexdigest()
-        self.private_hash = hashlib.sha256(self.sid + SESSIONS_SECRET_KEY_PRIVATE).hexdigest()
+        self.sid = uuid.uuid4().int & (1<<63)-1
         self.map = Transit.Map(0)
         self.last_edit_time = datetime.datetime.now()
+        
+    def public_key(self):
+        return self.sid ^ SESSIONS_SECRET_KEY_PUBLIC
+    
+    def private_key(self):
+        return self.sid ^ SESSIONS_SECRET_KEY_PRIVATE
 
     def keep_alive(self):
         self.last_edit_time = datetime.datetime.now()
@@ -90,11 +99,11 @@ class SessionAuthentication(object):
         self.session = s
         self.editable = editable
 
-    def returnable_hash(self):
+    def returnable_key(self):
         if self.editable:
-            return self.session.private_hash
+            return '{:16x}'.format(self.session.private_key())
         else:
-            return self.session.public_hash
+            return '{:16x}'.format(self.session.public_key())
 
 session_manager = SessionManager()
 
@@ -104,22 +113,14 @@ def route_main():
 
 @app.route('/session')
 def route_session_status():
-    create_new_session = False
+    s = Session()
+    session_manager.add(s)
+    a = session_manager.auth_by_key(s.private_key())
 
-    if 'id' not in session:
-        create_new_session = True
-    else:
-        a = session_manager.auth_by_hash(session['id'])
-        if a is None:
-            create_new_session = True
-
-    if create_new_session:
-        s = Session()
-        session_manager.add(s)
-        a = session_manager.auth_by_hash(s.private_hash)
-        session['id'] = s.private_hash
-
-    return json.dumps({"id": a.returnable_hash(), "private": a.editable})
+    return_obj = {"is_private": a.editable, "public_key": '{:16x}'.format(a.session.public_key())}
+    if a.editable:
+        return_obj["private_key"] = '{:16x}'.format(a.session.private_key())
+    return json.dumps(return_obj)
 
 @app.route('/session-links')
 def route_session_links():
@@ -128,7 +129,8 @@ def route_session_links():
 
 @app.route('/session-save')
 def route_session_save():
-    e = check_for_session_errors()
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
     if e:
         return e
 
@@ -144,9 +146,10 @@ def route_session_save():
     conn = psycopg2.connect(conn_string)
     cursor = conn.cursor()
 
-    a = session_manager.auth_by_hash(request.args.get('id'))
+    a = session_manager.auth_by_key(h)
     if a.editable:
         sid = a.session.sid
+        print "saving with sid "+str(sid)
         sdata = a.session.map.to_json().replace("'", "''")
         sdt = datetime.datetime.now()
 
@@ -164,9 +167,7 @@ def route_session_save():
 
 @app.route('/session-load')
 def route_session_load():
-    a = session_manager.auth_by_hash(request.args.get('id'))
-    sid = a.session.sid
-    session['id'] = request.args.get('id')
+    h = int(request.args.get('i'), 16)
 
     config = ConfigParser.RawConfigParser()
     config.read('settings.cfg')
@@ -180,24 +181,53 @@ def route_session_load():
     conn = psycopg2.connect(conn_string)
     cursor = conn.cursor()
 
+    is_private = False
+    sid = session_manager.get_sid_from_public_key(h)
+    #print "public guess: "+str(sid)
     cursor.execute("SELECT data FROM sessions WHERE id = %s LIMIT 1" % (sid))
-    if (cursor.rowcount > 0):
-        row = cursor.fetchone()
-        sdata = row[0]
-        m = Transit.Map(0)
-        m.from_json(sdata)
-        m.sidf_state = 0
-        m.regenerate_all_ids()
-        session_to_map[session['id']] = m
-        sessions.append(session['id'])
-
-        return json.dumps({"id": session['id'], "data": m.to_json().replace("'", "''")})
-    else:
+    if (cursor.rowcount == 0):
+        sid = session_manager.get_sid_from_private_key(h)
+        #print "private guess: "+str(sid)
+        cursor.execute("SELECT data FROM sessions WHERE id = %s LIMIT 1" % (sid))
+        is_private = True
+    if (cursor.rowcount == 0):
         return json.dumps({"error": "Invalid ID"})
+
+    row = cursor.fetchone()
+    sdata = row[0]
+    m = Transit.Map(0)
+    m.from_json(sdata)
+    m.sidf_state = 0
+    m.regenerate_all_ids()
+    
+    if not is_private:
+        print "generating new session."
+        s = Session()
+        session_manager.add(s)
+        s.map = m
+    else:
+        print "looking for private session."
+        s = session_manager.get_by_sid(sid)
+        if s is None:
+            print "generating new private session."
+            s = Session()
+            s.sid = sid
+            s.map = m
+            session_manager.add(s)
+    
+    a = session_manager.auth_by_key(s.private_key())
+    print a
+
+    print "returning id "+str(session['id'])
+    return_obj = {"public_key": '{:16x}'.format(a.session.public_key()), "is_private": a.editable, "data": m.to_json().replace("'", "''")}
+    if a.editable:
+        return_obj["private_key"] = '{:16x}'.format(a.session.private_key())
+    return json.dumps(return_obj)
 
 @app.route('/session-push', methods=['GET', 'POST'])
 def route_session_push():
-    e = check_for_session_errors()
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
     if e:
         return e
 
@@ -210,15 +240,15 @@ def route_session_push():
     m = Transit.Map(0)
     m.from_json(d)
     m.sidf_state = 0
-    session_manager.auth_by_hash(session['id']).session.map = m
+    session_manager.auth_by_key(h).session.map = m
 
     return json.dumps({"result": "OK"})
 
 
 @app.route('/station-add')
 def route_station_add():
-
-    e = check_for_session_errors()
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
     if e:
         return e
 
@@ -227,7 +257,7 @@ def route_station_add():
     lat = request.args.get('lat')
     lng = request.args.get('lng')
     station_id = request.args.get('station-id')
-    m = session_manager.auth_by_hash(session['id']).session.map
+    m = session_manager.auth_by_key(h).session.map
 
     for service in m.services:
         if service_id == str(service.sid):
@@ -239,7 +269,8 @@ def route_station_add():
 
 @app.route('/lat-lng-info')
 def route_lat_lng_info():
-    e = check_for_session_errors()
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
     if e:
         return e
 
@@ -251,15 +282,15 @@ def route_lat_lng_info():
 
 @app.route('/station-remove')
 def route_station_remove():
-
-    e = check_for_session_errors()
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
     if e:
         return e
 
     service_id = request.args.get('service-id')
     station_id = request.args.get('station-id')
 
-    m = session_manager.auth_by_hash(session['id']).session.map
+    m = session_manager.auth_by_key(h).session.map
     for s in m.services:
         if service_id == str(s.sid):
 
@@ -273,7 +304,8 @@ def route_station_remove():
 
 @app.route('/station-update')
 def route_station_update():
-    e = check_for_session_errors()
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
     if e:
         return e
 
@@ -286,7 +318,7 @@ def route_station_update():
     locality = request.args.get('locality')
     region = request.args.get('region')
 
-    m = session_manager.auth_by_hash(session['id']).session.map
+    m = session_manager.auth_by_key(h).session.map
     for s in m.services:
         if service_id == str(s.sid):
 
@@ -313,8 +345,8 @@ def route_station_update():
 
 @app.route('/stop-add')
 def route_stop_add():
-
-    e = check_for_session_errors()
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
     if e:
         return e
 
@@ -323,7 +355,7 @@ def route_stop_add():
     station_id = request.args.get('station-id')
     stop_id = request.args.get('stop-id')
 
-    m = session_manager.auth_by_hash(session['id']).session.map
+    m = session_manager.auth_by_key(h).session.map
     for service in m.services:
         if service_id == str(service.sid):
             line_exists = False
@@ -344,8 +376,8 @@ def route_stop_add():
 
 @app.route('/stop-remove')
 def route_stop_remove():
-
-    e = check_for_session_errors()
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
     if e:
         return e
 
@@ -353,7 +385,7 @@ def route_stop_remove():
     line_id = request.args.get('line-id')
     stop_id = request.args.get('stop-id')
 
-    m = session_manager.auth_by_hash(session['id']).session.map
+    m = session_manager.auth_by_key(h).session.map
     for s in m.services:
         if service_id == str(s.sid):
 
@@ -369,8 +401,8 @@ def route_stop_remove():
 
 @app.route('/line-add')
 def route_line_add():
-
-    e = check_for_session_errors()
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
     if e:
         return e
 
@@ -382,7 +414,7 @@ def route_line_add():
     service_id = request.args.get('service-id')
     line_id = request.args.get('line-id')
 
-    m = session_manager.auth_by_hash(session['id']).session.map
+    m = session_manager.auth_by_key(h).session.map
     line = Transit.Line(int(line_id), name)
     line.full_name = full_name
     line.color_bg = color_bg
@@ -397,7 +429,8 @@ def route_line_add():
 
 @app.route('/line-update')
 def route_line_update():
-    e = check_for_session_errors()
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
     if e:
         return e
 
@@ -408,7 +441,7 @@ def route_line_update():
     color_bg = request.args.get('color-bg')
     color_fg = request.args.get('color-fg')
 
-    m = session_manager.auth_by_hash(session['id']).session.map
+    m = session_manager.auth_by_key(h).session.map
     for s in m.services:
         if service_id == str(s.sid):
 
@@ -429,8 +462,8 @@ def route_line_update():
 
 @app.route('/line-info')
 def route_line_info():
-
-    e = check_for_session_errors()
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
     if e:
         return e
 
@@ -438,7 +471,7 @@ def route_line_info():
     line_name = request.args.get('line-name')
 
     sid = request.args.get('id')
-    m = session_manager.auth_by_hash(session['id']).session.map
+    m = session_manager.auth_by_key(h).session.map
     for s in m.services:
         for l in s.lines:
             if line_id == str(l.sid) or line_name == l.name:
@@ -448,8 +481,8 @@ def route_line_info():
 
 @app.route('/edge-add')
 def route_edge_add():
-
-    e = check_for_session_errors()
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
     if e:
         return e
 
@@ -462,7 +495,7 @@ def route_edge_add():
     if (stop_1_id == stop_2_id):
         return json.dumps({"error": "Duplicate Stop IDs"})
 
-    m = session_manager.auth_by_hash(session['id']).session.map
+    m = session_manager.auth_by_key(h).session.map
     for s in m.services:
         if service_id == str(s.sid):
 
@@ -494,8 +527,8 @@ def route_edge_add():
 
 @app.route('/edge-remove')
 def route_edge_remove():
-
-    e = check_for_session_errors()
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
     if e:
         return e
 
@@ -503,7 +536,7 @@ def route_edge_remove():
     line_id = request.args.get('line-id')
     edge_id = request.args.get('edge-id')
 
-    m = session_manager.auth_by_hash(session['id']).session.map
+    m = session_manager.auth_by_key(h).session.map
     for s in m.services:
         if service_id == str(s.sid):
 
@@ -519,15 +552,15 @@ def route_edge_remove():
 
 @app.route('/service-add')
 def route_service_add():
-
-    e = check_for_session_errors()
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
     if e:
         return e
 
     name = request.args.get('name')
     service_id = request.args.get('service-id')
 
-    m = session_manager.auth_by_hash(session['id']).session.map
+    m = session_manager.auth_by_key(h).session.map
     service = Transit.Service(int(service_id), name)
     m.add_service(service)
 
@@ -535,13 +568,13 @@ def route_service_add():
 
 @app.route('/service-info')
 def route_service_info():
-
-    e = check_for_session_errors()
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
     if e:
         return e
 
     service_id = request.args.get('id')
-    m = session_manager.auth_by_hash(session['id']).session.map
+    m = session_manager.auth_by_key(h).session.map
     for s in m.services:
         if service_id == str(s.sid):
             return s.to_json()
@@ -550,12 +583,12 @@ def route_service_info():
 
 @app.route('/map-info')
 def route_map_info():
-
-    e = check_for_session_errors()
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
     if e:
         return e
 
-    m = session_manager.auth_by_hash(session['id']).session.map
+    m = session_manager.auth_by_key(h).session.map
     return m.to_json()
 
 @app.route('/graphviz')
@@ -575,12 +608,12 @@ def route_hexagons():
 
 @app.route('/get-hexagons')
 def route_get_hexagons():
-
-    e = check_for_session_errors()
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
     if e:
         return e
 
-    m = session_manager.auth_by_hash(session['id']).session.map
+    m = session_manager.auth_by_key(h).session.map
     bb = TransitGIS.BoundingBox(m)
     bb.min_lat -= 0.2;
     bb.max_lat += 0.2;
@@ -592,28 +625,30 @@ def route_get_hexagons():
 
 @app.route('/transit-model')
 def route_transit_model():
-
-    e = check_for_session_errors()
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
     if e:
         return e
 
-    m = session_manager.auth_by_hash(session['id']).session.map
+    m = session_manager.auth_by_key(h).session.map
     model = TransitModel.map_analysis(m)
 
     return model.to_json()
 
 @app.route('/clear-settings')
 def route_clear_settings():
-    e = check_for_session_errors()
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
     if e:
         return e
 
-    m = session_manager.auth_by_hash(session['id']).session.map
+    m = session_manager.auth_by_key(h).session.map
     m.settings = TransitSettings.Settings()
 
 @app.route('/station-pair-info')
 def route_station_pair_info():
-    e = check_for_session_errors()
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
     if e:
         return e
 
@@ -629,7 +664,7 @@ def route_station_pair_info():
     stations_found = 0
     stations = []
 
-    m = session_manager.auth_by_hash(session['id']).session.map
+    m = session_manager.auth_by_key(h).session.map
     for s in m.services:
         if service_id == str(s.sid):
             # Look for matching station.
@@ -645,10 +680,8 @@ def route_station_pair_info():
 
     return json.dumps({"result": "OK"})
 
-def check_for_session_errors():
-    if 'id' not in session:
-        return json.dumps({"error": "Create session first"})
-    elif session_manager.auth_by_hash(session['id']) is None:
+def check_for_session_errors(h):
+    if session_manager.auth_by_key(h) is None:
         return json.dumps({"error": "Invalid session"})
 
     return 0

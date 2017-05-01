@@ -57,8 +57,8 @@ class TransitUI {
             if (this.moving_control_point != null) {
                 console.log("updating moving control point");
                 if (INC_UPDATES) {
-                    this.sync_station_pair_info(this.get_station_pair_by_sp_id(this.moving_control_point_sp_id));
-                    this.sync_station_pair_info(this.get_station_pair_by_sp_id(this.moving_opp_control_point_sp_id));
+                    //this.sync_station_pair_info(this.get_station_pair_by_sp_id(this.moving_control_point_sp_id));
+                    //this.sync_station_pair_info(this.get_station_pair_by_sp_id(this.moving_opp_control_point_sp_id));
                 }
             }
         });
@@ -133,7 +133,7 @@ class TransitUI {
 
         console.log(line);
         if (INC_UPDATES) {
-            $.ajax({ url: "line-add?service-id="+NS_map.primary_service().sid.toString()+"&name="+encodeURIComponent(line.name)+"&full-name="+encodeURIComponent(line.full_name)+"&color-bg="+encodeURIComponent(line.color_bg)+"&color-fg="+encodeURIComponent(line.color_fg)+"&line-id="+line.sid.toString(),
+            $.ajax({ url: "line-add?i="+NS_session+"&service-id="+NS_map.primary_service().sid.toString()+"&name="+encodeURIComponent(line.name)+"&full-name="+encodeURIComponent(line.full_name)+"&color-bg="+encodeURIComponent(line.color_bg)+"&color-fg="+encodeURIComponent(line.color_fg)+"&line-id="+line.sid.toString(),
                 async: true,
                 dataType: 'json',
                 success: function(data, status) {
@@ -226,7 +226,7 @@ class TransitUI {
             this.draw_line(line, true, true);
             
             if (INC_UPDATES) {
-                $.ajax({ url: "line-update?service-id="+NS_map.primary_service().sid.toString()+"&line-id="+line.sid.toString()+"&name="+encodeURIComponent(line.name)+"&full-name="+encodeURIComponent(line.full_name)+"&color-bg="+encodeURIComponent(line.color_bg)+"&color-fg="+encodeURIComponent(line.color_fg),
+                $.ajax({ url: "line-update?i="+NS_session+"&service-id="+NS_map.primary_service().sid.toString()+"&line-id="+line.sid.toString()+"&name="+encodeURIComponent(line.name)+"&full-name="+encodeURIComponent(line.full_name)+"&color-bg="+encodeURIComponent(line.color_bg)+"&color-fg="+encodeURIComponent(line.color_fg),
                     async: true,
                     dataType: 'json',
                     success: function(data, status) {
@@ -392,7 +392,7 @@ class TransitUI {
         
         // Sync with server
         // synchronous station-add is mandatory since it gives localized info
-        $.ajax({ url: "station-add?service-id="+this.active_service.sid.toString()+"&station-id="+station.sid.toString()+"&lat="+lat+"&lng="+lng,
+        $.ajax({ url: "station-add?i="+NS_session+"&service-id="+this.active_service.sid.toString()+"&station-id="+station.sid.toString()+"&lat="+lat+"&lng="+lng,
             async: false,
             dataType: 'json',
             success: function(data, status) {
@@ -453,7 +453,7 @@ class TransitUI {
                 }
                 line.remove_edge(edges_to_remove[i]);
                 if (INC_UPDATES) {
-                    $.ajax({ url: "edge-remove?service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&edge-id="+edges_to_remove[i].sid.toString(),
+                    $.ajax({ url: "edge-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&edge-id="+edges_to_remove[i].sid.toString(),
                         async: true,
                         dataType: 'json',
                         success: function(data, status) {
@@ -464,12 +464,12 @@ class TransitUI {
         }
         
         if (INC_UPDATES) {
-            $.ajax({ url: "stop-add?service-id="+this.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&station-id="+station.sid.toString()+"&stop-id="+stop.sid.toString(),
+            $.ajax({ url: "stop-add?i="+NS_session+"&service-id="+this.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&station-id="+station.sid.toString()+"&stop-id="+stop.sid.toString(),
                 async: true,
                 dataType: 'json',
                 success: function(data, status) {
                     for (var i = 0; i < best_edges.length; i++) {
-                        $.ajax({ url: "edge-add?service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-1-id="+best_edges[i].stops[0].sid+"&stop-2-id="+best_edges[i].stops[1].sid+"&edge-id="+best_edges[i].sid.toString(),
+                        $.ajax({ url: "edge-add?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-1-id="+best_edges[i].stops[0].sid+"&stop-2-id="+best_edges[i].stops[1].sid+"&edge-id="+best_edges[i].sid.toString(),
                             async: true,
                             dataType: 'json',
                             success: function(data, status) {
@@ -495,7 +495,7 @@ class TransitUI {
         var lat = station.location[0];
         var lng = station.location[1];
 
-        $.ajax({ url: "lat-lng-info?lat="+lat+"&lng="+lng,
+        $.ajax({ url: "lat-lng-info?i="+NS_session+"&lat="+lat+"&lng="+lng,
             async: false,
             dataType: 'json',
             success: function(data, status) {
@@ -519,7 +519,7 @@ class TransitUI {
     }
 
     sync_station_info(station) {
-        $.ajax({ url: "station-update?service-id="+NS_interface.active_service.sid.toString()+"&station-id="+station.sid.toString()+"&name="+encodeURIComponent(station.name)+"&location="+station.location[0].toString()+","+station.location[1].toString()+"&neighborhood="+encodeURIComponent(station.neighborhood),
+        $.ajax({ url: "station-update?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&station-id="+station.sid.toString()+"&name="+encodeURIComponent(station.name)+"&location="+station.location[0].toString()+","+station.location[1].toString()+"&neighborhood="+encodeURIComponent(station.neighborhood),
             async: true,
             dataType: 'json',
             success: function(data, status) {
@@ -529,7 +529,7 @@ class TransitUI {
     }
     
     sync_station_pair_info(station_pair) {
-        $.ajax({ url: "station-pair-info?service-id="+NS_interface.active_service.sid.toString()+"&station-id-1="+station_pair.stations[0].sid.toString()+"&station-id-2="+station_pair.stations[1].sid.toString()+"&ucp-0-lat="+station_pair.user_control_points[0].lat.toString()+"&ucp-0-lng="+station_pair.user_control_points[0].lng.toString()+"&ucp-1-lat="+station_pair.user_control_points[1].lat.toString()+"&ucp-1-lng="+station_pair.user_control_points[1].lng.toString(),
+        $.ajax({ url: "station-pair-info?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&station-id-1="+station_pair.stations[0].sid.toString()+"&station-id-2="+station_pair.stations[1].sid.toString()+"&ucp-0-lat="+station_pair.user_control_points[0].lat.toString()+"&ucp-0-lng="+station_pair.user_control_points[0].lng.toString()+"&ucp-1-lat="+station_pair.user_control_points[1].lat.toString()+"&ucp-1-lng="+station_pair.user_control_points[1].lng.toString(),
             async: true,
             dataType: 'json',
             success: function(data, status) {
@@ -583,7 +583,7 @@ class TransitUI {
                 }
                 this.active_line.remove_edge(edges_to_remove[i]);
                 if (INC_UPDATES) {
-                    $.ajax({ url: "edge-remove?service-id="+NS_interface.active_service.sid.toString()+"&line-id="+this.active_line.sid.toString()+"&edge-id="+edges_to_remove[i].sid.toString(),
+                    $.ajax({ url: "edge-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+this.active_line.sid.toString()+"&edge-id="+edges_to_remove[i].sid.toString(),
                         async: true,
                         dataType: 'json',
                         success: function(data, status) {
@@ -595,12 +595,12 @@ class TransitUI {
         
         
         if (INC_UPDATES) {
-            $.ajax({ url: "stop-add?service-id="+this.active_service.sid.toString()+"&line-id="+this.active_line.sid.toString()+"&station-id="+station.sid.toString()+"&stop-id="+stop.sid.toString(),
+            $.ajax({ url: "stop-add?i="+NS_session+"&service-id="+this.active_service.sid.toString()+"&line-id="+this.active_line.sid.toString()+"&station-id="+station.sid.toString()+"&stop-id="+stop.sid.toString(),
                 async: true,
                 dataType: 'json',
                 success: function(data, status) {
                     for (var i = 0; i < best_edges.length; i++) {
-                        $.ajax({ url: "edge-add?service-id="+NS_interface.active_service.sid.toString()+"&line-id="+NS_interface.active_line.sid.toString()+"&stop-1-id="+best_edges[i].stops[0].sid.toString()+"&stop-2-id="+best_edges[i].stops[1].sid.toString()+"&edge-id="+best_edges[i].sid.toString(),
+                        $.ajax({ url: "edge-add?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+NS_interface.active_line.sid.toString()+"&stop-1-id="+best_edges[i].stops[0].sid.toString()+"&stop-2-id="+best_edges[i].stops[1].sid.toString()+"&edge-id="+best_edges[i].sid.toString(),
                             async: true,
                             dataType: 'json',
                             success: function(data, status) {
@@ -643,7 +643,7 @@ class TransitUI {
                     line.stops.splice(j, 1);
 
                     if (INC_UPDATES) {
-                        $.ajax({ url: "stop-remove?service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-id="+stop.sid.toString(),
+                        $.ajax({ url: "stop-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-id="+stop.sid.toString(),
                             async: true,
                             dataType: 'json',
                             success: function(data, status) {
@@ -687,7 +687,7 @@ class TransitUI {
                         }
                         line.remove_edge(edge);
                         if (INC_UPDATES) {
-                            $.ajax({ url: "edge-remove?service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&edge-id="+edge.sid.toString(),
+                            $.ajax({ url: "edge-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&edge-id="+edge.sid.toString(),
                                 async: true,
                                 dataType: 'json',
                                 success: function(data, status) {
@@ -720,7 +720,7 @@ class TransitUI {
                             var new_edge = new Edge([central_stop, spoke_stop]);
                             line.add_edge(new_edge);
                             if (INC_UPDATES) {
-                                $.ajax({ url: "edge-add?service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-1-id="+new_edge.stops[0].sid.toString()+"&stop-2-id="+new_edge.stops[1].sid.toString()+"&edge-id="+new_edge.sid.toString(),
+                                $.ajax({ url: "edge-add?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-1-id="+new_edge.stops[0].sid.toString()+"&stop-2-id="+new_edge.stops[1].sid.toString()+"&edge-id="+new_edge.sid.toString(),
                                     async: true,
                                     dataType: 'json',
                                     success: function(data, status) {
@@ -750,7 +750,7 @@ class TransitUI {
                             best_edges[i].sid = NS_id.id();
                             line.add_edge(best_edges[i]);
                             if (INC_UPDATES) {
-                                $.ajax({ url: "edge-add?service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-1-id="+best_edges[i].stops[0].sid.toString()+"&stop-2-id="+best_edges[i].stops[1].sid.toString()+"&edge-id="+best_edges[i].sid.toString(),
+                                $.ajax({ url: "edge-add?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-1-id="+best_edges[i].stops[0].sid.toString()+"&stop-2-id="+best_edges[i].stops[1].sid.toString()+"&edge-id="+best_edges[i].sid.toString(),
                                     async: true,
                                     dataType: 'json',
                                     success: function(data, status) {
@@ -761,7 +761,7 @@ class TransitUI {
                         for (var i = 0; i < edges_to_remove.length; i++) {
                             line.remove_edge(edges_to_remove[i]);
                             if (INC_UPDATES) {
-                                $.ajax({ url: "edge-remove?service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&edge-id="+edges_to_remove[i].sid.toString(),
+                                $.ajax({ url: "edge-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&edge-id="+edges_to_remove[i].sid.toString(),
                                     async: true,
                                     dataType: 'json',
                                     success: function(data, status) {
@@ -781,7 +781,7 @@ class TransitUI {
             if (station.sid == id) {
                 this.active_service.stations.splice(i, 1);
                 if (INC_UPDATES) {
-                    $.ajax({ url: "station-remove?service-id="+NS_interface.active_service.sid.toString()+"&station-id="+station.sid.toString(),
+                    $.ajax({ url: "station-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&station-id="+station.sid.toString(),
                         async: true,
                         dataType: 'json',
                         success: function(data, status) {
@@ -837,7 +837,7 @@ class TransitUI {
         line.remove_stop(stop);
         
         if (INC_UPDATES) {
-            $.ajax({ url: "stop-remove?service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-id="+stop.sid.toString(),
+            $.ajax({ url: "stop-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-id="+stop.sid.toString(),
                 async: true,
                 dataType: 'json',
                 success: function(data, status) {
@@ -854,7 +854,7 @@ class TransitUI {
                 impacted_edges.push(edge);
                 line.remove_edge(edge);
                 if (INC_UPDATES) {
-                    $.ajax({ url: "edge-remove?service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&edge-id="+edge.sid.toString(),
+                    $.ajax({ url: "edge-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&edge-id="+edge.sid.toString(),
                         async: true,
                         dataType: 'json',
                         success: function(data, status) {
@@ -880,7 +880,7 @@ class TransitUI {
                         var new_edge = new Edge([central_stop, spoke_stop]);
                         line.add_edge(new_edge);
                         if (INC_UPDATES) {
-                            $.ajax({ url: "edge-add?service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-1-id="+new_edge.stops[0].sid.toString()+"&stop-2-id="+new_edge.stops[1].sid.toString()+"&edge-id="+new_edge.sid.toString(),
+                            $.ajax({ url: "edge-add?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-1-id="+new_edge.stops[0].sid.toString()+"&stop-2-id="+new_edge.stops[1].sid.toString()+"&edge-id="+new_edge.sid.toString(),
                                 async: true,
                                 dataType: 'json',
                                 success: function(data, status) {
@@ -910,7 +910,7 @@ class TransitUI {
                         best_edges[i].sid = NS_id.id();
                         line.add_edge(best_edges[i]);
                         if (INC_UPDATES) {
-                            $.ajax({ url: "edge-add?service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-1-id="+best_edges[i].stops[0].sid+"&stop-2-id="+best_edges[i].stops[1].sid+"&edge-id="+best_edges[i].sid.toString(),
+                            $.ajax({ url: "edge-add?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-1-id="+best_edges[i].stops[0].sid+"&stop-2-id="+best_edges[i].stops[1].sid+"&edge-id="+best_edges[i].sid.toString(),
                                 async: true,
                                 dataType: 'json',
                                 success: function(data, status) {
@@ -921,7 +921,7 @@ class TransitUI {
                     for (var i = 0; i < edges_to_remove.length; i++) {
                         line.remove_edge(edges_to_remove[i]);
                         if (INC_UPDATES) {
-                            $.ajax({ url: "edge-remove?service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&edge-id="+edges_to_remove[i].sid.toString(),
+                            $.ajax({ url: "edge-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&edge-id="+edges_to_remove[i].sid.toString(),
                                 async: true,
                                 dataType: 'json',
                                 success: function(data, status) {
@@ -1797,7 +1797,7 @@ class TransitUI {
     }
 
     get_ridership() {
-        $.ajax({ url: "transit-model",
+        $.ajax({ url: "transit-model?i="+NS_session,
             async: true,
             dataType: 'json',
             success: function(data, status) {
@@ -1813,7 +1813,7 @@ class TransitUI {
     }
     
     get_hexagons() {
-        $.ajax({ url: "get-hexagons",
+        $.ajax({ url: "get-hexagons?i="+NS_session,
             async: true,
             dataType: 'json',
             success: function(data, status) {

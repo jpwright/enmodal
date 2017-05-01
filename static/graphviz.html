@@ -22,11 +22,12 @@
 
 <script type="text/javascript">
   
+    var session_id = get_url_parameter("id");
     var url_params = get_url_parameter("line");
     console.log(url_params);
   
     if (url_params) {
-        $.ajax({ url: "line-info?line-name="+url_params,
+        $.ajax({ url: "line-info?i="+session_id+"&line-name="+url_params,
             async: false,
             dataType: 'json',
             success: function(data, status) {
@@ -38,7 +39,7 @@
                 for (var i = 0; i < line["stops"].length; i++) {
                     var stop = line["stops"][i];
                     for (var j = 0; j < stations.length; j++) {
-                        if (stations[j].id == stop["station_id"]) {
+                        if (stations[j].sid == stop["station_id"]) {
                             var node_comp = {id: stop["id"], label: stations[j]["name"]};
                             node_comps.push(node_comp);
                         }
@@ -71,7 +72,7 @@
             }
         });
     } else {
-        $.ajax({ url: "map-info",
+        $.ajax({ url: "map-info?i="+session_id,
             async: false,
             dataType: 'json',
             success: function(data, status) {

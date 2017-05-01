@@ -38,6 +38,7 @@ def map_analysis(m):
 
     for hexagon in region.hexagons:
         condensed_region.add_hexagon(hexagon)
+        hexagon_to_station[hexagon] = []
 
     for station in service.stations:
         if not station.gids_known:

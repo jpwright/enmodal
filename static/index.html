@@ -59,6 +59,7 @@
     <script src="static/js/bootstrap.min.js"></script>
     <script src="static/js/chroma.min.js"></script>
     <script src='static/js/lz-string.min.js'></script>
+    <script src="static/js/clipboard.min.js"></script>
 
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD_upU9Ivq9tc2tk450HpgPr6zC3NHSjjs&libraries=places"></script>
 
@@ -71,17 +72,26 @@
             </div>
             <div class="starter-inner" id="starter-share" style="display: none;">
                 <div class="share-header">Sharing</div>
-                <div class="share-link">
-                    <div class="share-link-header">Public link</div>
-                    <div class="share-link-content" id="share-link-public"></div>
-                    <div class="share-link-copy-button">copy</div>
-                    <div class="share-link-footer">This link is a read-only copy of your map that can be shared publicly.</div>
+                <div class="share-body">
+                    <div class="share-link">
+                        <div class="share-link-header">Public link</div>
+                        <div class="share-link-content" id="share-link-public">
+                            <div class="share-link-input"><input type="text" id="share-link-public-input" readonly></div>
+                            <div class="share-link-copy-button game-button-large" data-clipboard-target="#share-link-public-input">copy</div>
+                        </div>
+                        <div class="share-link-footer">This link is a read-only copy of your map that can be shared publicly.</div>
+                    </div>
+                    <div class="share-link">
+                        <div class="share-link-header">Private link</div>
+                        <div class="share-link-content" id="share-link-private">
+                            <div class="share-link-input"><input type="text" id="share-link-private-input" readonly></div>
+                            <div class="share-link-copy-button game-button-large" data-clipboard-target="#share-link-private-input">copy</div>
+                        </div>
+                        <div class="share-link-footer">This link allows you to edit your map later. Bookmark it and keep it secret!</div>
+                    </div>
                 </div>
-                <div class="share-link">
-                    <div class="share-link-header">Private link</div>
-                    <div class="share-link-content" id="share-link-private"></div>
-                    <div class="share-link-copy-button">copy</div>
-                    <div class="share-link-footer">This link allows you to edit your map later. Bookmark it and keep it secret!</div>
+                <div class="share-footer">
+                    <div class="game-button-large" id="share-ok">OK</div>
                 </div>
             </div>
         </div>

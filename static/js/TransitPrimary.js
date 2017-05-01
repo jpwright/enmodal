@@ -17,13 +17,14 @@ function new_game() {
         async: false,
         dataType: 'json',
         success: function(data, status) {
-            NS_session = data["id"];
+            NS_session = data["private_key"];
             window.history.pushState("", "", "?id="+NS_session);
+            update_share_urls(data["public_key"], data["private_key"]);
         }
     });
 
     // Initialize map
-    $.ajax({ url: "map-info",
+    $.ajax({ url: "map-info?i="+NS_session,
         async: false,
         dataType: 'json',
         success: function(data, status) {
@@ -34,7 +35,7 @@ function new_game() {
 
     // Initialize service
     var NS_service = new Service("MTA");
-    $.ajax({ url: "service-add?name="+NS_service.name+"&service-id="+NS_service.sid.toString(),
+    $.ajax({ url: "service-add?i="+NS_session+"&name="+NS_service.name+"&service-id="+NS_service.sid.toString(),
         async: false,
         dataType: 'json',
         success: function(data, status) {
@@ -46,7 +47,7 @@ function new_game() {
 }
 
 function sync_with_server(get_ridership) {
-    $.ajax({ url: "session-push",
+    $.ajax({ url: "session-push?i="+NS_session,
         async: true,
         type: "POST",
         data: LZString.compressToUTF16(NS_map.to_json()),
@@ -58,7 +59,7 @@ function sync_with_server(get_ridership) {
                     NS_interface.sync_station_pair_info(NS_interface.station_pairs[i]);
                 }
             }
-            $.ajax({ url: "session-save",
+            $.ajax({ url: "session-save?i="+NS_session,
                 async: true,
                 dataType: 'json',
                 success: function(data, status) {
@@ -70,6 +71,13 @@ function sync_with_server(get_ridership) {
             }
         }
     });
+}
+
+function update_share_urls(public_key, private_key) {
+    console.log(location.origin);
+    
+    $("#share-link-public input").val(location.origin+"/?id="+public_key);
+    $("#share-link-private input").val(location.origin+"/?id="+private_key);
 }
 
 function initialize_game_state() {
@@ -97,9 +105,10 @@ function initialize_game_state() {
     if (session_id != null) {
         PRELOADED_SESSION = true;
         // Initialize session and map
-        $.ajax({ url: "session-load?id="+session_id,
+        $.ajax({ url: "session-load?i="+session_id,
             async: false,
             success: function(data, status) {
+                
                 console.log(data);
                 var j = JSON.parse(data);
                 console.log(j);
@@ -108,7 +117,10 @@ function initialize_game_state() {
                 } else {
                     var jdata = JSON.parse(j.data);
                     console.log(jdata);
-                    NS_session = j.sid;
+                    NS_session = j.private_key;
+                    window.history.pushState("", "", "?id="+NS_session);
+                    update_share_urls(j.public_key, j.private_key);
+                    
                     NS_map = new Map();
                     NS_map.sid = jdata.sid;
                     NS_map.from_json(jdata);
@@ -391,4 +403,11 @@ $(function() {
         $("#starter-share").show();
         $("#starter").show();
     });
+    
+    $("#share-ok").click(function(e) {
+        $("#starter-share").hide();
+        $("#starter").hide();
+    });
+    
+    new Clipboard('.share-link-copy-button');
 });
