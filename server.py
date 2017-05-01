@@ -20,14 +20,14 @@ import TransitSettings
 
 import ConfigParser
 
-app = Flask(__name__, static_url_path='/static')
-app.secret_key = 'F12Yr58j4zX T~Y%C!efJ]Gxe/,?KT'
-
 config = ConfigParser.RawConfigParser()
 config.read('settings.cfg')
 SESSIONS_SECRET_KEY_PUBLIC = int(config.get('sessions', 'secret_key_public'), 16)
 SESSIONS_SECRET_KEY_PRIVATE = int(config.get('sessions', 'secret_key_private'), 16)
 SESSION_EXPIRATION_TIME = int(config.get('sessions', 'expiration_time'))
+
+app = Flask(__name__, static_url_path='/static')
+app.secret_key = config.get('app', 'secret_key')
 
 class SessionManager(object):
     def __init__(self):
