@@ -20,6 +20,8 @@ var USE_CURVED_TRACKS = true;
 var CURVE_OVERSHOOT = 0.5;
 var BEZIER_SHARPNESS = 0.6;
 
+var DGGRID_AREA = 0.0733633;
+
 var DEBUG_MODE = false;
 
 // Map rendering parameters

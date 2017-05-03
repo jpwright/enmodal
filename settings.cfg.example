@@ -16,4 +16,6 @@ user: DB_USER_HERE
 password: DB_PASSWORD_HERE
 secret_key_public: aaaaaaaaaaaaaaaa
 secret_key_private: bbbbbbbbbbbbbbbb
+
+# Session expiration time, in seconds.
 expiration_time: 7200

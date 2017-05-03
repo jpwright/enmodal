@@ -4,6 +4,7 @@ import psycopg2.extras
 import requests
 import json
 import re
+import geobuf
 
 import Transit
 import ConfigParser
@@ -31,15 +32,22 @@ class HexagonRegion(object):
                 return h
         return None
     
+    def geojson(self):
+        features = []
+        for hexagon in self.hexagons:
+            features.append({"type": "Feature", "geometry": hexagon.geo, "properties": {"population": hexagon.population, "employment": hexagon.employment}})
+        return {"type": "FeatureCollection", "features": features}
+    
     def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True)
 
 class Hexagon(object):
     
-    def __init__(self, gid, geo, population):
+    def __init__(self, gid, geo, population, employment):
         self.gid = gid
         self.geo = geo
         self.population = population
+        self.employment = employment
         
     def center(self):
         lat = 0
@@ -58,13 +66,19 @@ class Hexagon(object):
     
 class BoundingBox(object):
     
-    def __init__(self, min_lat, max_lat, min_lng, max_lng):
+    def __init__(self):
+        self.min_lat = 0
+        self.max_lat = 0
+        self.min_lng = 0
+        self.max_lng = 0
+        
+    def set_bounds(self, min_lat, max_lat, min_lng, max_lng):
         self.min_lat = min_lat
         self.max_lat = max_lat
         self.min_lng = min_lng
         self.max_lng = max_lng
         
-    def __init__(self, m):
+    def set_from_map(self, m):
         min_lat_set = False
         max_lat_set = False
         min_lng_set = False
@@ -85,35 +99,6 @@ class BoundingBox(object):
                 if not max_lng_set or station.location[1] > self.max_lng:
                     self.max_lng = station.location[1]
                     max_lng_set = True
-        
-
-def hexagons(lat, lng, distance):
-    config = ConfigParser.RawConfigParser()
-    config.read('settings.cfg')
-
-    host = config.get('postgres', 'host')
-    port = config.get('postgres', 'port')
-    dbname = config.get('postgres', 'dbname')
-    user = config.get('postgres', 'user')
-    password = config.get('postgres', 'password')
-    conn_string = "host='"+host+"' port='"+port+"' dbname='"+dbname+"' user='"+user+"' password='"+password+"'"
-    # print the connection string we will use to connect
-    print "Connecting to database\n	->%s" % (conn_string)
-
-    conn = psycopg2.connect(conn_string)
-    cursor = conn.cursor('cursor_unique_name', cursor_factory=psycopg2.extras.DictCursor)
-    
-    cursor.execute("SELECT gid, ST_AsGeoJSON(geo), population FROM dggrid WHERE ST_DWithin(geo, 'POINT("+lng+" "+lat+")', "+distance+") LIMIT 10000")
-    #cursor.execute("SELECT gid FROM dggrid WHERE ST_DWithin(geo, 'POINT("+lng+" "+lat+")', 0.01) LIMIT 1000;")
-    #cursor.execute("SELECT * FROM dggrid ORDER BY geo <-> st_setsrid(st_makepoint("+lng+","+lat+"),4326) LIMIT 100;")
-
-    hexagons = []
-    for row in cursor:
-        hexagons.append({"gid": row[0], "geo": json.loads(row[1]), "population": row[2]})
-        
-    cursor.close()
-    conn.close()
-    return hexagons
 
 def hexagons_bb(bb):
     config = ConfigParser.RawConfigParser()
@@ -131,7 +116,7 @@ def hexagons_bb(bb):
     conn = psycopg2.connect(conn_string)
     cursor = conn.cursor('cursor_unique_name', cursor_factory=psycopg2.extras.DictCursor)
      
-    query = "SELECT gid, ST_AsGeoJSON(geo), population FROM dggrid WHERE ST_CoveredBy(geo, ST_MakeEnvelope("+str(bb.min_lng)+", "+str(bb.min_lat)+", "+str(bb.max_lng)+", "+str(bb.max_lat)+")) LIMIT 20000"
+    query = "SELECT gid, ST_AsGeoJSON(geo), population, employment FROM dggrid WHERE ST_CoveredBy(geo, ST_MakeEnvelope("+str(bb.min_lng)+", "+str(bb.min_lat)+", "+str(bb.max_lng)+", "+str(bb.max_lat)+")) LIMIT 20000"
     print query
     cursor.execute(query)
     #cursor.execute("SELECT gid FROM dggrid WHERE ST_DWithin(geo, 'POINT("+lng+" "+lat+")', 0.01) LIMIT 1000;")
@@ -139,10 +124,10 @@ def hexagons_bb(bb):
 
     region = HexagonRegion()
     for row in cursor:
-        region.add_hexagon(Hexagon(int(row[0]), json.loads(row[1]), int(row[2])))
+        region.add_hexagon(Hexagon(int(row[0]), json.loads(row[1]), int(row[2]), int(row[3])))
     cursor.close()
     conn.close()
-        
+    
     return region
 
 def station_constructor(sid, lat, lng):
@@ -189,6 +174,8 @@ def station_constructor(sid, lat, lng):
         elif (has_locality):
             name = properties["locality"]
         else:
+            name = "Station"
+        if len(name) <= 1:
             name = "Station"
     
         name = re.sub(r'(\w+\s)\b(Street)\b', r'\1St', name)

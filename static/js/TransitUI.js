@@ -10,6 +10,15 @@ class TransitUI {
         this.map = map;
 
         this.active_tool = "station";
+        this.hexagon_layer = "none";
+        this.hexagon_scales = {
+            "population": chroma.scale('YlGnBu').domain([1,0]),
+            "employment": chroma.scale('YlOrRd').domain([1,0])
+        };
+        this.hexagon_units = {
+            "population": "persons / mile<sup>2</sup>",
+            "employment": "jobs /  mile<sup>2</sup>"
+        };
         this.preview_paths_enabled = true;
 
         this.nearest_station_to_mouse = null;
@@ -71,8 +80,8 @@ class TransitUI {
             if (NS_interface.active_tool == "station") {
                 //NS_interface.get_ridership();
             }
-            if (NS_interface.active_tool == "data") {
-                //NS_interface.get_hexagons();
+            if (NS_interface.hexagon_layer != "none") {
+                NS_interface.get_hexagons();
             }
         });
     }
@@ -226,12 +235,12 @@ class TransitUI {
             this.draw_line(line, true, true);
             
             if (INC_UPDATES) {
-                $.ajax({ url: "line-update?i="+NS_session+"&service-id="+NS_map.primary_service().sid.toString()+"&line-id="+line.sid.toString()+"&name="+encodeURIComponent(line.name)+"&full-name="+encodeURIComponent(line.full_name)+"&color-bg="+encodeURIComponent(line.color_bg)+"&color-fg="+encodeURIComponent(line.color_fg),
+                /*$.ajax({ url: "line-update?i="+NS_session+"&service-id="+NS_map.primary_service().sid.toString()+"&line-id="+line.sid.toString()+"&name="+encodeURIComponent(line.name)+"&full-name="+encodeURIComponent(line.full_name)+"&color-bg="+encodeURIComponent(line.color_bg)+"&color-fg="+encodeURIComponent(line.color_fg),
                     async: true,
                     dataType: 'json',
                     success: function(data, status) {
                     }
-                });
+                });*/
             }
         } else {
             $("#option-section-lines").animate({scrollTop: $('#option-section-lines').prop('scrollHeight')}, 1000);
@@ -1813,23 +1822,27 @@ class TransitUI {
     }
     
     get_hexagons() {
-        $.ajax({ url: "get-hexagons?i="+NS_session,
+        var initial_bounds = this.map.getBounds();
+        var search_bounds = initial_bounds.pad(0.1); // Pad for maximum scrollability
+        $.ajax({ url: "get-hexagons?i="+NS_session+"&lat-min="+search_bounds.getSouth().toString()+"&lat-max="+search_bounds.getNorth().toString()+"&lng-min="+search_bounds.getWest().toString()+"&lng-max="+search_bounds.getEast().toString(),
             async: true,
-            dataType: 'json',
-            success: function(data, status) {
+            dataType: 'text',
+            success: function(data_zip, status) {
+                var data = JSON.parse(data_zip);
                 //NS_interface.data_layer.clearLayers();
+                /*
                 var max_population = 0.0;
                 var min_population = -1.0;
                 var populations = [];
-                for (var i = 0; i < data["hexagons"].length; i++) {
-                    var population = data["hexagons"][i]["population"];
+                for (var i = 0; i < data.length; i++) {
+                    var population = data[i]["population"];
                     if (population > max_population) max_population = population;
                     if (population < min_population || min_population == -1.0) min_population = population;
                     populations.push(population);
                 }
                 NS_interface.chroma_scale.domain([min_population, max_population], 7, 'quantiles');
-                for (var i = 0; i < data["hexagons"].length; i++) {
-                    var hexagon = data["hexagons"][i];
+                for (var i = 0; i < data.length; i++) {
+                    var hexagon = data[i];
                     var population = hexagon["population"];
                     var opacity = 0.7;
                     var color = NS_interface.chroma_scale(population).hex();
@@ -1842,13 +1855,38 @@ class TransitUI {
                     } else {
                         var h = new Hexagon(hexagon["gid"], hexagon["geo"], color, opacity);
                         NS_interface.hexagons[hexagon["gid"]] = h;
-                        h.draw();
+                        if (initial_bounds.contains(h.poly.getBounds())) {
+                            h.draw();
+                        }
                     }
                 }
+                */
+                NS_interface.data_layer.clearLayers();
+                var num_breaks = 8;
+                var breaks = quantiles(data, num_breaks, NS_interface.hexagon_layer);
+                var scale = NS_interface.hexagon_scales[NS_interface.hexagon_layer];
+                $("#scale-boxes").empty();
+                for (var i = 0; i < num_breaks; i++) {
+                    $("#scale-boxes").append('<div class="scale-box" style="background-color: '+scale((num_breaks-i)/num_breaks).hex()+' "></div>');
+                }
+                $("#scale-mid").text(Math.round(breaks[Math.round((num_breaks-1)/2)]/DGGRID_AREA).toString());
+                $("#scale-high").text(Math.round(breaks[0]/DGGRID_AREA).toString());
+                $("#scale-units").html(NS_interface.hexagon_units[NS_interface.hexagon_layer]);
+                $("#scale").show();
+                NS_interface.data_layer.addLayer(L.geoJson(data, {style: function(feature) {
+                    var property = 0;
+                    if (NS_interface.hexagon_layer == "population") property = feature.properties.population;
+                    if (NS_interface.hexagon_layer == "employment") property = feature.properties.employment;
+                    return {
+                        fillColor: populationColor(property, breaks, scale),
+                        weight: 0,
+                        opacity: 1,
+                        color: 'white',
+                        fillOpacity: 0.35
+                    };
+                }}));
                 NS_interface.line_path_layer.bringToFront();
                 NS_interface.station_marker_layer.bringToFront();
-                
-                var tileIndex = geojsonvt(data);
 
             }
         });
@@ -1858,6 +1896,37 @@ class TransitUI {
 
     }
 
+}
+
+function sortNumber(a,b) {
+    return a - b;
+}
+
+function quantiles(geojson, num_breaks, feature_name) {
+    console.log(geojson);
+    var property_array = []
+    for (var i = 0; i < geojson.features.length; i++) {
+        property_array.push(geojson.features[i].properties[feature_name]);
+    }
+    property_array.sort(sortNumber);
+    var breaks = [];
+    var index = property_array.length - 1;
+    index -= Math.round(property_array.length/num_breaks);
+    for (var j = 0; j <= num_breaks; j++) {
+        breaks.push(property_array[index]);
+        index -= Math.round(property_array.length/num_breaks);
+        if (index < 0) index = 0;
+    }
+    return breaks;
+        
+}
+
+function populationColor(d, breaks, scale) {
+    var num_breaks = breaks.length - 1;
+    for (var i = 0; i < num_breaks; i++) {
+        if (d >= breaks[i]) return scale(i/num_breaks).hex();
+    }
+    return scale[num_breaks-1];
 }
 
 class LineDelta {

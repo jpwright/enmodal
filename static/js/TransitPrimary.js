@@ -184,7 +184,7 @@ var CUSTOM_CITY_NAME = "";
 initialize_game_state();
 
 $(function() {
-
+    
     // Event handlers
     $(document).on('click', '.station-delete', delete_station_event);
     $(document).on('click', '.station-transfer', transfer_station_event);
@@ -386,10 +386,18 @@ $(function() {
             $(".data-layer-selector").removeClass("data-layer-selected");
             $(this).addClass("data-layer-selected");
             if ($(this).attr('id') == "data-layer-population") {
+                NS_interface.hexagon_layer = "population";
+                NS_interface.get_hexagons();
+                NS_interface.map.addLayer(NS_interface.data_layer);
+            }
+            if ($(this).attr('id') == "data-layer-employment") {
+                NS_interface.hexagon_layer = "employment";
                 NS_interface.get_hexagons();
                 NS_interface.map.addLayer(NS_interface.data_layer);
             }
         } else {
+            NS_interface.hexagon_layer = "none";
+            $("#scale").hide();
             $(".data-layer-selector").removeClass("data-layer-selected");
             NS_interface.map.removeLayer(NS_interface.data_layer);
         }

@@ -115,7 +115,7 @@ class Station(object):
         self.gids_in_range = gids
         self.gids_known = True
         
-    def clear_gids(self, gids):
+    def clear_gids(self):
         self.gids_in_range = []
         self.gids_known = False
 

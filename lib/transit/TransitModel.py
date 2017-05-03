@@ -18,11 +18,12 @@ class TransitModel(object):
 
 def map_analysis(m):
 
-    bb = TransitGIS.BoundingBox(m)
-    bb.min_lat -= 0.02;
-    bb.max_lat += 0.02;
-    bb.min_lng -= 0.02;
-    bb.max_lng += 0.02;
+    bb = TransitGIS.BoundingBox()
+    bb.set_from_map(m)
+    bb.min_lat -= 0.01;
+    bb.max_lat += 0.01;
+    bb.min_lng -= 0.01;
+    bb.max_lng += 0.01;
 
     start = time.time()
     region = TransitGIS.hexagons_bb(bb)

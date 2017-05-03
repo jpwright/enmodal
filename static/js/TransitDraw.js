@@ -475,7 +475,7 @@ class Hexagon {
     update_style() {
         this.style = this.generate_style();
         this.poly.setStyle(this.style);
-        this.poly.redraw();
+        //this.poly.redraw();
     }
     
     draw() {

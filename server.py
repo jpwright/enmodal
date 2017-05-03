@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, session, escape
+from flask import Flask, render_template, request, after_this_request, escape
 
 import psycopg2
 import psycopg2.extras
@@ -10,6 +10,13 @@ import os
 import uuid
 import datetime
 from lzstring import LZString
+import zlib
+from cStringIO import StringIO as IO
+import gzip
+import functools
+
+import multiprocessing
+import time
 
 import sys
 sys.path.append(os.path.abspath('lib/transit'))
@@ -27,7 +34,7 @@ SESSIONS_SECRET_KEY_PRIVATE = int(config.get('sessions', 'secret_key_private'), 
 SESSION_EXPIRATION_TIME = int(config.get('sessions', 'expiration_time'))
 
 app = Flask(__name__, static_url_path='/static')
-app.secret_key = config.get('app', 'secret_key')
+app.secret_key = config.get('flask', 'secret_key')
 
 class SessionManager(object):
     def __init__(self):
@@ -59,6 +66,10 @@ class SessionManager(object):
 
     def add(self, s):
         self.sessions.append(s)
+        
+        # Whenever we add a new session, check for old ones to remove.
+        purged = self.purge()
+        print str(len(self.sessions))+" active sessions, "+str(purged)+" purged."
 
     def remove_by_sid(self, sid):
         s = self.get_by_sid(sid)
@@ -68,13 +79,20 @@ class SessionManager(object):
     def auth_by_key(self, h):
         public_session = self.get_by_public_key(h)
         if public_session is not None:
+            public_session.keep_alive()
             a = SessionAuthentication(public_session, False)
             return a
         private_session = self.get_by_private_key(h)
         if private_session is not None:
+            private_session.keep_alive()
             a = SessionAuthentication(private_session, True)
             return a
         return None
+    
+    def purge(self):
+        num_sessions_start = len(self.sessions)
+        self.sessions = [x for x in self.sessions if not x.is_expired()]
+        return num_sessions_start - len(self.sessions)
 
 class Session(object):
     def __init__(self):
@@ -92,7 +110,9 @@ class Session(object):
         self.last_edit_time = datetime.datetime.now()
 
     def is_expired(self):
-        return (datetime.datetime.now() - self.last_edit_time) > SESSION_EXPIRATION_TIME
+        return (datetime.datetime.now() - self.last_edit_time).total_seconds() > SESSION_EXPIRATION_TIME
+
+session_manager = SessionManager()
 
 class SessionAuthentication(object):
     def __init__(self, s, editable):
@@ -105,7 +125,38 @@ class SessionAuthentication(object):
         else:
             return '{:16x}'.format(self.session.public_key())
 
-session_manager = SessionManager()
+def gzipped(f):
+    @functools.wraps(f)
+    def view_func(*args, **kwargs):
+        @after_this_request
+        def zipper(response):
+            accept_encoding = request.headers.get('Accept-Encoding', '')
+
+            if 'gzip' not in accept_encoding.lower():
+                return response
+
+            response.direct_passthrough = False
+
+            if (response.status_code < 200 or
+                response.status_code >= 300 or
+                'Content-Encoding' in response.headers):
+                return response
+            gzip_buffer = IO()
+            gzip_file = gzip.GzipFile(mode='wb', 
+                                      fileobj=gzip_buffer)
+            gzip_file.write(response.data)
+            gzip_file.close()
+
+            response.data = gzip_buffer.getvalue()
+            response.headers['Content-Encoding'] = 'gzip'
+            response.headers['Vary'] = 'Accept-Encoding'
+            response.headers['Content-Length'] = len(response.data)
+
+            return response
+
+        return f(*args, **kwargs)
+
+    return view_func
 
 @app.route('/')
 def route_main():
@@ -201,24 +252,18 @@ def route_session_load():
     m.regenerate_all_ids()
     
     if not is_private:
-        print "generating new session."
         s = Session()
         session_manager.add(s)
         s.map = m
     else:
-        print "looking for private session."
         s = session_manager.get_by_sid(sid)
         if s is None:
-            print "generating new private session."
             s = Session()
             s.sid = sid
             s.map = m
             session_manager.add(s)
     
     a = session_manager.auth_by_key(s.private_key())
-    print a
-
-    print "returning id "+str(session['id'])
     return_obj = {"public_key": '{:16x}'.format(a.session.public_key()), "is_private": a.editable, "data": m.to_json().replace("'", "''")}
     if a.editable:
         return_obj["private_key"] = '{:16x}'.format(a.session.private_key())
@@ -330,6 +375,7 @@ def route_station_update():
                     if location != None:
                         location_comps = location.split(',')
                         station.location = [float(location_comps[0]), float(location_comps[1])]
+                        station.clear_gids()
                     if streets != None:
                         street_comps = streets.split(',')
                         station.streets = street_comps
@@ -595,33 +641,32 @@ def route_map_info():
 def route_graphviz():
     return app.send_static_file('graphviz.html')
 
-@app.route('/hexagons')
-def route_hexagons():
-
-    lat = request.args.get('lat')
-    lng = request.args.get('lng')
-    distance = request.args.get('distance')
-
-    hexagons = TransitGIS.hexagons(lat, lng, distance)
-
-    return json.dumps(hexagons)
-
 @app.route('/get-hexagons')
+@gzipped
 def route_get_hexagons():
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
     if e:
         return e
 
-    m = session_manager.auth_by_key(h).session.map
-    bb = TransitGIS.BoundingBox(m)
-    bb.min_lat -= 0.2;
-    bb.max_lat += 0.2;
-    bb.min_lng -= 0.2;
-    bb.max_lng += 0.2;
+    lat_min = float(request.args.get('lat-min'))
+    lng_min = float(request.args.get('lng-min'))
+    lat_max = float(request.args.get('lat-max'))
+    lng_max = float(request.args.get('lng-max'))
+    
+    #bb = TransitGIS.BoundingBox(m)
+    bb = TransitGIS.BoundingBox()
+    bb.set_bounds(lat_min, lat_max, lng_min, lng_max)
 
     hexagons = TransitGIS.hexagons_bb(bb)
-    return hexagons.to_json()
+    #encoded = geobuf.encode(hexagons.geojson())
+    #zlib_compress = zlib.compressobj(-1, zlib.DEFLATED, -zlib.MAX_WBITS)
+    #encoded = zlib_compress.compress(json.dumps(hexagons.geojson())) + zlib_compress.flush()
+    #print "Compressing..."
+    #encoded = LZString().compressToUTF16(json.dumps(hexagons.geojson()))
+    #print "Compression done"
+    #return encoded
+    return json.dumps(hexagons.geojson())
 
 @app.route('/transit-model')
 def route_transit_model():
