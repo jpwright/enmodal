@@ -15,7 +15,7 @@ conn_string = "host='"+host+"' port='"+port+"' dbname='"+dbname+"' user='"+user+
 print "Connecting to database\n	->%s" % (conn_string)
 
 conn = psycopg2.connect(conn_string)
-cursor = conn.cursor('cursor_unique_name', cursor_factory=psycopg2.extras.DictCursor)
+cursor = conn.cursor()
     
 query = "CREATE TABLE IF NOT EXISTS dggrid ( \
         id BIGSERIAL PRIMARY KEY, \
@@ -37,7 +37,7 @@ conn_string = "host='"+host+"' port='"+port+"' dbname='"+dbname+"' user='"+user+
 print "Connecting to database\n	->%s" % (conn_string)
 
 conn = psycopg2.connect(conn_string)
-cursor = conn.cursor('cursor_unique_name', cursor_factory=psycopg2.extras.DictCursor)
+cursor = conn.cursor()
 
 query = "CREATE TABLE IF NOT EXISTS dggrid ( \
         id BIGSERIAL PRIMARY KEY, \
