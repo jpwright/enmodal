@@ -29,6 +29,7 @@ import ConfigParser
 
 config = ConfigParser.RawConfigParser()
 config.read('settings.cfg')
+PORT = int(config.get('flask', 'port'))
 SESSIONS_SECRET_KEY_PUBLIC = int(config.get('sessions', 'secret_key_public'), 16)
 SESSIONS_SECRET_KEY_PRIVATE = int(config.get('sessions', 'secret_key_private'), 16)
 SESSION_EXPIRATION_TIME = int(config.get('sessions', 'expiration_time'))
@@ -759,4 +760,4 @@ def check_for_session_errors(h):
     return 0
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5050, threaded=True)
+    app.run(host='0.0.0.0', port=PORT, threaded=True)

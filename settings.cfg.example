@@ -1,4 +1,5 @@
 [flask]
+port: 5050
 secret_key: F12Yr58j4zX T~Y%C!efJ]Gxe/,?KT
 
 [postgres]
