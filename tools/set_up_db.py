@@ -49,5 +49,5 @@ cursor.execute(query)
 
 conn.commit()
 
-cur.close()
+cursor.close()
 conn.close()

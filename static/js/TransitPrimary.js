@@ -34,7 +34,6 @@ function new_game() {
     });*/
     
     NS_map = new Map();
-    NS_settings = new Settings();
         
     // Initialize service
     var NS_service = new Service("MTA");

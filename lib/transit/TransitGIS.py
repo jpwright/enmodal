@@ -4,7 +4,6 @@ import psycopg2.extras
 import requests
 import json
 import re
-import geobuf
 
 import Transit
 import ConfigParser
