@@ -39,10 +39,15 @@ print "Connecting to database\n	->%s" % (conn_string)
 conn = psycopg2.connect(conn_string)
 cursor = conn.cursor()
 
-query = "CREATE TABLE IF NOT EXISTS dggrid ( \
+query = "CREATE TABLE IF NOT EXISTS sessions ( \
         id BIGSERIAL PRIMARY KEY, \
         data jsonb, \
         updated timestamp without time zone \
     );"
 print query
 cursor.execute(query)
+
+conn.commit()
+
+cur.close()
+conn.close()
