@@ -42,7 +42,7 @@ cursor = conn.cursor('cursor_unique_name', cursor_factory=psycopg2.extras.DictCu
 query = "CREATE TABLE IF NOT EXISTS dggrid ( \
         id BIGSERIAL PRIMARY KEY, \
         data jsonb, \
-        updated timestamp without time zone
+        updated timestamp without time zone \
     );"
 print query
 cursor.execute(query)
