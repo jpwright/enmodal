@@ -26,3 +26,23 @@ query = "CREATE TABLE IF NOT EXISTS dggrid ( \
     );"
 print query
 cursor.execute(query)
+
+host = config.get('sessions', 'host')
+port = config.get('sessions', 'port')
+dbname = config.get('sessions', 'dbname')
+user = config.get('sessions', 'user')
+password = config.get('sessions', 'password')
+conn_string = "host='"+host+"' port='"+port+"' dbname='"+dbname+"' user='"+user+"' password='"+password+"'"
+# print the connection string we will use to connect
+print "Connecting to database\n	->%s" % (conn_string)
+
+conn = psycopg2.connect(conn_string)
+cursor = conn.cursor('cursor_unique_name', cursor_factory=psycopg2.extras.DictCursor)
+
+query = "CREATE TABLE IF NOT EXISTS dggrid ( \
+        id BIGSERIAL PRIMARY KEY, \
+        data jsonb, \
+        updated timestamp without time zone
+    );"
+print query
+cursor.execute(query)
