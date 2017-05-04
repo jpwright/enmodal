@@ -116,7 +116,7 @@ def hexagons_bb(bb):
     conn = psycopg2.connect(conn_string)
     cursor = conn.cursor('cursor_unique_name', cursor_factory=psycopg2.extras.DictCursor)
      
-    query = "SELECT gid, ST_AsGeoJSON(geo), population, employment FROM dggrid WHERE ST_CoveredBy(geo, ST_MakeEnvelope("+str(bb.min_lng)+", "+str(bb.min_lat)+", "+str(bb.max_lng)+", "+str(bb.max_lat)+")) LIMIT 20000"
+    query = "SELECT gid, ST_AsGeoJSON(geo), population, employment FROM dggrid WHERE ST_CoveredBy(geo, ST_MakeEnvelope("+str(bb.min_lng)+", "+str(bb.min_lat)+", "+str(bb.max_lng)+", "+str(bb.max_lat)+")) LIMIT 10000"
     print query
     cursor.execute(query)
     #cursor.execute("SELECT gid FROM dggrid WHERE ST_DWithin(geo, 'POINT("+lng+" "+lat+")', 0.01) LIMIT 1000;")

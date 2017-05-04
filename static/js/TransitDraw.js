@@ -20,12 +20,14 @@ class StationMarker {
                 NS_interface.preview_station(event.latlng.lat, event.latlng.lng);
                 //NS_interface.preview_station(lat, lng);
                 var station = NS_interface.get_station_marker_by_marker(marker).station;
-                var content = '<div class="visual-edit-station-name">'+station.name+'</div>';
+                $("#option-section-visual-instructions").hide();
+                var content = '<div class="visual-edit-station-name">'+station.name+'</div><div class="visual-edit-station-lines">';
                 var lines = NS_interface.active_service.station_lines(station);
                 for (var i = 0; i < lines.length; i++) {
                     var line = lines[i];
-                    content += '<div class="subway-line-long subway-deletable station-popup-line-marker" style="background-color: '+line.color_bg+'; color: '+line.color_fg+';"><div class="content">'+line.name+'</div></div>';
+                    content += '<div class="subway-line-long" style="background-color: '+line.color_bg+'; color: '+line.color_fg+';"><div class="content">'+line.name+'</div></div> ';
                 }
+                content += '</div>';
                 $("#option-section-visual-station-header").html(content);
             }
         });

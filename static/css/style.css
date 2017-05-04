@@ -45,8 +45,7 @@ html, body {
 
 .station-popup {
     width: 250px;
-    bottom: 0px;
-    font-family: 'Montserrat', sans-serif;
+    bottom: 0px;\
 }
 
 .station-content {
@@ -389,6 +388,21 @@ textarea.station-name-edit {
     box-sizing: content-box;
 }
 
+.custom-scroll::-webkit-scrollbar-track {
+    background-color: none;
+}
+
+.custom-scroll::-webkit-scrollbar {
+    width: 6px;
+    background-color: none;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+    border-radius: 6px;
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+
 #route-diagram-container-container {
     padding: 5px;
     position: absolute;
@@ -429,6 +443,7 @@ textarea.station-name-edit {
     position: absolute;
     top: 0.3em;
     left: 0.5em;
+    z-index: 501;
 }
 
 .route-diagram-stop-info {
@@ -468,7 +483,9 @@ textarea.station-name-edit {
     height: 100%;
     width: 0.4em;
     left: 0.8em;
-    top: 1.25em;
+    top: 1.2em;
+    z-index: 500;
+    border-radius: 0.2em;
 }
 
 .route-diagram-connector-branch {
@@ -478,12 +495,16 @@ textarea.station-name-edit {
     height: 100%;
     padding-top: 0.5em;
     padding-bottom: 0.8em;
+    z-index: 500;
+    border-radius: 0.2em;
 }
 
 .route-diagram-connector-internal {
     height: 100%;
     width: 100%;
     float: left;
+    z-index: 500;
+    border-radius: 0.2em;
 }
 
 .route-diagram-connector-top-joint {
@@ -493,6 +514,8 @@ textarea.station-name-edit {
     width: 0.8em;
     top: 0.5em;
     border-radius: 0.4em;
+    z-index: 500;
+    border-radius: 0.2em;
 }
 
 .route-diagram-connector-bottom-joint {
@@ -502,6 +525,8 @@ textarea.station-name-edit {
     width: 0.8em;
     bottom: 0.8em;
     border-radius: 0.4em;
+    z-index: 500;
+    border-radius: 0.2em;
 }
 
 #scale {
@@ -727,6 +752,16 @@ ul.ui-autocomplete {
 #option-section-visual {
     display: block;
     position: relative;
+}
+
+#option-section-visual-station-header {
+    padding-bottom: 10px;
+    border-bottom: 1px dotted rgba(255, 255, 255, 0.5);
+}
+
+.visual-edit-station-name {
+    font-size: 1.5em;
+    font-weight: bold;
 }
 
 #option-section-data {

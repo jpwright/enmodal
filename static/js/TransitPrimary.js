@@ -24,15 +24,18 @@ function new_game() {
     });
 
     // Initialize map
-    $.ajax({ url: "map-info?i="+NS_session,
+    /*$.ajax({ url: "map-info?i="+NS_session,
         async: false,
         dataType: 'json',
         success: function(data, status) {
             NS_map = new Map();
             NS_map.sid = data["sid"];
         }
-    });
-
+    });*/
+    
+    NS_map = new Map();
+    NS_settings = new Settings();
+        
     // Initialize service
     var NS_service = new Service("MTA");
     $.ajax({ url: "service-add?i="+NS_session+"&name="+NS_service.name+"&service-id="+NS_service.sid.toString(),
@@ -50,15 +53,10 @@ function sync_with_server(get_ridership) {
     $.ajax({ url: "session-push?i="+NS_session,
         async: true,
         type: "POST",
-        data: LZString.compressToUTF16(NS_map.to_json()),
+        data: LZString.compressToUTF16(NS_interface.sync_json()),
         dataType: 'text',
         success: function(data, status) {
             console.log("push done");
-            for (var i = 0; i < NS_interface.station_pairs.length; i++) {
-                if (NS_interface.station_pairs[i].user_modified) {
-                    NS_interface.sync_station_pair_info(NS_interface.station_pairs[i]);
-                }
-            }
             $.ajax({ url: "session-save?i="+NS_session,
                 async: true,
                 dataType: 'json',
@@ -91,7 +89,7 @@ function initialize_game_state() {
     L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
             attribution: '',
             maxZoom: 16,
-            minZoom: 12
+            minZoom: 10
     }).addTo(map);
 
     map.on('click', handle_map_click);

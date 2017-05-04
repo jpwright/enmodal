@@ -536,15 +536,6 @@ class TransitUI {
             }
         });
     }
-    
-    sync_station_pair_info(station_pair) {
-        $.ajax({ url: "station-pair-info?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&station-id-1="+station_pair.stations[0].sid.toString()+"&station-id-2="+station_pair.stations[1].sid.toString()+"&ucp-0-lat="+station_pair.user_control_points[0].lat.toString()+"&ucp-0-lng="+station_pair.user_control_points[0].lng.toString()+"&ucp-1-lat="+station_pair.user_control_points[1].lat.toString()+"&ucp-1-lng="+station_pair.user_control_points[1].lng.toString(),
-            async: true,
-            dataType: 'json',
-            success: function(data, status) {
-            }
-        });
-    }
 
     add_stop_to_station(id) {
 
@@ -1890,6 +1881,31 @@ class TransitUI {
 
             }
         });
+    }
+    
+    settings() {
+        var station_pair_json = [];
+        for (var i = 0; i < this.station_pairs.length; i++) {
+            var station_pair = this.station_pairs[i];
+            if (station_pair.user_modified) {
+                var cps = [];
+                for (var j = 0; j < station_pair.user_control_points.length; j++) {
+                    var cp = station_pair.user_control_points[j];
+                    cps.push([cp.lat, cp.lng]);
+                }
+                var sp_json = {'svc': this.active_service.sid.toString(), 's1': station_pair.stations[0].sid.toString(), 's2': station_pair.stations[1].sid.toString(), 'cps': cps};
+                station_pair_json.push(sp_json);
+            }
+        }
+        return {"station_pairs": station_pair_json};
+    }
+    
+    sync_json() {
+        var ret = {
+            "map": NS_map,
+            "settings": this.settings()
+        }
+        return JSON.stringify(ret);
     }
 
     load_session(session_id) {

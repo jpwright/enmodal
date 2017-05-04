@@ -38,7 +38,7 @@ pool.connect(function(err, client, done) {
             return console.error('error running query', err);
         } else {
 
-            var sel_result = client.query("SELECT id, gid, ST_AsText(geo) FROM dggrid WHERE id > 1000000 ORDER BY id ASC LIMIT 100000;", function(sel_err, sel_result) {
+            var sel_result = client.query("SELECT id, gid, ST_AsText(geo) FROM dggrid WHERE id > 1400000 ORDER BY id ASC LIMIT 100000;", function(sel_err, sel_result) {
                 if (sel_err) {
                     console.error('error running query', sel_err);
                 }

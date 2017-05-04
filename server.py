@@ -279,13 +279,40 @@ def route_session_push():
     data = request.get_data()
     charset = request.mimetype_params.get('charset') or 'UTF-8'
     jd = LZString().decompressFromUTF16(data.decode(charset, 'utf-16'))
-    d = json.loads(jd)
+    jdl = json.loads(jd)
+    d = jdl['map']
     #print d
     d['sidf_state'] = 0
     m = Transit.Map(0)
     m.from_json(d)
     m.sidf_state = 0
     session_manager.auth_by_key(h).session.map = m
+    
+    settings = jdl['settings']
+    sp_settings = settings['station_pairs']
+    for sp in sp_settings:
+        # Check that both stations exist
+        stations_found = 0
+        stations = []
+        
+        service_id = sp['svc']
+        station_id_1 = int(sp['s1'])
+        station_id_2 = int(sp['s2'])
+        ucp_0_lat = float(sp['cps'][0][0])
+        ucp_0_lng = float(sp['cps'][0][1])
+        ucp_1_lat = float(sp['cps'][1][0])
+        ucp_1_lng = float(sp['cps'][1][1])
+
+        for s in m.services:
+            if service_id == str(s.sid):
+                # Look for matching station.
+                for station in s.stations:
+                    if (station_id_1 == station.sid) or (station_id_2 == station.sid):
+                        stations_found += 1
+                        stations.append(station)
+
+        if stations_found == 2:
+            m.settings.set_user_control_points(station_id_1, station_id_2, ucp_0_lat, ucp_0_lng, ucp_1_lat, ucp_1_lng)
 
     return json.dumps({"result": "OK"})
 
