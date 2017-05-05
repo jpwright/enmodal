@@ -2,7 +2,7 @@
 port: 5050
 secret_key: F12Yr58j4zX T~Y%C!efJ]Gxe/,?KT
 
-[postgres]
+[dggrid]
 host: localhost
 port: 5432
 dbname: DB_NAME_HERE

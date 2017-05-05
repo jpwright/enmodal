@@ -17,7 +17,7 @@ print "Connecting to database\n	->%s" % (conn_string)
 conn = psycopg2.connect(conn_string)
 cursor = conn.cursor()
     
-query = "CREATE TABLE IF NOT EXISTS dggrid ( \
+query = "CREATE TABLE IF NOT EXISTS dgpt ( \
         id BIGSERIAL PRIMARY KEY, \
         gid bigint UNIQUE, \
         geo geometry, \

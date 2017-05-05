@@ -19,7 +19,7 @@ import multiprocessing
 import time
 
 import sys
-sys.path.append(os.path.abspath('lib/transit'))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'lib', 'transit')))
 import Transit
 import TransitGIS
 import TransitModel
@@ -28,8 +28,16 @@ import TransitSettings
 import ConfigParser
 
 config = ConfigParser.RawConfigParser()
-config.read('settings.cfg')
+config.read(os.path.abspath(os.path.join(os.path.dirname(__file__), 'settings.cfg')))
 PORT = int(config.get('flask', 'port'))
+
+
+SESSIONS_HOST = config.get('sessions', 'host')
+SESSIONS_PORT = config.get('sessions', 'port')
+SESSIONS_DBNAME = config.get('sessions', 'dbname')
+SESSIONS_USER = config.get('sessions', 'user')
+SESSIONS_PASSWORD = config.get('sessions', 'password')
+SESSIONS_CONN_STRING = "host='"+SESSIONS_HOST+"' port='"+SESSIONS_PORT+"' dbname='"+SESSIONS_DBNAME+"' user='"+SESSIONS_USER+"' password='"+SESSIONS_PASSWORD+"'"
 SESSIONS_SECRET_KEY_PUBLIC = int(config.get('sessions', 'secret_key_public'), 16)
 SESSIONS_SECRET_KEY_PRIVATE = int(config.get('sessions', 'secret_key_private'), 16)
 SESSION_EXPIRATION_TIME = int(config.get('sessions', 'expiration_time'))
@@ -186,16 +194,7 @@ def route_session_save():
     if e:
         return e
 
-    config = ConfigParser.RawConfigParser()
-    config.read('settings.cfg')
-    host = config.get('sessions', 'host')
-    port = config.get('sessions', 'port')
-    dbname = config.get('sessions', 'dbname')
-    user = config.get('sessions', 'user')
-    password = config.get('sessions', 'password')
-    conn_string = "host='"+host+"' port='"+port+"' dbname='"+dbname+"' user='"+user+"' password='"+password+"'"
-
-    conn = psycopg2.connect(conn_string)
+    conn = psycopg2.connect(SESSIONS_CONN_STRING)
     cursor = conn.cursor()
 
     a = session_manager.auth_by_key(h)
@@ -221,16 +220,7 @@ def route_session_save():
 def route_session_load():
     h = int(request.args.get('i'), 16)
 
-    config = ConfigParser.RawConfigParser()
-    config.read('settings.cfg')
-    host = config.get('sessions', 'host')
-    port = config.get('sessions', 'port')
-    dbname = config.get('sessions', 'dbname')
-    user = config.get('sessions', 'user')
-    password = config.get('sessions', 'password')
-    conn_string = "host='"+host+"' port='"+port+"' dbname='"+dbname+"' user='"+user+"' password='"+password+"'"
-
-    conn = psycopg2.connect(conn_string)
+    conn = psycopg2.connect(SESSIONS_CONN_STRING)
     cursor = conn.cursor()
 
     is_private = False

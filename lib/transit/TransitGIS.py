@@ -8,6 +8,13 @@ import re
 import Transit
 import ConfigParser
 
+DGGRID_HOST = config.get('dggrid', 'host')
+DGGRID_PORT = config.get('dggrid', 'port')
+DGGRID_DBNAME = config.get('dggrid', 'dbname')
+DGGRID_USER = config.get('dggrid', 'user')
+DGGRID_PASSWORD = config.get('dggrid', 'password')
+DGGRID_CONN_STRING = "host='"+DGGRID_HOST+"' port='"+DGGRID_PORT+"' dbname='"+DGGRID_DBNAME+"' user='"+DGGRID_USER+"' password='"+DGGRID_PASSWORD+"'"
+
 class HexagonRegion(object):
     
     def __init__(self):
@@ -100,19 +107,8 @@ class BoundingBox(object):
                     max_lng_set = True
 
 def hexagons_bb(bb):
-    config = ConfigParser.RawConfigParser()
-    config.read('settings.cfg')
 
-    host = config.get('postgres', 'host')
-    port = config.get('postgres', 'port')
-    dbname = config.get('postgres', 'dbname')
-    user = config.get('postgres', 'user')
-    password = config.get('postgres', 'password')
-    conn_string = "host='"+host+"' port='"+port+"' dbname='"+dbname+"' user='"+user+"' password='"+password+"'"
-    # print the connection string we will use to connect
-    print "Connecting to database\n	->%s" % (conn_string)
-
-    conn = psycopg2.connect(conn_string)
+    conn = psycopg2.connect(DGGRID_CONN_STRING)
     cursor = conn.cursor('cursor_unique_name', cursor_factory=psycopg2.extras.DictCursor)
      
     query = "SELECT gid, ST_AsGeoJSON(geo), population, employment FROM dggrid WHERE ST_CoveredBy(geo, ST_MakeEnvelope("+str(bb.min_lng)+", "+str(bb.min_lat)+", "+str(bb.max_lng)+", "+str(bb.max_lat)+")) LIMIT 10000"
