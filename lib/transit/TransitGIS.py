@@ -8,6 +8,8 @@ import re
 import Transit
 import ConfigParser
 
+config = ConfigParser.RawConfigParser()
+config.read(os.path.abspath(os.path.join(os.path.dirname(__file__), 'settings.cfg')))
 DGGRID_HOST = config.get('dggrid', 'host')
 DGGRID_PORT = config.get('dggrid', 'port')
 DGGRID_DBNAME = config.get('dggrid', 'dbname')
