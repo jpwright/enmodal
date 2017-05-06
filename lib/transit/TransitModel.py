@@ -47,7 +47,7 @@ def map_analysis(m):
             for hexagon in region.hexagons:
                 center = hexagon.center()
                 # Look for stations within catchment.
-                distance = great_circle(center, (station.location[0], station.location[1])).miles
+                distance = great_circle(center, (station.location[1], station.location[0])).miles
                 if (distance <= CATCHMENT_DISTANCE):
                     if hexagon in hexagon_to_station:
                         hexagon_to_station[hexagon].append(station)
@@ -68,7 +68,7 @@ def map_analysis(m):
                     hexagon_to_station[hexagon].append(station)
                 else:
                     hexagon_to_station[hexagon] = [station]
-            station_to_hexagon = hexagons
+            station_to_hexagon[station] = hexagons
 
     end = time.time()
     print "Analyzing hexagons took "+str(end-start)
