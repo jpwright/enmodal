@@ -535,7 +535,7 @@ class TransitUI {
             async: true,
             dataType: 'json',
             success: function(data, status) {
-
+                NS_interface.get_ridership();
             }
         });
     }
