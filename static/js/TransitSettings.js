@@ -21,25 +21,14 @@ var CURVE_OVERSHOOT = 0.5;
 var BEZIER_SHARPNESS = 0.6;
 
 var DGGRID_AREA = 0.0733633;
+var MAX_ZOOM = 16;
+var MIN_ZOOM = 12;
+var START_ZOOM = 13;
 
 var DEBUG_MODE = false;
 
 // Map rendering parameters
 var SHARED_STRETCH_THRESHOLD = 8; // Max number of "local" stations in a shared stretch.
-
-// Voxel data paramaters
-var GEO_RANGE_LAT = 0.8;
-var GEO_RANGE_LNG = 1.0;
-
-var LAT_MIN = 40.713 - GEO_RANGE_LAT/2.0;
-var LAT_MAX = 40.713 + GEO_RANGE_LAT/2.0;
-var LNG_MIN = -74.006 - GEO_RANGE_LNG/2.0;
-var LNG_MAX = -74.006 + GEO_RANGE_LNG/2.0;
-
-var VOXELS_DIM = 500;
-var VOXELS_RES_LAT = GEO_RANGE_LAT / VOXELS_DIM;
-var VOXELS_RES_LNG = GEO_RANGE_LNG / VOXELS_DIM;
-var VOXELS_TOTAL = VOXELS_DIM * VOXELS_DIM;
 
 // Geocoding parameters
 var ENC_NEIGHBORHOODS_ALWAYS_LABEL = ['Astoria'];

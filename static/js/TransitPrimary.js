@@ -83,12 +83,12 @@ function initialize_game_state() {
     var map = L.map('map', {
         fullscreenControl: true,
         attributionControl: false
-    }).setView([40.713, -74.006], 13);
+    }).setView([40.713, -74.006], START_ZOOM);
 
     L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
             attribution: '',
-            maxZoom: 16,
-            minZoom: 10
+            maxZoom: MAX_ZOOM,
+            minZoom: MIN_ZOOM
     }).addTo(map);
 
     map.on('click', handle_map_click);
@@ -385,11 +385,19 @@ $(function() {
             if ($(this).attr('id') == "data-layer-population") {
                 NS_interface.hexagon_layer = "population";
                 NS_interface.get_hexagons();
-                NS_interface.map.addLayer(NS_interface.data_layer);
             }
             if ($(this).attr('id') == "data-layer-employment") {
                 NS_interface.hexagon_layer = "employment";
                 NS_interface.get_hexagons();
+            }
+            if ($(this).attr('id') == "data-layer-ridership") {
+                NS_interface.hexagon_layer = "none";
+                NS_interface.data_layer.clearLayers();
+                for (var i = 0; i < NS_map.primary_service().stations.length; i++) {
+                    var station = NS_map.primary_service().stations[i];
+                    
+                    NS_interface.data_layer.addLayer(L.circle(station.location, {color: 'red', radius: station.ridership/100.0}));
+                }
                 NS_interface.map.addLayer(NS_interface.data_layer);
             }
         } else {

@@ -19,6 +19,9 @@ class TransitUI {
             "population": "persons / mile<sup>2</sup>",
             "employment": "jobs /  mile<sup>2</sup>"
         };
+        this.hexagon_bounds = null;
+        this.hexagon_zoom = null;
+        this.data_layer_request_num = 0;
         this.preview_paths_enabled = true;
 
         this.nearest_station_to_mouse = null;
@@ -1814,73 +1817,109 @@ class TransitUI {
     
     get_hexagons() {
         var initial_bounds = this.map.getBounds();
-        var search_bounds = initial_bounds.pad(0.1); // Pad for maximum scrollability
-        $.ajax({ url: "get-hexagons?i="+NS_session+"&lat-min="+search_bounds.getSouth().toString()+"&lat-max="+search_bounds.getNorth().toString()+"&lng-min="+search_bounds.getWest().toString()+"&lng-max="+search_bounds.getEast().toString(),
-            async: true,
-            dataType: 'text',
-            success: function(data_zip, status) {
-                var data = JSON.parse(data_zip);
-                //NS_interface.data_layer.clearLayers();
-                /*
-                var max_population = 0.0;
-                var min_population = -1.0;
-                var populations = [];
-                for (var i = 0; i < data.length; i++) {
-                    var population = data[i]["population"];
-                    if (population > max_population) max_population = population;
-                    if (population < min_population || min_population == -1.0) min_population = population;
-                    populations.push(population);
-                }
-                NS_interface.chroma_scale.domain([min_population, max_population], 7, 'quantiles');
-                for (var i = 0; i < data.length; i++) {
-                    var hexagon = data[i];
-                    var population = hexagon["population"];
-                    var opacity = 0.7;
-                    var color = NS_interface.chroma_scale(population).hex();
-                    if (hexagon["gid"] in NS_interface.hexagons) {
-                        var h = NS_interface.hexagons[hexagon["gid"]];
-                        if (h.color != color) {
-                            h.color = color;
-                            h.update_style();
-                        }
-                    } else {
-                        var h = new Hexagon(hexagon["gid"], hexagon["geo"], color, opacity);
-                        NS_interface.hexagons[hexagon["gid"]] = h;
-                        if (initial_bounds.contains(h.poly.getBounds())) {
-                            h.draw();
+        var bounds = initial_bounds.pad(0.5); // Pad for maximum scrollability
+        
+        var do_it = true;
+        if (this.hexagon_bounds != null && this.hexagon_zoom != null) {
+            if (this.hexagon_bounds.contains(initial_bounds) && NS_interface.map.getZoom() == this.hexagon_zoom) {
+                do_it = false;
+            }
+        }
+        if(NS_interface.map.getZoom() < MIN_ZOOM) do_it = false;
+        var request_num = NS_interface.data_layer_request_num;
+        
+        if (do_it) {
+            this.hexagon_bounds = bounds;
+            this.hexagon_zoom = NS_interface.map.getZoom();
+            $.ajax({ url: "get-hexagons?i="+NS_session+"&lat-min="+bounds.getSouth().toString()+"&lat-max="+bounds.getNorth().toString()+"&lng-min="+bounds.getWest().toString()+"&lng-max="+bounds.getEast().toString(),
+                async: true,
+                dataType: 'text',
+                success: function(data_zip, status) {
+                    var data = JSON.parse(data_zip);
+                    //NS_interface.data_layer.clearLayers();
+                    /*
+                    var max_population = 0.0;
+                    var min_population = -1.0;
+                    var populations = [];
+                    for (var i = 0; i < data.length; i++) {
+                        var population = data[i]["population"];
+                        if (population > max_population) max_population = population;
+                        if (population < min_population || min_population == -1.0) min_population = population;
+                        populations.push(population);
+                    }
+                    NS_interface.chroma_scale.domain([min_population, max_population], 7, 'quantiles');
+                    for (var i = 0; i < data.length; i++) {
+                        var hexagon = data[i];
+                        var population = hexagon["population"];
+                        var opacity = 0.7;
+                        var color = NS_interface.chroma_scale(population).hex();
+                        if (hexagon["gid"] in NS_interface.hexagons) {
+                            var h = NS_interface.hexagons[hexagon["gid"]];
+                            if (h.color != color) {
+                                h.color = color;
+                                h.update_style();
+                            }
+                        } else {
+                            var h = new Hexagon(hexagon["gid"], hexagon["geo"], color, opacity);
+                            NS_interface.hexagons[hexagon["gid"]] = h;
+                            if (initial_bounds.contains(h.poly.getBounds())) {
+                                h.draw();
+                            }
                         }
                     }
+                    */
+                    var num_breaks = 8;
+                    var breaks = quantiles(data, num_breaks, NS_interface.hexagon_layer);
+                    var scale = NS_interface.hexagon_scales[NS_interface.hexagon_layer];
+                    $("#scale-boxes").empty();
+                    for (var i = 0; i < num_breaks; i++) {
+                        $("#scale-boxes").append('<div class="scale-box" style="background-color: '+scale((num_breaks-i)/num_breaks).hex()+' "></div>');
+                    }
+                    $("#scale-mid").text(Math.round(breaks[Math.round((num_breaks-1)/2)]/DGGRID_AREA).toString());
+                    $("#scale-high").text(Math.round(breaks[0]/DGGRID_AREA).toString());
+                    $("#scale-units").html(NS_interface.hexagon_units[NS_interface.hexagon_layer]);
+                    $("#scale").show();
+                    
+                    NS_interface.data_layer.clearLayers();
+                    /**/
+                    if (NS_interface.map.getZoom() < 14) {
+                        NS_interface.data_layer.addLayer(L.vectorGrid.slicer(data, {
+                            vectorTileLayerStyles: {
+                                sliced: function(properties, zoom) {
+                                    var property = 0;
+                                    if (NS_interface.hexagon_layer == "population") property = properties.population;
+                                    if (NS_interface.hexagon_layer == "employment") property = properties.employment;
+                                    return {
+                                        fillColor: populationColor(property, breaks, scale),
+                                        fill: true,
+                                        weight: 0,
+                                        opacity: 1,
+                                        color: 'white',
+                                        fillOpacity: 0.35
+                                    };
+                                }
+                            }
+                        }));
+                    } else {
+                        NS_interface.data_layer.addLayer(L.geoJson(data, {style: function(feature) {
+                            var property = 0;
+                            if (NS_interface.hexagon_layer == "population") property = feature.properties.population;
+                            if (NS_interface.hexagon_layer == "employment") property = feature.properties.employment;
+                            return {
+                                fillColor: populationColor(property, breaks, scale),
+                                weight: 0,
+                                opacity: 1,
+                                color: 'white',
+                                fillOpacity: 0.35
+                            };
+                        }}));
+                    }
+                    NS_interface.line_path_layer.bringToFront();
+                    NS_interface.station_marker_layer.bringToFront();
+                    NS_interface.map.setMinZoom(MIN_ZOOM);
                 }
-                */
-                NS_interface.data_layer.clearLayers();
-                var num_breaks = 8;
-                var breaks = quantiles(data, num_breaks, NS_interface.hexagon_layer);
-                var scale = NS_interface.hexagon_scales[NS_interface.hexagon_layer];
-                $("#scale-boxes").empty();
-                for (var i = 0; i < num_breaks; i++) {
-                    $("#scale-boxes").append('<div class="scale-box" style="background-color: '+scale((num_breaks-i)/num_breaks).hex()+' "></div>');
-                }
-                $("#scale-mid").text(Math.round(breaks[Math.round((num_breaks-1)/2)]/DGGRID_AREA).toString());
-                $("#scale-high").text(Math.round(breaks[0]/DGGRID_AREA).toString());
-                $("#scale-units").html(NS_interface.hexagon_units[NS_interface.hexagon_layer]);
-                $("#scale").show();
-                NS_interface.data_layer.addLayer(L.geoJson(data, {style: function(feature) {
-                    var property = 0;
-                    if (NS_interface.hexagon_layer == "population") property = feature.properties.population;
-                    if (NS_interface.hexagon_layer == "employment") property = feature.properties.employment;
-                    return {
-                        fillColor: populationColor(property, breaks, scale),
-                        weight: 0,
-                        opacity: 1,
-                        color: 'white',
-                        fillOpacity: 0.35
-                    };
-                }}));
-                NS_interface.line_path_layer.bringToFront();
-                NS_interface.station_marker_layer.bringToFront();
-
-            }
-        });
+            });
+        }
     }
     
     settings() {
@@ -1919,7 +1958,6 @@ function sortNumber(a,b) {
 }
 
 function quantiles(geojson, num_breaks, feature_name) {
-    console.log(geojson);
     var property_array = []
     for (var i = 0; i < geojson.features.length; i++) {
         property_array.push(geojson.features[i].properties[feature_name]);

@@ -5,6 +5,7 @@ import requests
 import json
 import re
 import os
+import copy
 
 import Transit
 import ConfigParser
@@ -22,6 +23,7 @@ class HexagonRegion(object):
     
     def __init__(self):
         self.hexagons = []
+        self.hexagon_geo = {}
         
     def add_hexagon(self, h):
         self.hexagons.append(h)
@@ -43,8 +45,11 @@ class HexagonRegion(object):
     
     def geojson(self):
         features = []
+        first = True
         for hexagon in self.hexagons:
-            features.append({"type": "Feature", "geometry": hexagon.geo, "properties": {"population": hexagon.population, "employment": hexagon.employment}})
+            geo = hexagon.geo_hex
+            features.append({"type": "Feature", "geometry": geo, "properties": {"population": hexagon.population, "employment": hexagon.employment}})
+            
         return {"type": "FeatureCollection", "features": features}
     
     def to_json(self):
@@ -52,23 +57,31 @@ class HexagonRegion(object):
 
 class Hexagon(object):
     
-    def __init__(self, gid, geo, population, employment):
+    def __init__(self, gid, geo_hex, population, employment):
         self.gid = gid
-        self.geo = geo
+        self.geo_hex = geo_hex
         self.population = population
         self.employment = employment
         
     def center(self):
         lat = 0
         lng = 0
-        for coordinate in self.geo["coordinates"][0]:
-            lat += coordinate[1]
-            lng += coordinate[0]
+        for coordinate in self.geo_hex["coordinates"][0]:
+            lat += coordinate[0]
+            lng += coordinate[1]
             
-        lat = lat / len(self.geo["coordinates"][0])
-        lng = lng / len(self.geo["coordinates"][0])
+        lat = lat / len(self.geo_hex["coordinates"][0])
+        lng = lng / len(self.geo_hex["coordinates"][0])
         
         return (lat, lng)
+    
+    def shift_center(self, lat, lng):
+        curr_center = self.center()
+        lat_delta = lat - curr_center[0]
+        lng_delta = lng - curr_center[1]
+        for coordinate in self.geo_hex["coordinates"][0]:
+            coordinate[0] += lat_delta
+            coordinate[1] += lng_delta
         
     def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True)
@@ -112,17 +125,31 @@ class BoundingBox(object):
 def hexagons_bb(bb):
 
     conn = psycopg2.connect(DGGRID_CONN_STRING)
-    cursor = conn.cursor('cursor_unique_name', cursor_factory=psycopg2.extras.DictCursor)
+    cursor = conn.cursor()
      
-    query = "SELECT gid, ST_AsGeoJSON(geo), population, employment FROM dggrid WHERE ST_CoveredBy(geo, ST_MakeEnvelope("+str(bb.min_lng)+", "+str(bb.min_lat)+", "+str(bb.max_lng)+", "+str(bb.max_lat)+")) LIMIT 10000"
+    query = "SELECT gid, ST_AsGeoJSON(center), population, employment FROM dggrid WHERE ST_Within(center, ST_MakeEnvelope("+str(bb.min_lng)+", "+str(bb.min_lat)+", "+str(bb.max_lng)+", "+str(bb.max_lat)+")) LIMIT 100000;"
     print query
     cursor.execute(query)
     #cursor.execute("SELECT gid FROM dggrid WHERE ST_DWithin(geo, 'POINT("+lng+" "+lat+")', 0.01) LIMIT 1000;")
     #cursor.execute("SELECT * FROM dggrid ORDER BY geo <-> st_setsrid(st_makepoint("+lng+","+lat+"),4326) LIMIT 100;")
 
+    rows = cursor.fetchall()
+    
+    query = "SELECT gid, ST_AsGeoJSON(geo), population, employment FROM dggrid WHERE gid="+str(rows[0][0])+" LIMIT 1;"
+    print query
+    cursor.execute(query)
+    hexagon_row = cursor.fetchone()
+    hexagon_template = Hexagon(int(hexagon_row[0]), json.loads(hexagon_row[1]), int(hexagon_row[2]), int(hexagon_row[3]))
+    
     region = HexagonRegion()
-    for row in cursor:
-        region.add_hexagon(Hexagon(int(row[0]), json.loads(row[1]), int(row[2]), int(row[3])))
+    for row in rows:
+        h = copy.deepcopy(hexagon_template)
+        c = json.loads(row[1])
+        h.shift_center(c['coordinates'][0], c['coordinates'][1])
+        h.gid = int(row[0])
+        h.population = int(row[2])
+        h.employment = int(row[3])
+        region.add_hexagon(h)
     cursor.close()
     conn.close()
     

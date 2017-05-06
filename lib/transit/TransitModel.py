@@ -43,6 +43,7 @@ def map_analysis(m):
 
     for station in service.stations:
         if not station.gids_known:
+            station_gids = []
             for hexagon in region.hexagons:
                 center = hexagon.center()
                 # Look for stations within catchment.
@@ -56,6 +57,8 @@ def map_analysis(m):
                         station_to_hexagon[station].append(hexagon)
                     else:
                         station_to_hexagon[station] = [hexagon]
+                    station_gids.append(hexagon.gid)
+            station.set_gids(station_gids)
         else:
             hexagons = []
             for gid in station.gids_in_range:

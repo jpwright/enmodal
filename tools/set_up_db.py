@@ -5,11 +5,11 @@ import psycopg2.extras
 config = ConfigParser.RawConfigParser()
 config.read('../settings.cfg')
 
-host = config.get('postgres', 'host')
-port = config.get('postgres', 'port')
-dbname = config.get('postgres', 'dbname')
-user = config.get('postgres', 'user')
-password = config.get('postgres', 'password')
+host = config.get('dggrid', 'host')
+port = config.get('dggrid', 'port')
+dbname = config.get('dggrid', 'dbname')
+user = config.get('dggrid', 'user')
+password = config.get('dggrid', 'password')
 conn_string = "host='"+host+"' port='"+port+"' dbname='"+dbname+"' user='"+user+"' password='"+password+"'"
 # print the connection string we will use to connect
 print "Connecting to database\n	->%s" % (conn_string)
