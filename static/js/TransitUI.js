@@ -84,7 +84,7 @@ class TransitUI {
                 //NS_interface.get_ridership();
             }
             if (NS_interface.hexagon_layer != "none") {
-                NS_interface.get_hexagons();
+                NS_interface.get_hexagons(false);
             }
         });
     }
@@ -1815,7 +1815,7 @@ class TransitUI {
         });
     }
     
-    get_hexagons() {
+    get_hexagons(force) {
         var initial_bounds = this.map.getBounds();
         var bounds = initial_bounds.pad(0.5); // Pad for maximum scrollability
         
@@ -1827,6 +1827,7 @@ class TransitUI {
         }
         if(NS_interface.map.getZoom() < MIN_ZOOM) do_it = false;
         var request_num = NS_interface.data_layer_request_num;
+        if (force) do_it = true;
         
         if (do_it) {
             this.hexagon_bounds = bounds;

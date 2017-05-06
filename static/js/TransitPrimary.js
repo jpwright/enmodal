@@ -49,7 +49,14 @@ function new_game() {
 }
 
 function sync_with_server(get_ridership) {
-    $.ajax({ url: "session-push?i="+NS_session,
+    $.ajax({ url: "session-save?i="+NS_session,
+        async: true,
+        dataType: 'json',
+        success: function(data, status) {
+            $("#save-message").fadeIn().delay(2000).fadeOut();
+        }
+    });
+    /*$.ajax({ url: "session-push?i="+NS_session,
         async: true,
         type: "POST",
         data: LZString.compressToUTF16(NS_interface.sync_json()),
@@ -67,7 +74,7 @@ function sync_with_server(get_ridership) {
                 NS_interface.get_ridership();
             }
         }
-    });
+    });*/
 }
 
 function update_share_urls(public_key, private_key) {
@@ -384,11 +391,11 @@ $(function() {
             $(this).addClass("data-layer-selected");
             if ($(this).attr('id') == "data-layer-population") {
                 NS_interface.hexagon_layer = "population";
-                NS_interface.get_hexagons();
+                NS_interface.get_hexagons(true);
             }
             if ($(this).attr('id') == "data-layer-employment") {
                 NS_interface.hexagon_layer = "employment";
-                NS_interface.get_hexagons();
+                NS_interface.get_hexagons(true);
             }
             if ($(this).attr('id') == "data-layer-ridership") {
                 NS_interface.hexagon_layer = "none";
