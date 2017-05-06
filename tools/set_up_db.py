@@ -1,9 +1,10 @@
 import ConfigParser
 import psycopg2
 import psycopg2.extras
+import os
 
 config = ConfigParser.RawConfigParser()
-config.read(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'settings.cfg')))
+config.read(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'settings.cfg')))
 DGGRID_HOST = config.get('dggrid', 'host')
 DGGRID_PORT = config.get('dggrid', 'port')
 DGGRID_DBNAME = config.get('dggrid', 'dbname')
@@ -16,13 +17,7 @@ print "Connecting to database\n	->%s" % (DGGRID_CONN_STRING)
 conn = psycopg2.connect(DGGRID_CONN_STRING)
 cursor = conn.cursor()
     
-query = "CREATE TABLE IF NOT EXISTS dggrid ( \
-        id BIGSERIAL PRIMARY KEY, \
-        gid bigint UNIQUE, \
-        geo geometry, \
-        population int, \
-        employment int \
-    );"
+query = "CREATE TABLE IF NOT EXISTS dggrid (id BIGSERIAL PRIMARY KEY, gid bigint UNIQUE, geo geometry, center geometry, population int, employment int);"
 print query
 cursor.execute(query)
 
@@ -38,11 +33,7 @@ print "Connecting to database\n	->%s" % (SESSIONS_CONN_STRING)
 conn = psycopg2.connect(SESSIONS_CONN_STRING)
 cursor = conn.cursor()
 
-query = "CREATE TABLE IF NOT EXISTS sessions ( \
-        id BIGSERIAL PRIMARY KEY, \
-        data jsonb, \
-        updated timestamp without time zone \
-    );"
+query = "CREATE TABLE IF NOT EXISTS sessions (id BIGSERIAL PRIMARY KEY, data jsonb, updated timestamp without time zone);"
 print query
 cursor.execute(query)
 
