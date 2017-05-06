@@ -20,6 +20,9 @@ cursor = conn.cursor()
 query = "CREATE TABLE IF NOT EXISTS dggrid (id BIGSERIAL PRIMARY KEY, gid bigint UNIQUE, geo geometry, center geometry, population int, employment int);"
 print query
 cursor.execute(query)
+conn.commit()
+cursor.close()
+conn.close()
 
 SESSIONS_HOST = config.get('sessions', 'host')
 SESSIONS_PORT = config.get('sessions', 'port')
