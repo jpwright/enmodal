@@ -274,6 +274,7 @@ def route_session_push():
     data = request.get_data()
     charset = request.mimetype_params.get('charset') or 'UTF-8'
     jd = LZString().decompressFromUTF16(data.decode(charset, 'utf-16'))
+    print 'decompressed session push'
     jdl = json.loads(jd)
     d = jdl['map']
     #print d
