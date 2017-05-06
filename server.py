@@ -235,6 +235,7 @@ def route_session_load():
     if (cursor.rowcount == 0):
         return json.dumps({"error": "Invalid ID"})
 
+    print sid
     row = cursor.fetchone()
     sdata = row[0]
     m = Transit.Map(0)
@@ -269,6 +270,7 @@ def route_session_push():
     if e:
         return e
 
+    print 'received session push'
     data = request.get_data()
     charset = request.mimetype_params.get('charset') or 'UTF-8'
     jd = LZString().decompressFromUTF16(data.decode(charset, 'utf-16'))
