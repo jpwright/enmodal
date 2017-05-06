@@ -253,6 +253,8 @@ def route_session_load():
             s.sid = sid
             s.map = m
             session_manager.add(s)
+        else:
+            s.map = m
     
     a = session_manager.auth_by_key(s.private_key())
     return_obj = {"public_key": '{:16x}'.format(a.session.public_key()), "is_private": a.editable, "data": m.to_json().replace("'", "''")}
