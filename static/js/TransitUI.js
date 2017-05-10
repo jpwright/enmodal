@@ -1876,6 +1876,7 @@ class TransitUI {
                     for (var i = 0; i < num_breaks; i++) {
                         $("#scale-boxes").append('<div class="scale-box" style="background-color: '+scale((num_breaks-i)/num_breaks).hex()+' "></div>');
                     }
+                    $("#scale-low").text("0");
                     $("#scale-mid").text(Math.round(breaks[Math.round((num_breaks-1)/2)]/DGGRID_AREA).toString());
                     $("#scale-high").text(Math.round(breaks[0]/DGGRID_AREA).toString());
                     $("#scale-units").html(NS_interface.hexagon_units[NS_interface.hexagon_layer]);

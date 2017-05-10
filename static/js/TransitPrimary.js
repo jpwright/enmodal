@@ -49,6 +49,7 @@ function new_game() {
 }
 
 function sync_with_server(get_ridership) {
+    /*
     $.ajax({ url: "session-save?i="+NS_session,
         async: true,
         dataType: 'json',
@@ -56,7 +57,9 @@ function sync_with_server(get_ridership) {
             $("#save-message").fadeIn().delay(2000).fadeOut();
         }
     });
-    /*$.ajax({ url: "session-push?i="+NS_session,
+    */
+    
+    $.ajax({ url: "session-push?i="+NS_session,
         async: true,
         type: "POST",
         data: LZString.compressToUTF16(NS_interface.sync_json()),
@@ -74,7 +77,8 @@ function sync_with_server(get_ridership) {
                 NS_interface.get_ridership();
             }
         }
-    });*/
+    });
+    
 }
 
 function update_share_urls(public_key, private_key) {
@@ -360,6 +364,7 @@ $(function() {
             $("#option-section-lines").hide();
             $("#option-section-route").hide();
             $("#option-section-visual").show();
+            $("#option-section-visual-station-header").empty();
             $("#option-section-data").hide();
 
             NS_interface.preview_path_layer.clearLayers();
@@ -400,18 +405,37 @@ $(function() {
             if ($(this).attr('id') == "data-layer-ridership") {
                 NS_interface.hexagon_layer = "none";
                 NS_interface.data_layer.clearLayers();
+                var min_ridership = -1;
+                var max_ridership = 0;
                 for (var i = 0; i < NS_map.primary_service().stations.length; i++) {
                     var station = NS_map.primary_service().stations[i];
-                    
-                    NS_interface.data_layer.addLayer(L.circle(station.location, {color: 'red', radius: station.ridership/100.0}));
+                    var ridership = station.ridership;
+                    if (ridership > max_ridership) max_ridership = ridership;
+                    if (ridership < min_ridership || min_ridership == -1) min_ridership = ridership;
                 }
-                NS_interface.map.addLayer(NS_interface.data_layer);
+                for (var i = 0; i < NS_map.primary_service().stations.length; i++) {
+                    var station = NS_map.primary_service().stations[i];
+                    var ridership = station.ridership;
+                    var r = 39.0*(ridership-min_ridership)/(max_ridership-min_ridership) + 1;
+                    NS_interface.data_layer.addLayer(L.circleMarker(station.location, {color: 'red', radius: r}));
+                }
+                //NS_interface.map.addLayer(NS_interface.data_layer);
+                $("#scale-boxes").empty();
+                for (var i = 0; i < 10; i++) {
+                    $("#scale-boxes").append('<div class="scale-box"><div class="scale-inner" style="width: '+((i+1)*2).toString()+'px; height: '+((i+1)*2).toString()+'px; top: '+(20-(i+1)).toString()+'px;"></div>');
+                }
+                $("#scale-low").text(Math.round(min_ridership));
+                $("#scale-mid").text(Math.round((max_ridership-min_ridership)/2 + min_ridership));
+                $("#scale-high").text(Math.round(max_ridership));
+                $("#scale-units").html("weekday riders");
+                $("#scale").show();
             }
         } else {
             NS_interface.hexagon_layer = "none";
             $("#scale").hide();
             $(".data-layer-selector").removeClass("data-layer-selected");
-            NS_interface.map.removeLayer(NS_interface.data_layer);
+            //NS_interface.map.removeLayer(NS_interface.data_layer);
+            NS_interface.data_layer.clearLayers();
         }
     });
 
