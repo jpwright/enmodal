@@ -6,6 +6,19 @@ html, body {
     font-family: 'Montserrat', sans-serif;
 }
 
+#alpha-warning {
+    z-index: 8000;
+    width: 100%;
+    height: 100%;
+    padding: 10% 15%;
+    background-color: rgba(255, 255, 255, 0.9);
+    position: absolute;
+    top: 0;
+    left: 0;
+    text-align: center;
+    font-size: 1.5em;
+}
+
 #map {
     position: absolute;
     top: 0;
@@ -45,7 +58,7 @@ html, body {
 
 .station-popup {
     width: 250px;
-    bottom: 0px;\
+    bottom: 0px;
 }
 
 .station-content {
