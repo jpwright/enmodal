@@ -143,11 +143,11 @@ function initialize_game_state() {
     for (var i = 0; i < initial_lines.length; i++) {
         var line = initial_lines[i];
         
-        $.ajax({ url: "line-add?service-id="+NS_map.primary_service().id.toString()+"&name="+line.name,
+        $.ajax({ url: "line-add?service-id="+NS_map.primary_service().sid.toString()+"&name="+line.name,
             async: false,
             dataType: 'json',
             success: function(data, status) {
-                line.id = data["id"];
+                line.sid = data["id"];
                 line.color_bg = '#0039A6';
                 line.color_fg = '#FFFFFF';
                 NS_map.primary_service().add_line(line);
@@ -220,7 +220,7 @@ $(function() {
     });
     
     $(document).on("click", ".line-selector-option", function(e) {
-        NS_interface.update_line_selector(parseInt(e.target.id));
+        NS_interface.update_line_selector(parseInt(e.target.sid));
     });
     
     $("#custom-line-save").click(function() {

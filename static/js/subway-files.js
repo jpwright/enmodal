@@ -32,7 +32,7 @@ function load_game_json(data) {
     
     NS_map.services = [];
     
-    NS_map.id = data["id"];
+    NS_map.sid = data["id"];
     for (var i = 0; i < data["services"].length; i++) {
         var d_service = data["services"][i];
         var service = new Service(d_service["id"], d_service["name"]);

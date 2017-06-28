@@ -170,12 +170,12 @@ function add_custom_line(custom_line_name, custom_line_css_class, custom_line_cs
     var line_group_exists = false;
     for (var i = 0; i < N_line_groups.length; i++) {
         if (N_line_groups[i].name == custom_line_css_bg) {
-            N_line_groups[i].add_line(line.id);
+            N_line_groups[i].add_line(line.sid);
             line_group_exists = true;
         }
     }
     if (!line_group_exists) {
-        N_line_groups.push(new LineGroup(custom_line_css_bg, [line.id]));
+        N_line_groups.push(new LineGroup(custom_line_css_bg, [line.sid]));
     }
 }
 

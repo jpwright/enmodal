@@ -4,7 +4,7 @@ node_modules/
 .DS_Store
 ftp.py
 static/geojson/*
-*.gz
+transit.gz
 venv/*
 *.cfg
 *.kate-swp
@@ -13,3 +13,6 @@ vm_setup.sh
 *.csv
 data/*
 *.png
+*.zip
+*.gz
+
