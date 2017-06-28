@@ -21,7 +21,7 @@ print "Connecting to database\n	->%s" % (SESSIONS_CONN_STRING)
 conn = psycopg2.connect(SESSIONS_CONN_STRING)
 cursor = conn.cursor()
 
-query = "SELECT id, updated from sessions;"
+query = "SELECT id, updated from sessions ORDER BY updated ASC;"
 print query
 cursor.execute(query)
 
