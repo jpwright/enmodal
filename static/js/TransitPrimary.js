@@ -307,7 +307,7 @@ $(function() {
         },
         minLength: 3
     });
-    $("#city-picker-input").attr('autocomplete', 'on');
+    //$("#city-picker-input").attr('autocomplete', 'on');
 
     // Color pickers
     $("#color-picker-bg").spectrum({

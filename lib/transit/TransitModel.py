@@ -13,6 +13,9 @@ class TransitModel(object):
         self.ridership = ridership
         self.region = region
 
+    def ridership_json(self):
+        return json.dumps(self.ridership)
+
     def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True)
 

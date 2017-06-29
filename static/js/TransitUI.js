@@ -1805,8 +1805,8 @@ class TransitUI {
             dataType: 'json',
             success: function(data, status) {
                 console.log(data);
-                for (var i in data["ridership"]) {
-                    var ridership = data["ridership"][i];
+                for (var i in data) {
+                    var ridership = data[i];
                     var station = NS_interface.active_service.get_station_by_id(parseInt(i));
                     station.ridership = ridership;
                     $("#stationriders-"+station.sid.toString()).text(Math.round(station.ridership).toString());

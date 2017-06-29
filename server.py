@@ -701,7 +701,7 @@ def route_transit_model():
     m = session_manager.auth_by_key(h).session.map
     model = TransitModel.map_analysis(m)
 
-    return model.to_json()
+    return model.ridership_json()
 
 @app.route('/clear-settings')
 def route_clear_settings():
