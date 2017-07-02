@@ -37,9 +37,12 @@ class TransitUI {
 
         this.active_transfer_station = null;
         
+        this.pane_station_markers = this.map.createPane("stationMarkerPane");
+        //this.pane_station_markers.style.zIndex = 8000;
+        
         this.line_path_layer = L.featureGroup();
         this.transfer_layer = L.featureGroup();
-        this.station_marker_layer = L.featureGroup();
+        this.station_marker_layer = L.featureGroup({pane: "stationMarkerPane"});
         this.preview_path_layer = L.featureGroup();
         this.bezier_layer = L.featureGroup();
         this.data_layer = L.featureGroup();
@@ -47,6 +50,7 @@ class TransitUI {
         this.hexagons = {}; // Indexed by hexagon gid
         this.chroma_scale = chroma.scale('YlGnBu');
 
+        
         this.map.addLayer(this.data_layer);
         this.map.addLayer(this.line_path_layer);
         this.map.addLayer(this.preview_path_layer);
@@ -376,7 +380,7 @@ class TransitUI {
                         NS_interface.draw_line(lines[i], false, true);
                     }
                     NS_interface.draw_transfers();
-                    NS_interface.station_marker_layer.bringToFront();
+                    //NS_interface.station_marker_layer.bringToFront();
                 }
             });
         });
@@ -506,7 +510,7 @@ class TransitUI {
         }
         
         this.purge_station_pairs();
-        this.station_marker_layer.bringToFront();
+        //this.station_marker_layer.bringToFront();
         this.get_ridership();
         this.update_line_diagram();
         
@@ -637,7 +641,7 @@ class TransitUI {
         }
         
         this.purge_station_pairs();
-        this.station_marker_layer.bringToFront();
+        //this.station_marker_layer.bringToFront();
         
         this.get_ridership();
         this.update_line_diagram();
@@ -838,7 +842,7 @@ class TransitUI {
         for (var i = 0; i < impacted_lines.length; i++) {
             this.draw_line(impacted_lines[i], false, true);
         }
-        this.station_marker_layer.bringToFront();
+        //this.station_marker_layer.bringToFront();
 
         this.get_ridership();
         this.update_line_diagram();
@@ -970,7 +974,7 @@ class TransitUI {
         // Refresh the marker
         this.get_station_marker_by_station(station).generate_popup();
         
-        this.station_marker_layer.bringToFront();
+        //this.station_marker_layer.bringToFront();
 
         this.get_ridership();
         this.update_line_diagram();
@@ -1366,7 +1370,7 @@ class TransitUI {
 
         // Bring station marker layer to front.
         if (btf) {
-            this.station_marker_layer.bringToFront();
+            //this.station_marker_layer.bringToFront();
         }
     }
     
@@ -1376,7 +1380,7 @@ class TransitUI {
             this.draw_transfer(NS_interface.active_service.transfers[i]);
         }
         // Bring station layer to front.
-        this.station_marker_layer.bringToFront();
+        //this.station_marker_layer.bringToFront();
     }
     
     draw_transfer(transfer) {
@@ -1399,7 +1403,7 @@ class TransitUI {
             }
         }
         // Bring station layer to front.
-        this.station_marker_layer.bringToFront();
+        //this.station_marker_layer.bringToFront();
     }
     
     purge_bad_transfers() {
@@ -1449,7 +1453,7 @@ class TransitUI {
             this.line_path_layer.addLayer(path);
         }
         // Bring station layer to front.
-        this.station_marker_layer.bringToFront();
+        //this.station_marker_layer.bringToFront();
     }
 
     preview_line(line, lat, lng) {
@@ -1474,7 +1478,7 @@ class TransitUI {
         }
 
         // Bring station layer to front.
-        this.station_marker_layer.bringToFront();
+        //this.station_marker_layer.bringToFront();
     }
     
     preview_transfer(lat, lng) {
@@ -1511,7 +1515,7 @@ class TransitUI {
         var path = L.polyline([L.latLng(chunk.features[0].geometry.coordinates[1][1], chunk.features[0].geometry.coordinates[1][0]), L.latLng(this.active_transfer_station.location[0], this.active_transfer_station.location[1])], {weight: TRANSFER_WIDTH, color: 'black', opacity: TRANSFER_PREVIEW_OPACITY});
         this.preview_path_layer.addLayer(path);
         // Bring station layer to front.
-        this.station_marker_layer.bringToFront();
+        //this.station_marker_layer.bringToFront();
     }
 
     preview_clear() {
@@ -1776,7 +1780,7 @@ class TransitUI {
                                     for (var k = 0; k < lines.length; k++) {
                                         NS_interface.draw_line(lines[k], false, true);
                                     }
-                                    NS_interface.station_marker_layer.bringToFront();
+                                    //NS_interface.station_marker_layer.bringToFront();
                                 });
                             });
                             this.bezier_layer.addLayer(markers[j].marker);
@@ -1787,7 +1791,7 @@ class TransitUI {
         }
 
         // Bring station layer to front.
-        this.station_marker_layer.bringToFront();
+        //this.station_marker_layer.bringToFront();
     }
 
     update_line_diagram() {
@@ -2044,7 +2048,7 @@ class TransitUI {
                         }}));
                     }
                     NS_interface.line_path_layer.bringToFront();
-                    NS_interface.station_marker_layer.bringToFront();
+                    //NS_interface.station_marker_layer.bringToFront();
                     NS_interface.map.setMinZoom(MIN_ZOOM);
                 }
             });

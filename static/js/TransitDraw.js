@@ -11,7 +11,7 @@ class StationMarker {
 
     generate_marker() {
         var latlng = L.latLng(this.station.location[0], this.station.location[1]);
-        var marker = L.circleMarker(latlng, {draggable: true, color: "black", opacity: 1.0, fillColor: "white", fillOpacity: 1.0, zIndexOffset: 100}).setRadius(MARKER_RADIUS_DEFAULT).bindTooltip(this.station.name, this.tooltip_options);
+        var marker = L.circleMarker(latlng, {draggable: true, color: "black", opacity: 1.0, fillColor: "white", fillOpacity: 1.0, zIndexOffset: 100, pane: "stationMarkerPane"}).setRadius(MARKER_RADIUS_DEFAULT).bindTooltip(this.station.name, this.tooltip_options);
         marker.on('click', function(event) {
             //console.log('marker click');
             if (NS_interface.active_tool == "line") {

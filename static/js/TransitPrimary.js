@@ -170,7 +170,7 @@ function initialize_game_state() {
                         NS_interface.draw_line(line, false, true);
                     }
                     NS_interface.draw_transfers();
-                    NS_interface.station_marker_layer.bringToFront();
+                    //NS_interface.station_marker_layer.bringToFront();
                     NS_interface.map.closePopup();
                     NS_interface.get_ridership();
                     $("#starter-city-picker").hide();
