@@ -68,8 +68,8 @@ class TransitUI {
                 this.moving_station_marker.generate_popup();
                 this.moving_station_marker.marker.openPopup();
                 this.moving_station_marker = null;
-                this.update_line_diagram();
                 this.purge_bad_transfers();
+                this.update_line_diagram();
             }
             if (this.moving_control_point != null) {
                 console.log("updating moving control point");
@@ -1891,12 +1891,31 @@ class TransitUI {
                 stop_info_div.append(stop_connectors);
                 // Add an empty connector just to make sure each stop row has the height it needs
                 stop_connectors.append('<div class="subway-line-long subway-line-mini subway-line-marker-diagram subway-line-marker-diagram-fake" style="font-size: 1em;"><div class="content"></div></div>');
+                var connecting_lines = []
                 for (var k = 0; k < this.active_service.lines.length; k++) {
                     if (this.active_service.lines[k].sid != line.sid) {
                         if (this.active_service.lines[k].has_station(stop.station)) {
-                            stop_connectors.append('<div class="subway-line-long subway-line-mini subway-line-marker-diagram" style="font-size: 1em; background-color: '+this.active_service.lines[k].color_bg+'; color: '+this.active_service.lines[k].color_fg+';"><div class="content">'+this.active_service.lines[k].name+'</div></div>');
+                            connecting_lines.push(this.active_service.lines[k]);
                         }
                     }
+                }
+                for (var k = 0; k < this.active_service.transfers.length; k++) {
+                    if (this.active_service.transfers[k].has_station(stop.station)) {
+                        var transfer_stations = this.active_service.transfers[k].stations;
+                        for (var l = 0; l < transfer_stations.length; l++) {
+                            if (transfer_stations[l] != stop.station) {
+                                var transfer_station_lines = this.active_service.station_lines(transfer_stations[l]);
+                                for (var m = 0; m < transfer_station_lines.length; m++) {
+                                    if (connecting_lines.indexOf(transfer_station_lines[m]) == -1) {
+                                        connecting_lines.push(transfer_station_lines[m]);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                for (var k = 0; k < connecting_lines.length; k++) {
+                    stop_connectors.append('<div class="subway-line-long subway-line-mini subway-line-marker-diagram" style="font-size: 1em; background-color: '+connecting_lines[k].color_bg+'; color: '+connecting_lines[k].color_fg+';"><div class="content">'+connecting_lines[k].name+'</div></div>');
                 }
 
                 // Store the stop index.
