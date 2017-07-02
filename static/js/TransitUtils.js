@@ -45,3 +45,12 @@ function station_distance(station_1, station_2) {
 
     return turf.distance(s1, s2, "miles");
 }
+
+function is_latlng(s) {
+    return /^(\-)?[0-9]{0,3}.[0-9]*,(\ )?(\-)?[0-9]{0,3}.[0-9]*$/.test(s);
+}
+
+function get_latlng(s) {
+    var c = s.split(",");
+    return [parseFloat(c[0]), parseFloat(c[1])];
+}

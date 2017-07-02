@@ -286,20 +286,25 @@ $(function() {
     });*/
     $("#city-picker-input").autocomplete({
         source: function(request, response) {
-            $.ajax({
-                url: "http://search.mapzen.com/v1/autocomplete?api_key=mapzen-t6h4cff&layers=locality&text="+request.term,
-                dataType: "json",
-                success: function( data ) {
-                    response($.map(data.features, function(item) {
-                        if (item.properties.country_a == "USA") {
-                            return {
-                                label : item.properties.locality + ", " + item.properties.region_a,
-                                value : item.geometry
-                            };
-                        }
-                    }));
-                }
-            });
+            if (is_latlng(request.term)) {
+                var ll = get_latlng(request.term);
+                NS_interface.map.panTo(L.latLng(ll[0],ll[1]));
+            } else {
+                $.ajax({
+                    url: "http://search.mapzen.com/v1/autocomplete?api_key=mapzen-t6h4cff&layers=locality&text="+request.term,
+                    dataType: "json",
+                    success: function( data ) {
+                        response($.map(data.features, function(item) {
+                            if (item.properties.country_a == "USA") {
+                                return {
+                                    label : item.properties.locality + ", " + item.properties.region_a,
+                                    value : item.geometry
+                                };
+                            }
+                        }));
+                    }
+                });
+            }
         },
         select: function (event, ui) {
             $("#city-picker-input").val(ui.item.label);
