@@ -13,7 +13,7 @@ class StationMarker {
         var latlng = L.latLng(this.station.location[0], this.station.location[1]);
         var marker = L.circleMarker(latlng, {draggable: true, color: "black", opacity: 1.0, fillColor: "white", fillOpacity: 1.0, zIndexOffset: 100}).setRadius(MARKER_RADIUS_DEFAULT).bindTooltip(this.station.name, this.tooltip_options);
         marker.on('click', function(event) {
-            console.log('marker click');
+            //console.log('marker click');
             if (NS_interface.active_tool == "line") {
                 marker.unbindPopup();
                 NS_interface.station_for_bezier_edits = NS_interface.nearest_station_to_mouse;
@@ -29,6 +29,37 @@ class StationMarker {
                 }
                 content += '</div>';
                 $("#option-section-visual-station-header").html(content);
+            }
+            if (NS_interface.active_tool == "transfer") {
+                marker.unbindPopup();
+                var station = NS_interface.get_station_marker_by_marker(marker).station;
+                if (station != NS_interface.active_transfer_station) {
+                    var station_loc = {
+                        "type": "Feature",
+                        "properties": {},
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": [station.location[1], station.location[0]]
+                        }
+                    };
+                    var transfer_loc = {
+                        "type": "Feature",
+                        "properties": {},
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": [NS_interface.active_transfer_station.location[1], NS_interface.active_transfer_station.location[0]]
+                        }
+                    };
+
+                    var distance = turf.distance(station_loc, transfer_loc, "miles");
+                    if (distance <= MAX_TRANSFER_DISTANCE_MILES) {
+                        // Create the transfer
+                        NS_interface.active_service.add_transfer(station, NS_interface.active_transfer_station);
+                        NS_interface.draw_transfers();
+                    }
+                    NS_interface.active_tool = "station";
+                    NS_interface.preview_clear();
+                }
             }
         });
         return marker;
@@ -50,14 +81,13 @@ class StationMarker {
         var active_line_is_different = true;
         for (var i = 0; i < lines.length; i++) {
             var line = lines[i];
-            content += '<div id="'+this.station.sid.toString()+'.'+line.sid.toString()+'" class="subway-line-long subway-deletable station-popup-line-marker" style="background-color: '+line.color_bg+'; color: '+line.color_fg+';"><div class="content">'+line.name+'</div></div>';
+            content += '<div id="'+this.station.sid.toString()+'.'+line.sid.toString()+'" class="subway-line-long subway-deletable station-popup-line-marker" style="background-color: '+line.color_bg+'; color: '+line.color_fg+';" data-balloon="Remove" data-balloon-pos="down"><div class="content">'+line.name+'</div></div>';
             if (line.sid == NS_interface.active_line.sid) {
                 active_line_is_different = false;
             }
         }
         content += ' </div>';
 
-        content += '<div class="station-buttons"><div class="station-content-button station-transfer" id="transfer-'+this.station.sid.toString()+'">Transfer</div>';
 
 
         if (active_line_is_different) {
@@ -66,6 +96,7 @@ class StationMarker {
 
         content += '<div class="station-content-button station-delete ';
         content += '" id="delete-'+this.station.sid.toString()+'">Delete</div>';
+        content += '<div class="station-buttons"><div class="station-content-button station-transfer" id="transfer-'+this.station.sid.toString()+'">Transfer</div>';
         content += '</div><div style="clear: both;"></div>';
         content += '</div>';
 

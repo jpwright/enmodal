@@ -284,6 +284,8 @@ def route_session_push():
     m.sidf_state = 0
     session_manager.auth_by_key(h).session.map = m
     
+    # Copy user settings
+    # TODO clean this up!
     settings = jdl['settings']
     sp_settings = settings['station_pairs']
     for sp in sp_settings:
@@ -411,6 +413,16 @@ def route_station_update():
 
     return json.dumps({"error": "Invalid ID"})
 
+@app.route('/transfer-add')
+def route_transfer_add():
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
+    if e:
+        return e
+
+    service_id = request.args.get('service-id')
+    station_1_id = request.args.get('station-1-id')
+    station_2_id = request.args.get('station-2-id')
 
 @app.route('/stop-add')
 def route_stop_add():

@@ -24,3 +24,24 @@ function num_unique_colors(lines) {
     }
     return ret;
 }
+
+function station_distance(station_1, station_2) {
+    var s1 = {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+            "type": "Point",
+            "coordinates": [station_1.location[1], station_1.location[0]]
+        }
+    };
+    var s2 = {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+            "type": "Point",
+            "coordinates": [station_2.location[1], station_2.location[0]]
+        }
+    };
+
+    return turf.distance(s1, s2, "miles");
+}

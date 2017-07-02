@@ -46,6 +46,13 @@ class Map(object):
                     for stop_id in edge.stop_ids:
                         edge_stop_ids.append(sid_map[stop_id])
                     edge.stop_ids = edge_stop_ids
+            for transfer in service.transfers:
+                sid_map[transfer.sid] = self.create_sid()
+                transfer.sid = sid_map[transfer.sid]
+                transfer_station_ids = []
+                for station_id in transfer.station_ids:
+                    transfer_station_ids.append(sid_map[station_id])
+                transfer.station_ids = transfer_station_ids
 
         for station_pair in self.settings.station_pairs:
             station_pair.station_ids = [sid_map[station_pair.station_ids[0]], sid_map[station_pair.station_ids[1]]]
@@ -272,6 +279,23 @@ class Edge(object):
     def from_json(self, j):
         self.stop_ids = [int(j['stop_ids'][0]), int(j['stop_ids'][1])]
 
+class Transfer(object):
+    """A Transfer is a connection between two Stations.
+
+    Attributes:
+        stops: An array (of size 2) containing the Stations connected by this Transfer.
+    """
+
+    def __init__(self, sid, station_ids):
+        self.sid = sid
+        self.station_ids = station_ids
+        
+    def to_json(self):
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+
+    def from_json(self, j):
+        self.station_ids = [int(j['station_ids'][0]), int(j['station_ids'][1])]
+
 class Service(object):
     """A Service is a collection of Lines; most analogous to a single mode within a transit agency.
 
@@ -285,6 +309,7 @@ class Service(object):
         self.name = name
         self.lines = []
         self.stations = []
+        self.transfers = []
 
     def add_line(self, l):
         self.lines.append(l)
@@ -312,6 +337,12 @@ class Service(object):
             if station.sid == i:
                 return station
         raise ValueError("station not found with id %s" % (i))
+
+    def add_transfer(self, t):
+        self.transfers.append(t)
+        
+    def remove_transfer(self, t):
+        self.transfers.remove(t)
     
     def get_stop_neighbors(self, line, stop):
         neighbors = {}
@@ -366,3 +397,8 @@ class Service(object):
             l = Line(line['sid'], line['name'])
             l.from_json(line, station_ids)
             self.add_line(l)
+        if 'transfers' in j:
+            for transfer in j['transfers']:
+                t = Transfer(transfer['sid'], transfer['station_ids'])
+                t.from_json(transfer)
+                self.add_transfer(t)

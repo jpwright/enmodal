@@ -1,8 +1,12 @@
 // Game version
-var GAME_VERSION = 0.12;
+var GAME_VERSION = 0.13;
 
 // Send incremental updates to server?
 var INC_UPDATES = true;
+
+// Used to set async parameter for all server requests.
+var ASYNC_REQUIRED = true;
+var ASYNC_OPTIONAL = false;
 
 // Drawing parameters
 var CURVE_THRESHOLD = 0.005; // Max overshoot from curve momentum.
@@ -15,6 +19,8 @@ var STATION_MARKER_SCALE_THRESHOLD = 6;
 var TRACK_WIDTH = 6.0;
 var TRACK_OFFSET = 6.0;
 var TRANSFER_WIDTH = 3.0;
+var TRANSFER_PREVIEW_OPACITY = 0.75;
+var MAX_TRANSFER_DISTANCE_MILES = 0.25;
 
 var USE_CURVED_TRACKS = true;
 var CURVE_OVERSHOOT = 0.5;

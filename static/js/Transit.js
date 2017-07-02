@@ -448,6 +448,39 @@ class Edge {
     }
 }
 
+class Transfer {
+    /*
+     * A Transfer represents an in-system connection between two Stations.
+     *
+     * Attributes:
+     *  stations: array of connected Stations
+     */
+    constructor(stations) {
+        this.sid = NS_id.id();
+        this.stations = stations;
+    }
+    
+    has_station(station) {
+        if (this.stations.indexOf(station) > -1) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
+    toJSON() {
+        return {"sid": this.sid, "station_ids": [this.stations[0].sid, this.stations[1].sid]};
+    }
+
+    from_json(j, service) {
+        this.sid = j.sid;
+        this.stations = [];
+        for (var i = 0; i < j.station_ids.length; i++) {
+            this.stations.push(service.get_station_by_id(j.station_ids[i]));
+        }
+    }
+}
+
 class Service {
     /*
      * A Service is a collection of Lines; most analogous to a single mode within a transit agency.
@@ -462,6 +495,7 @@ class Service {
         this.name = name;
         this.lines = [];
         this.stations = [];
+        this.transfers = [];
     }
 
     add_line(l) {
@@ -484,6 +518,20 @@ class Service {
             }
         }
         return null;
+    }
+    
+    has_edge_for_stations(station_1, station_2) {
+        for (var i = 0; i < this.lines.length; i++) {
+            var stop_1 = this.lines[i].get_stop_by_station(station_1);
+            var stop_2 = this.lines[i].get_stop_by_station(station_2);
+            if (stop_1 != null && stop_2 != null) {
+                var edge = this.lines[i].get_edge_by_stops([stop_1, stop_2]);
+                if (edge != null) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     add_station(s) {
@@ -661,6 +709,61 @@ class Service {
         return drawmaps;
 
     }
+    
+    /**
+     * Add transfer between stations station_1 and station_2.
+     */
+    add_transfer(station_1, station_2) {
+        for (var i = this.transfers.length - 1; i >= 0; i--) {
+            var transfer = this.transfers[i];
+            if (transfer.has_station(station_1) && transfer.has_station(station_2)) {
+                this.transfers.splice(i, 1);
+            }
+        }
+        if (station_1 != station_2) {
+            this.transfers.push(new Transfer([station_1, station_2]));
+        }
+    }
+    
+    /**
+     * Remove all transfers that contain a station.
+     * Returns true if any transfers removed, else false.
+     */
+    remove_transfers_for_station(station) {
+        var num_removed = 0;
+        for (var i = this.transfers.length - 1; i >= 0; i--) {
+            var transfer = this.transfers[i];
+            if (transfer.has_station(station)) {
+                this.transfers.splice(i, 1);
+                num_removed += 1;
+            }
+        }
+        if ((num_removed) > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
+    /**
+     * Removes all transfers longer than the input threshold.
+     * Returns true if any transfers removed, else false.
+     */
+    remove_transfers_above_length(length) {
+        var num_removed = 0;
+        for (var i = this.transfers.length - 1; i >= 0; i--) {
+            var transfer = this.transfers[i];
+            if (station_distance(transfer.stations[0], transfer.stations[1]) > length) {
+                this.transfers.splice(i, 1);
+                num_removed += 1;
+            }
+        }
+        if ((num_removed) > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     to_json() {
         return JSON.stringify(this);
@@ -682,6 +785,14 @@ class Service {
             l.sid = j.lines[i].sid;
             l.from_json(j.lines[i], this);
             this.add_line(l);
+        }
+        this.transfers = [];
+        if (j.transfers != null) {
+            for (var i = 0; i < j.transfers.length; i++) {
+                var t = new Transfer([]);
+                t.from_json(j.transfers[i], this);
+                this.transfers.push(t);
+            }
         }
     }
 }
