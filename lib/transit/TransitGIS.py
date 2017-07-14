@@ -19,6 +19,8 @@ DGGRID_USER = config.get('dggrid', 'user')
 DGGRID_PASSWORD = config.get('dggrid', 'password')
 DGGRID_CONN_STRING = "host='"+DGGRID_HOST+"' port='"+DGGRID_PORT+"' dbname='"+DGGRID_DBNAME+"' user='"+DGGRID_USER+"' password='"+DGGRID_PASSWORD+"'"
 
+MAPZEN_KEY = config.get('flask', 'mapzen_key')
+
 class HexagonRegion(object):
     
     def __init__(self):
@@ -157,8 +159,7 @@ def hexagons_bb(bb):
 
 def station_constructor(sid, lat, lng):
     
-    MAPZEN_API_KEY = "mapzen-t6h4cff"
-    mapzen_uri = "https://search.mapzen.com/v1/reverse?api_key="+MAPZEN_API_KEY+"&point.lat="+lat+"&point.lon="+lng+"&size=1&layers=address"
+    mapzen_uri = "https://search.mapzen.com/v1/reverse?api_key="+MAPZEN_KEY+"&point.lat="+lat+"&point.lon="+lng+"&size=1&layers=address"
     
     geocode = requests.get(mapzen_uri)
     geocode_content = json.loads(geocode.content)
@@ -217,3 +218,51 @@ def station_constructor(sid, lat, lng):
     s.region = region
     
     return s
+
+#six degrees of precision in valhalla
+inv = 1.0 / 1e6;
+
+#decode an encoded string
+def mapzen_decode(encoded):
+    decoded = []
+    previous = [0,0]
+    i = 0
+    #for each byte
+    while i < len(encoded):
+        #for each coord (lat, lon)
+        ll = [0,0]
+        for j in [0, 1]:
+            shift = 0
+            byte = 0x20
+            #keep decoding bytes until you have this coord
+            while byte >= 0x20:
+                byte = ord(encoded[i]) - 63
+                i += 1
+                ll[j] |= (byte & 0x1f) << shift
+                shift += 5
+            #get the final value adding the previous offset and remember it for the next
+            ll[j] = previous[j] + (~(ll[j] >> 1) if ll[j] & 1 else (ll[j] >> 1))
+            previous[j] = ll[j]
+        #scale by the precision and chop off long coords also flip the positions so
+        #its the far more standard lon,lat instead of lat,lon
+        decoded.append([float('%.6f' % (ll[1] * inv)), float('%.6f' % (ll[0] * inv))])
+    #hand back the list of coordinates
+    return decoded
+
+def mapzen_route(service, line):
+    
+    locations = []
+    for stop in line.stops:
+        station = service.find_station(stop.station_id)
+        locations.append({"lat": station.location[0], "lon": station.location[1]})
+    
+    mapzen_uri = 'https://valhalla.mapzen.com/route?json={"locations":'+json.dumps(locations)+',"costing":"auto_shorter","directions_options":{"units":"miles"}}&api_key=mapzen-t6h4cff'
+    print mapzen_uri
+    
+    geocode = requests.get(mapzen_uri)
+    geocode_content = json.loads(geocode.content)
+    #print json.dumps(geocode_content)
+    legs = geocode_content["trip"]["legs"]
+    print mapzen_decode(legs[0]["shape"])
+    
+    return 0

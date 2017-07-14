@@ -336,12 +336,6 @@ textarea.station-name-edit {
     position: relative;
 }
 
-#custom-line-options-column-preview {
-    width: 40%;
-    float: left;
-    overflow: hidden;
-}
-
 #custom-line-options-color-pickers {
     width: 20%;
     float: left;
@@ -350,8 +344,9 @@ textarea.station-name-edit {
 }
 
 #custom-line-options-column-inputs {
-    width: 40%;
+    width: 80%;
     float: right;
+    padding-top: 1em;
 }
 
 .custom-line-options-label {
@@ -742,6 +737,7 @@ ul.ui-autocomplete {
     overflow-y: hidden;
     overflow-x: visible;
     width: 25%;
+    min-width: 250px;
 }
 
 #option-section-tools {

@@ -1,0 +1,3 @@
+[submodule "lib/pyroutelib2"]
+	path = lib/pyroutelib2
+	url = https://github.com/gaulinmp/pyroutelib2.git

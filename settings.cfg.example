@@ -1,6 +1,7 @@
 [flask]
 port: 5050
 secret_key: F12Yr58j4zX T~Y%C!efJ]Gxe/,?KT
+mapzen_key: MAPZEN_API_KEY_HERE
 
 [dggrid]
 host: localhost

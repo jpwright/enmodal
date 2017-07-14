@@ -34,6 +34,8 @@ class TransitUI {
         this.moving_opp_control_point = null;
         this.moving_opp_control_point_index = null;
         this.moving_opp_control_point_sp_id = null;
+        
+        this.preview_line_pin_marker = null;
 
         this.active_transfer_station = null;
         
@@ -1688,7 +1690,14 @@ class TransitUI {
 
     preview_station(lat, lng) {
         this.preview_clear();
-
+        
+        /*
+        var pin_marker = L.circleMarker(L.latLng(lat, lng), {draggable: false, color: "black", opacity: 1.0, fillColor: "black", fillOpacity: 1.0, zIndexOffset: 100, pane: "stationMarkerPane"}).setRadius(4);
+        NS_interface.preview_line_pin_marker = pin_marker;
+        this.preview_paths.push(pin_marker);
+        this.preview_path_layer.addLayer(pin_marker);
+        */
+        
         var turf_e = {"type": "Feature", "properties": {}, "geometry": { "type": "Point", "coordinates": [lng, lat]}};
 
         // Find the nearest station
