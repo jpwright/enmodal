@@ -631,7 +631,9 @@ class Service {
             return a;
         }
         
-        dfs(start_stop, this, line, 0);
+        if (start_stop != null) {
+            dfs(start_stop, this, line, 0);
+        }
         
         return dfs_stops;
     }

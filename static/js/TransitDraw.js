@@ -14,22 +14,6 @@ class StationMarker {
         var marker = L.circleMarker(latlng, {draggable: true, color: "black", opacity: 1.0, fillColor: "white", fillOpacity: 1.0, zIndexOffset: 100, pane: "stationMarkerPane"}).setRadius(MARKER_RADIUS_DEFAULT).bindTooltip(this.station.name, this.tooltip_options);
         marker.on('click', function(event) {
             //console.log('marker click');
-            if (NS_interface.active_tool == "line") {
-                marker.unbindPopup();
-                NS_interface.station_for_bezier_edits = NS_interface.nearest_station_to_mouse;
-                NS_interface.preview_station(event.latlng.lat, event.latlng.lng);
-                //NS_interface.preview_station(lat, lng);
-                var station = NS_interface.get_station_marker_by_marker(marker).station;
-                $("#option-section-visual-instructions").hide();
-                var content = '<div class="visual-edit-station-name">'+station.name+'</div><div class="visual-edit-station-lines">';
-                var lines = NS_interface.active_service.station_lines(station);
-                for (var i = 0; i < lines.length; i++) {
-                    var line = lines[i];
-                    content += '<div class="subway-line-long" style="background-color: '+line.color_bg+'; color: '+line.color_fg+';"><div class="content">'+line.name+'</div></div> ';
-                }
-                content += '</div>';
-                $("#option-section-visual-station-header").html(content);
-            }
             if (NS_interface.active_tool == "transfer") {
                 marker.unbindPopup();
                 var station = NS_interface.get_station_marker_by_marker(marker).station;
@@ -121,27 +105,13 @@ class BezierControlPoint {
     }
 }
 
-class BezierControlPointMarker {
-    
-    constructor(b, id, sp_id) {
-        this.bcp = b;
-        this.sid = id;
-        this.sp_id = sp_id;
-        this.marker = this.generate_marker();
-    }
-    
-    update_marker() {
-        this.marker = this.generate_marker();
-    }
-    
-    generate_marker() {
-        var options = {draggable: false, color: "black", opacity: 0.8, fillColor: "#333", fillOpacity: 0.8, zIndexOffset: 100, radius: 5};
-        var marker = L.circleMarker(L.latLng(this.bcp.lat, this.bcp.lng), options);
-        marker.mcp_index = this.sid;
-        marker.sp_id = this.sp_id;
-        return marker;
+class BezierCenter {
+    constructor(lat, lng) {
+        this.lat = lat;
+        this.lng = lng;
     }
 }
+
 
 class LinePath {
 
@@ -212,67 +182,90 @@ class EdgePath {
     }
 }
 
+class Pin {
+    constructor(location) {
+        this.location = location;
+        this.sid = NS_id_sp.id();
+        this.marker = null;
+    }
+    
+    draw() {
+        NS_interface.line_path_layer.addLayer(this.marker);
+    }
+    
+    undraw() {
+        NS_interface.line_path_layer.removeLayer(this.marker);
+    }
+    
+    toJSON() {
+        return {"sid": this.sid, "location": this.location};
+    }
+}
+
+class SplineSegment {
+    constructor(controls, centers) {
+        this.controls = controls;
+        this.centers = centers;
+    }
+}
+
+class LineSplineSegment {
+    constructor(line, spline_segments) {
+        this.line = line;
+        this.spline_segments = spline_segments;
+    }
+}
+
 class StationPair {
     
     // Two stations associated with an array of LineControlPoints
     constructor(stations) {
         this.sid = NS_id_sp.id();
         this.stations = stations;
-        this.line_control_points = [];
-        this.user_modifying = 0; // Index of actively modified user_control_point
-        this.user_modified = false;
-        this.user_control_points = [];
+        this.line_spline_segments = [];
         this.paths = [];
-        this.draw_inverted = false;
+        this.follow_streets = false;
+        this.street_path = null;
+        this.pins = [];
+        this.draw_counter = 0;
+        this.group_sss = null;
     }
     
-    add_control_points(line, control_points) {
-        this.line_control_points.push(new LineControlPoints(line, control_points));
-        if (!this.user_modified) {
-            this.clear_user_control_points();
-        }
-        this.line_control_points.sort(function(a,b) {
+    add_line_spline_segment(lss) {
+        this.line_spline_segments.push(lss);
+        this.line_spline_segments.sort(function(a,b) {
             return a.line.sid > b.line.sid;
         });
     }
     
-    clear_line_control_points(line) {
-        for (var i = this.line_control_points.length - 1; i >= 0; i--) {
-            var lcp = this.line_control_points[i];
-            if (lcp.line == line) {
-                this.line_control_points.splice(i, 1);
+    clear_spline_segment_for_line(line) {
+        for (var i = this.line_spline_segments.length - 1; i >= 0; i--) {
+            var lss = this.line_spline_segments[i];
+            if (lss.line == line) {
+                this.line_spline_segments.splice(i, 1);
             }
         }
-        if (!this.user_modified) {
-            this.clear_user_control_points();
-        }
     }
     
-    set_user_control_points(control_points) {
-        this.user_control_points = control_points;
-        this.user_modified = true;
-    }
-    
-    clear_user_control_points() {
-        var a_lcp = this.average_lcp();
-        this.user_control_points = [new BezierControlPoint(a_lcp[0].lat, a_lcp[0].lng), new BezierControlPoint(a_lcp[1].lat, a_lcp[1].lng)];
+    clear_spline_segments() {
+        this.line_spline_segments = [];
     }
     
     lines() {
         var lines = [];
-        for (var i = 0; i < this.line_control_points.length; i++) {
-            var lcp_line = this.line_control_points[i].line;
-            if (lines.indexOf(lcp_line) == -1) {
-                lines.push(lcp_line);
+        for (var i = 0; i < this.line_spline_segments.length; i++) {
+            var lss_line = this.line_spline_segments[i].line;
+            if (lines.indexOf(lss_line) == -1) {
+                lines.push(lss_line);
             }
         }
         return lines;
     }
     
     has_line(line) {
-        for (var i = 0; i < this.line_control_points.length; i++) {
-            var lcp_line = this.line_control_points[i].line;
-            if (lcp_line == line) {
+        for (var i = 0; i < this.line_spline_segments.length; i++) {
+            var lss_line = this.line_spline_segments[i].line;
+            if (lss_line == line) {
                 return true;
             }
         }
@@ -290,10 +283,10 @@ class StationPair {
     
     num_lines() {
         var used_lines = [];
-        for (var i = 0; i < this.line_control_points.length; i++) {
-            var lcp_line = this.line_control_points[i].line;
-            if (used_lines.indexOf(lcp_line) == -1) {
-                used_lines.push(lcp_line);
+        for (var i = 0; i < this.line_spline_segments.length; i++) {
+            var lss_line = this.line_spline_segments[i].line;
+            if (used_lines.indexOf(lss_line) == -1) {
+                used_lines.push(lss_line);
             }
         }
         return used_lines.length;
@@ -302,150 +295,346 @@ class StationPair {
     num_lines_color() {
         var ret = 0;
         var used_colors = [];
-        for (var i = 0; i < this.line_control_points.length; i++) {
-            var lcp_line = this.line_control_points[i].line;
-            if (used_colors.indexOf(lcp_line.color_bg) == -1) {
-                used_colors.push(lcp_line.color_bg);
+        for (var i = 0; i < this.line_spline_segments.length; i++) {
+            var lss_line = this.line_spline_segments[i].line;
+            if (used_colors.indexOf(lss_line.color_bg) == -1) {
+                used_colors.push(lss_line.color_bg);
                 ret += 1;
             }
         }
         return ret;
     }
     
-    lcp_pos(lcp) {
+    ss_pos(ss) {
         var used_lines = [];
-        for (var i = 0; i < this.line_control_points.length; i++) {
-            var lcp_line = this.line_control_points[i].line;
-            if (used_lines.indexOf(lcp_line) == -1) {
-                used_lines.push(lcp_line);
+        for (var i = 0; i < this.line_spline_segments.length; i++) {
+            var lss_line = this.line_spline_segments[i].line;
+            if (used_lines.indexOf(lss_line) == -1) {
+                used_lines.push(lss_line);
             }
         }
         for (var j = 0; j < used_lines.length; j++) {
-            if (used_lines[j] == lcp.line) {
+            if (used_lines[j] == lss_line.line) {
                 return j;
             }
         }
         return -1;
     }
     
-    lcp_pos_color(lcp) {
+    lss_pos_color(lss) {
         var used_colors = [];
-        for (var i = 0; i < this.line_control_points.length; i++) {
-            var lcp_line = this.line_control_points[i].line;
-            if (used_colors.indexOf(lcp_line.color_bg) == -1) {
-                used_colors.push(lcp_line.color_bg);
+        for (var i = 0; i < this.line_spline_segments.length; i++) {
+            var lss_line = this.line_spline_segments[i].line;
+            if (used_colors.indexOf(lss_line.color_bg) == -1) {
+                used_colors.push(lss_line.color_bg);
             }
         }
         for (var j = 0; j < used_colors.length; j++) {
-            if (used_colors[j] == lcp.line.color_bg) {
+            if (used_colors[j] == lss.line.color_bg) {
                 return j;
             }
         }
         return -1;
     }
     
-    average_lcp() {
-        var x0 = 0.0;
-        var y0 = 0.0;
-        var x1 = 0.0;
-        var y1 = 0.0;
-        for (var i = 0; i < this.line_control_points.length; i++) {
-            x0 += this.line_control_points[i].control_points[0].lat;
-            y0 += this.line_control_points[i].control_points[0].lng;
-            x1 += this.line_control_points[i].control_points[1].lat;
-            y1 += this.line_control_points[i].control_points[1].lng;
+    average_sss() {
+        var a = [];
+        // Sum all the control points
+        for (var i = 0; i < this.line_spline_segments.length; i++) {
+            var lss = this.line_spline_segments[i];
+            for (var j = 0; j < lss.spline_segments.length; j++) {
+                var ss = lss.spline_segments[j];
+                if (a.length <= j) {
+                    // Gotta do this weirdness to force a deep copy
+                    var controls = []; //JSON.parse(JSON.stringify(ss.controls));
+                    var centers = []; //JSON.parse(JSON.stringify(ss.centers));
+                    // Add centers
+                    for (var k = 0; k < ss.centers.length; k++) {
+                        centers.push(new BezierCenter(ss.centers[k].lat, ss.centers[k].lng));
+                    }
+                    // Add controls
+                    for (var k = 0; k < ss.controls.length; k++) {
+                        controls.push(new BezierControlPoint(ss.controls[k].lat, ss.controls[k].lng));
+                    }
+                    a.push(new SplineSegment(controls, centers));
+                } else {
+                    // Add centers
+                    /*for (var k = 0; k < ss.centers.length; k++) {
+                        a[j].centers[k].lat += ss.centers[k].lat;
+                        a[j].centers[k].lng += ss.centers[k].lng;
+                    }*/
+                    // Add controls
+                    for (var k = 0; k < ss.controls.length; k++) {
+                        a[j].controls[k].lat += ss.controls[k].lat;
+                        a[j].controls[k].lng += ss.controls[k].lng;
+                    }
+                }
+            }
         }
-        x0 = x0 / this.line_control_points.length;
-        y0 = y0 / this.line_control_points.length;
-        x1 = x1 / this.line_control_points.length;
-        y1 = y1 / this.line_control_points.length;
-        return [{"lat": x0, "lng": y0}, {"lat": x1, "lng": y1}];
+        // Divide by number of lines
+        for (var j = 0; j < a.length; j++) {
+            var s = a[j];
+            // Divide centers
+            /*for (var k = 0; k < s.centers.length; k++) {
+                a[j].centers[k].lat = a[j].centers[k].lat / this.line_spline_segments.length;
+                a[j].centers[k].lng = a[j].centers[k].lng / this.line_spline_segments.length;
+            }*/
+            // Divide controls
+            for (var k = 0; k < s.controls.length; k++) {
+                a[j].controls[k].lat = a[j].controls[k].lat / this.line_spline_segments.length;
+                a[j].controls[k].lng = a[j].controls[k].lng / this.line_spline_segments.length;
+            }
+        }
+        this.group_sss = a;
+        return a;
     }
     
-    markers() {
-        if (this.user_modified) {
-            var cp = [{"lat": this.user_control_points[0].lat, "lng": this.user_control_points[0].lng}, {"lat": this.user_control_points[1].lat, "lng": this.user_control_points[1].lng}];
-        } else {
-            var cp = this.average_lcp();
+    project_pin(lat, lng) {
+        var sss = this.average_sss();
+        var min_distance = -1;
+        var best_p = null;
+        for (var i = 0; i < sss.length; i++) {
+            var ss = sss[i];
+            if (ss.controls.length == 1) {
+                var curve = new Bezier(ss.centers[0].lat, ss.centers[0].lng, ss.controls[0].lat, ss.controls[0].lng, ss.centers[1].lat, ss.centers[1].lng);
+            } else {
+                var curve = new Bezier(ss.centers[0].lat, ss.centers[0].lng, ss.controls[0].lat, ss.controls[0].lng, ss.controls[1].lat, ss.controls[1].lng, ss.centers[1].lat, ss.centers[1].lng);
+            }
+            var p = curve.project({x: lat, y: lng});
+            if (best_p == null || p.d < min_distance) {
+                min_distance = p.d;
+                best_p = p;
+            }
         }
-        var b1 = new BezierControlPointMarker(new BezierControlPoint(cp[0].lat, cp[0].lng), 0, this.sid);
-        var b2 = new BezierControlPointMarker(new BezierControlPoint(cp[1].lat, cp[1].lng), 1, this.sid);
-        return [b1, b2];
+        return best_p;
     }
     
-    generate_path(lcp, color, offset, weight, opacity) {  
-        if (this.user_modified) {
-            var cp = [{"lat": this.user_control_points[0].lat, "lng": this.user_control_points[0].lng}, {"lat": this.user_control_points[1].lat, "lng": this.user_control_points[1].lng}];
-        } else {
-            var cp = this.average_lcp();
+    distance_to_nearest_pin(lat, lng) {
+        // TODO calling average_sss a lot, maybe need to cache the result?
+        var sss = this.average_sss();
+        var min_distance = -1;
+        for (var i = 0; i < this.pins.length; i++) {
+            var pin = this.pins[i];
+            var px_n = NS_interface.map.latLngToLayerPoint(L.latLng(lat, lng));
+            var px_p = NS_interface.map.latLngToLayerPoint(L.latLng(pin.location[0], pin.location[1]));
+            var d = px_n.distanceTo(px_p);
+            if (min_distance == -1 || d < min_distance) {
+                min_distance = d;
+            }
         }
+        return min_distance;
+    }
         
-        if (lcp.control_points.length == 0) {
-            var path = L.polyline([L.latLng(this.stations[0].location[0], this.stations[0].location[1]), L.latLng(this.stations[1].location[0], this.stations[1].location[1])], {weight: weight, color: color, opacity: opacity});
+    
+    increment_draw_counter() {
+        this.draw_counter = this.draw_counter + 1;
+        if (this.draw_counter > FOLLOW_STREET_MOVE_THRESH) {
+            this.draw_counter = 0;
+            return true;
         } else {
-            var bezier_options = [
-                                    'M',
-                                    [this.stations[0].location[0], this.stations[0].location[1]]
-                                ];
-
-            var new_options = ['C',
-                                [cp[0].lat, cp[0].lng],
-                                [cp[1].lat, cp[1].lng],
-                                [this.stations[1].location[0], this.stations[1].location[1]]
-                            ];
-            bezier_options.push.apply(bezier_options, new_options);
-            
+            return false;
+        }
+    }
+    
+    generate_path(lss, color, offset, weight, opacity) {  
+        var path;
+        if (this.follow_streets) {
+            path = this.street_path;
+            if (this.increment_draw_counter() || this.street_path == null) {
+                $.ajax({ url: "street-path?i="+NS_session+"&service-id="+NS_map.primary_service().sid.toString()+"&station-1-lat="+this.stations[0].location[0].toString()+"&station-1-lng="+this.stations[0].location[1].toString()+"&station-2-lat="+this.stations[1].location[0].toString()+"&station-2-lng="+this.stations[1].location[1].toString(),
+                    async: false,
+                    dataType: 'json',
+                    success: function(data, status) {
+                        var ll = [];
+                        for (var i = 0; i < data[0].length; i++) {
+                            ll.push([data[0][i][1], data[0][i][0]]);
+                        }
+                        path = L.polyline(ll, {weight: weight, color: color, opacity: opacity, offset: offset*(weight/2)});
+                    }
+                });
+                this.street_path = path;
+            }
+        } else {
+            var sss = this.average_sss();
+            var bezier_options = [];
+            for (var i = 0; i < sss.length; i++) {
+                var ss = sss[i];
+                bezier_options.push('M');
+                bezier_options.push([ss.centers[0].lat, ss.centers[0].lng]);
+                var new_options = [];
+                if (ss.controls.length == 1) {
+                    new_options.push('Q');
+                }
+                if (ss.controls.length == 2) {
+                    new_options.push('C');
+                }
+                for (var j = 0; j < ss.controls.length; j++) {
+                    new_options.push([ss.controls[j].lat, ss.controls[j].lng]);
+                }
+                new_options.push([ss.centers[1].lat, ss.centers[1].lng]);
+                bezier_options.push.apply(bezier_options, new_options);
+            }
             var curve_options = {"color": color, "weight": weight, "opacity": opacity, "fill": false, "smoothFactor": 1.0, "offset": offset*(weight/2), "clickable": false, "pointer-events": "none", "className": "no-hover"};
-            var path = L.curve(bezier_options, curve_options);
+            path = L.curve(bezier_options, curve_options);
         }
         return path;
     }
     
-    average_path() {
-        var lcp = this.line_control_points[0];
-        return this.generate_path(lcp, "#A77", 0, 6*(this.num_lines_color()+1), 0.5);
+    add_pin(lat, lng) {
+        // Find the best spot in the pin order
+        var sss = this.average_sss();
+        var new_distance = -1;
+        var new_pt = null;
+        for (var i = 0; i < sss.length; i++) {
+            var ss = sss[i];
+            if (ss.controls.length == 1) {
+                var curve = new Bezier(ss.centers[0].lat, ss.centers[0].lng, ss.controls[0].lat, ss.controls[0].lng, ss.centers[1].lat, ss.centers[1].lng);
+            } else {
+                var curve = new Bezier(ss.centers[0].lat, ss.centers[0].lng, ss.controls[0].lat, ss.controls[0].lng, ss.controls[1].lat, ss.controls[1].lng, ss.centers[1].lat, ss.centers[1].lng);
+            }
+            var steps = curve.getLUT(BEZIER_LUT_STEPS);
+            
+            for (var j = 0; j < steps.length - 1; j++) {
+                var dn = NS_interface.map.distance(L.latLng(lat, lng), L.latLng(steps[j].x, steps[j].y));
+                if (new_distance == -1 || dn < new_distance) {
+                    new_pt = j + (i*BEZIER_LUT_STEPS);
+                    new_distance = dn;
+                }
+            }
+        }
+        
+        var new_pin = new Pin([lat, lng]);
+        this.generate_pin_marker(new_pin);
+        var splice_point = Math.floor(new_pt/BEZIER_LUT_STEPS);
+        this.pins.splice(splice_point, 0, new_pin);
+        this.draw_lines();
     }
     
-    generate_paths() {
-        this.undraw();
-        this.paths = [];
-        for (var i = 0; i < this.line_control_points.length; i++) {
-            var lcp = this.line_control_points[i];
-            //this.paths.push(this.generate_path(lcp, this.lcp_pos(lcp)*2 - (this.num_lines()-1)));
-            var offset = this.lcp_pos_color(lcp)*2 - (this.num_lines_color()-1);
-            /*if (this.stations[0].sid > this.stations[1].sid) {
-                offset = offset * -1;
-            }*/
-            /*if (this.draw_inverted) {
-                offset = offset * -1;
-            }*/
-            this.paths.push(this.generate_path(lcp, lcp.line.color_bg, offset, 6, 1.0));
+    remove_pin(pin) {
+        var pin_index = this.pins.indexOf(pin);
+        if (pin_index > -1) {
+            this.pins.splice(pin_index, 1);
         }
     }
     
-    undraw() {
+    generate_paths() {
+        this.undraw_paths();
+        this.paths = [];
+        for (var i = 0; i < this.line_spline_segments.length; i++) {
+            var lss = this.line_spline_segments[i];
+            var offset = this.lss_pos_color(lss)*2 - (this.num_lines_color()-1);
+            this.paths.push(this.generate_path(lss, lss.line.color_bg, offset, 6, 1.0));
+            // for debug only
+            //this.draw_paths();
+            if (DEBUG_BEZIER_CONTROLS) {
+                for (var j = 0; j < lss.spline_segments.length; j++) {
+                    var ss = lss.spline_segments[j];
+                    for (var k = 0; k < ss.controls.length; k++) {
+                        var color = "#000";
+                        if (k > 0) color = "#fff";
+                        this.paths.push(L.circleMarker([ss.controls[k].lat, ss.controls[k].lng], {color: color, opacity: 0.75, fillColor: lss.line.color_bg, fillOpacity: 1.0, radius: 4}));
+                        this.paths.push(L.polyline([[ss.controls[k].lat, ss.controls[k].lng], [ss.centers[k].lat, ss.centers[k].lng]], {color: "#aaa", opacity: 0.75}));
+                    }
+                }
+            }
+        }
+    }
+    
+    undraw_paths() {
         for (var j = 0; j < this.paths.length; j++) {
             NS_interface.line_path_layer.removeLayer(this.paths[j]);
         }
     }
     
-    draw() {
+    draw_paths() {
         for (var j = 0; j < this.paths.length; j++) {
             NS_interface.line_path_layer.addLayer(this.paths[j]);
         }
     }
-
-}
-
-class LineControlPoints {
     
-    constructor(line, control_points) {
-        this.line = line;
-        this.control_points = control_points;
+    undraw_pins() {
+        for (var j = 0; j < this.pins.length; j++) {
+            this.pins[j].undraw();
+        }
     }
     
-}
+    get_pin_by_leaflet_id(leaflet_id) {
+        for (var j = 0; j < this.pins.length; j++) {
+            if (this.pins[j].marker._leaflet_id == leaflet_id) {
+                return this.pins[j];
+            }
+        }
+        return null;
+    }
     
+    generate_pin_marker(pin) {
+        var m = L.marker([pin.location[0], pin.location[1]], {draggable: true, icon: PIN_ICON});
+        m.id = "pin-"+pin.sid.toString();
+        pin.marker = m;
+        var self = this;
+        m.on('drag', function(e) {
+            var p = self.get_pin_by_leaflet_id(e.target._leaflet_id);
+            p.location = [e.latlng.lat, e.latlng.lng];
+            self.draw_lines();
+            NS_interface.dragging_pin = true;
+        });
+        m.on('click', function(e) {
+            var p = self.get_pin_by_leaflet_id(e.target._leaflet_id);
+            console.log('pin click');
+            p.undraw();
+            self.remove_pin(p);
+            var lines = self.lines();
+            for (var i = 0; i < lines.length; i++) {
+                var line = lines[i];
+                NS_interface.draw_line(line, true, true);
+            }
+            self.draw_pins();
+        });
+        m.on('dragend', function(e) {
+            console.log('dragend pin');
+            NS_interface.dragging_pin = false;
+        });
+        return m;
+    }
+    
+    draw_lines() {
+        var lines = this.lines();
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i];
+            NS_interface.draw_line(line, true, true);
+        }
+    }
+    
+    draw_pins() {
+        for (var j = 0; j < this.pins.length; j++) {
+            this.pins[j].draw();
+        }
+    }
+    
+    undraw() {
+        this.undraw_paths();
+        this.undraw_pins();
+    }
+    
+    draw() {
+        this.draw_paths();
+        // Pin drawing is separate: let main application decide if it's needed
+        //this.draw_pins();
+    }
+    
+    toJSON() {
+        var station_ids = [];
+        for (var i = 0; i < this.stations.length; i++) {
+            station_ids.push(this.stations[i].sid);
+        }
+        var pins = [];
+        for (var i = 0; i < this.pins.length; i++) {
+            pins.push(this.pins[i].toJSON());
+        }
+        return {"sid": this.sid, "station_ids": station_ids, "pins": pins};
+    }
+
+}    
 
 class LineColor {
 

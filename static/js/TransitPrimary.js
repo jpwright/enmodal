@@ -145,7 +145,7 @@ function initialize_game_state() {
                     }
                     for (var i = 0; i < NS_map.primary_service().lines.length; i++) {
                         var line = NS_map.primary_service().lines[i];
-                        NS_interface.update_edge_paths(line);
+                        //NS_interface.update_edge_paths(line);
                     }
                     for (var i = 0; i < NS_map.primary_service().lines.length; i++) {
                         var line = NS_map.primary_service().lines[i];
@@ -158,10 +158,11 @@ function initialize_game_state() {
                         var sp = user_settings.station_pairs[i];
                         var station_1 = NS_map.primary_service().get_station_by_id(sp.station_ids[0]);
                         var station_2 = NS_map.primary_service().get_station_by_id(sp.station_ids[1]);
-                        var sp_real = NS_interface.get_station_pair(station_1, station_2);
+                        var sp_real = NS_interface.get_station_pair(station_1, station_2)[0];
                         if (sp_real != null) {
-                            var ucp = sp.user_control_points;
-                            sp_real[0].set_user_control_points([new BezierControlPoint(ucp[0][0], ucp[0][1]), new BezierControlPoint(ucp[1][0], ucp[1][1])]);
+                            for (var j = 0; j < sp.pins.length; j++) {
+                                sp_real.add_pin(sp.pins[j].location[0], sp.pins[j].location[1]);
+                            }
                         }
                     }
 
@@ -170,7 +171,6 @@ function initialize_game_state() {
                         NS_interface.draw_line(line, false, true);
                     }
                     NS_interface.draw_transfers();
-                    //NS_interface.station_marker_layer.bringToFront();
                     NS_interface.map.closePopup();
                     NS_interface.get_ridership();
                     $("#starter-city-picker").hide();
@@ -360,25 +360,6 @@ $(function() {
             //NS_interface.hexagons = {};
             //NS_interface.data_layer.clearLayers();
             NS_interface.active_tool = "station";
-        }
-    });
-    $("#tool-line").click(function(e) {
-        if (NS_interface.active_tool != "line") {
-            $(".tool-button").removeClass("game-button-active");
-            $("#tool-line").addClass("game-button-active");
-
-            $("#option-section-lines").hide();
-            $("#option-section-route").hide();
-            $("#option-section-visual").show();
-            $("#option-section-visual-station-header").empty();
-            $("#option-section-data").hide();
-
-            NS_interface.preview_path_layer.clearLayers();
-            NS_interface.station_for_bezier_edits = null;
-            NS_interface.moving_station_marker = null;
-            NS_interface.hexagons = {};
-            NS_interface.data_layer.clearLayers();
-            NS_interface.active_tool = "line";
         }
     });
     $("#tool-data").click(function(e) {

@@ -28,12 +28,8 @@ class TransitUI {
         this.station_for_bezier_edits = null;
         this.moving_station_marker = null; // Station marker being dragged
         
-        this.moving_control_point = null;
-        this.moving_control_point_index = null;
-        this.moving_control_point_sp_id = null;
-        this.moving_opp_control_point = null;
-        this.moving_opp_control_point_index = null;
-        this.moving_opp_control_point_sp_id = null;
+        this.dragging_pin = false;
+        this.station_pair_id_move_count_map = {};
         
         this.preview_line_pin_marker = null;
 
@@ -247,7 +243,7 @@ class TransitUI {
 
             this.update_line_selector(line.sid);
             $("#"+line.sid).html("<div class=\"subway-line-long\" style=\"background-color: "+line.color_bg+"; color: "+line.color_fg+";\"><div class=\"content\">"+line.name+"</div></div> "+line.full_name);
-            this.draw_line(line, true, true);
+            this.draw_line(line, false, true);
             
             if (INC_UPDATES) {
                 /*$.ajax({ url: "line-update?i="+NS_session+"&service-id="+NS_map.primary_service().sid.toString()+"&line-id="+line.sid.toString()+"&name="+encodeURIComponent(line.name)+"&full-name="+encodeURIComponent(line.full_name)+"&color-bg="+encodeURIComponent(line.color_bg)+"&color-fg="+encodeURIComponent(line.color_fg),
@@ -378,11 +374,22 @@ class TransitUI {
 
                     //var lines = NS_interface.active_service.station_lines(station_marker.station);
                     var lines = NS_interface.lines_for_station_by_station_pair(station_marker.station);
+                    var station_pairs_to_draw = [];
                     for (var i = 0; i < lines.length; i++) {
-                        NS_interface.draw_line(lines[i], false, true);
+                        // Re-draw lines (but don't render)
+                        NS_interface.draw_line(lines[i], true, false);
+                        var station_pairs = NS_interface.get_station_pairs_for_line(lines[i]);
+                        for (var j = 0; j < station_pairs.length; j++) {
+                            if (!(station_pairs[j] in station_pairs_to_draw)) {
+                                station_pairs_to_draw.push(station_pairs[j]);
+                            }
+                        }
+                    }
+                    // Render all station pairs
+                    for (var i = 0; i < station_pairs_to_draw.length; i++) {
+                        station_pairs_to_draw[i].draw();
                     }
                     NS_interface.draw_transfers();
-                    //NS_interface.station_marker_layer.bringToFront();
                 }
             });
         });
@@ -411,14 +418,13 @@ class TransitUI {
 
     add_new_station(lat, lng) {
 
-        var station = new Station("to be named", [lat, lng]);
+        var station = new Station("...", [lat, lng]);
         var stop;
         var line = this.active_line;
         
         // Sync with server
-        // synchronous station-add is mandatory since it gives localized info
         $.ajax({ url: "station-add?i="+NS_session+"&service-id="+this.active_service.sid.toString()+"&station-id="+station.sid.toString()+"&lat="+lat+"&lng="+lng,
-            async: ASYNC_OPTIONAL,
+            async: ASYNC_REQUIRED,
             dataType: 'json',
             success: function(data, status) {
                 station.name = data["name"];
@@ -431,7 +437,9 @@ class TransitUI {
                 if ("region" in data) {
                     station.region = data["region"];
                 }
-
+                // Update popup.
+                NS_interface.get_station_marker_by_station(station).generate_popup();
+                NS_interface.update_line_diagram();
             }
         });
         stop = new Stop(station);
@@ -456,11 +464,11 @@ class TransitUI {
                 for (var j = 0; j < best_edges[i].stops.length; j++) {
                     var station_pairs = this.get_station_pairs(best_edges[i].stops[j].station);
                     for (var k = 0; k < station_pairs.length; k++) {
-                        var sp_line_cps = station_pairs[k][0].line_control_points;
-                        for (var l = 0; l < sp_line_cps.length; l++) {
-                            var sp_line = sp_line_cps[l].line;
-                            if (lines_to_draw.indexOf(sp_line) == -1) {
-                                lines_to_draw.push(sp_line);
+                        var sp_line_lss = station_pairs[k][0].line_spline_segments;
+                        for (var l = 0; l < sp_line_lss.length; l++) {
+                            var lss_line = sp_line_lss[l].line;
+                            if (lines_to_draw.indexOf(lss_line) == -1) {
+                                lines_to_draw.push(lss_line);
                             }
                         }
                     }
@@ -512,7 +520,6 @@ class TransitUI {
         }
         
         this.purge_station_pairs();
-        //this.station_marker_layer.bringToFront();
         this.get_ridership();
         this.update_line_diagram();
         
@@ -699,9 +706,9 @@ class TransitUI {
                         for (var l = 0; l < edge.stops.length; l++) {
                             var station_pairs = this.get_station_pairs(edge.stops[l].station);
                             for (var m = 0; m < station_pairs.length; m++) {
-                                var sp_line_cps = station_pairs[m][0].line_control_points;
-                                for (var n = 0; n < sp_line_cps.length; n++) {
-                                    var sp_line = sp_line_cps[n].line;
+                                var sp_line_lss = station_pairs[m][0].line_spline_segments;
+                                for (var n = 0; n < sp_line_lss.length; n++) {
+                                    var sp_line = sp_line_lss[n].line;
                                     if (impacted_lines.indexOf(sp_line) == -1) {
                                         impacted_lines.push(sp_line);
                                     }
@@ -982,7 +989,7 @@ class TransitUI {
         this.update_line_diagram();
 
     }
-
+    /*
     update_edge_paths(line) {
         if (line.sid in this.line_paths) {
             var line_path = this.line_paths[line.sid];
@@ -1086,144 +1093,7 @@ class TransitUI {
         }
 
     }
-
-    tweak_line_path(line) {
-        // Go through each edge of this line,
-        // look for shared stretches,
-        // and tweak the edge paths to match the shared stretch.
-
-        console.log("TWEAK "+line.name);
-        var line_path = this.line_paths[line.sid];
-        line_path.edge_paths = [];
-
-        var draw_stops = []
-        for (var i = 0; i < line_path.raw_edge_paths.length; i++) {
-            // For each "raw" edge,
-            // look for related raw edges on other lines.
-            var raw_edge_path = line_path.raw_edge_paths[i];
-            var edge = line.get_edge_by_id(raw_edge_path.edge_id);
-            
-            console.log("Base Edge: "+edge.stops[0].station.sid+", "+edge.stops[1].station.sid);
-            var base_edge_order = 0;
-            if (edge.stops[0].station.sid > edge.stops[1].station.sid) {
-                base_edge_order = 1;
-            }
-            var stops = edge.stops;
-            var drawmaps = NS_interface.active_service.drawmap(stops[0], stops[1], line);
-            //console.log(drawmaps);
-            var drawmap_followed = false;
-            
-            if (drawmaps.length > 1) {
-
-                // Figure out which drawmap reflects the line we're drawing.
-                var current_line_index = 0;
-                
-                for (var k = 0; k < drawmaps.length; k++) {
-                    if (drawmaps[k].line == line) {
-                        current_line_index = k;
-                    }
-                }
-                
-                // Iterate through the drawmaps.
-                for (var k = 0; k < drawmaps.length; k++) {
-                    var drawmap = drawmaps[k];
-                    var line_path_to_follow = this.line_paths[drawmap.line.sid];
-                    var drawmap_edge_order = 0;
-                    
-                    // Figure out the drawmap edge order
-                    if (drawmap.line.sid != line.sid) {
-                        if (drawmap.stops.length == 2) {
-                            var edge_to_follow = drawmap.line.get_edge_by_stops([drawmap.stops[0], drawmap.stops[1]]);
-                            if (edge_to_follow.stops[0].station.sid > edge_to_follow.stops[1].station.sid) {
-                                drawmap_edge_order = 1;
-                            }
-                        } else {
-                            var edge_to_follow_1 = drawmap.line.get_edge_by_stops([drawmap.stops[0], drawmap.stops[1]]);
-                            var edge_to_follow_2 = drawmap.line.get_edge_by_stops([drawmap.stops[drawmap.stops.length - 2], drawmap.stops[drawmap.stops.length - 1]]);
-                            if (edge_to_follow_1.stops[0].station.sid == edge.stops[0].station.sid) {
-                                drawmap_edge_order = base_edge_order;
-                            } else {
-                                if (base_edge_order == 0) {
-                                    drawmap_edge_order = 1;
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Follow the first drawmap.
-                    if (!drawmap_followed && drawmap.line.sid != line.sid) {
-                    
-                        drawmap_followed = true;
-                        var stop_points = [];
-                        var control_points = [];
-                        
-                        
-                        
-                        for (var j = 1; j < drawmap.stops.length; j++) {
-                            var edge_to_follow = drawmap.line.get_edge_by_stops([drawmap.stops[j-1], drawmap.stops[j]]);
-                            var raw_edge_path_to_follow = line_path_to_follow.get_raw_path_for_edge(edge_to_follow);
-                            if (j == 1) {
-                                stop_points.push.apply(stop_points, [drawmap.stops[j-1].station.location]);
-                                //control_points.push.apply(control_points, raw_edge_path_to_follow.control_points);
-                            }
-                            var compare_result = edge_to_follow.compare_stops([drawmap.stops[j-1], drawmap.stops[j]]);
-                            var stop_points_to_add = raw_edge_path_to_follow.stop_points;
-                            var control_points_to_add = raw_edge_path_to_follow.control_points;
-
-                            // Edge matches. Add the control points
-                            if (compare_result == 2) {
-                                // reverse it
-                                stop_points_to_add = [stop_points_to_add[1], stop_points_to_add[0]];
-                                control_points_to_add = [[control_points_to_add[0][1], control_points_to_add[0][0]]];
-                            }
-                            stop_points.push.apply(stop_points, [drawmap.stops[j].station.location]);
-                            control_points.push.apply(control_points, control_points_to_add);
-
-                            // Set the offset
-                            
-                            console.log("Edge: "+edge_to_follow.stops[0].station.sid+", "+edge_to_follow.stops[1].station.sid);
-                            var edge_path_to_follow = line_path_to_follow.get_path_for_edge(edge_to_follow);
-                            edge_path_to_follow.offset = k*2 - (drawmaps.length-1);
-                            if (drawmap_edge_order != base_edge_order) {
-                                console.log("inverting!");
-                                edge_path_to_follow.offset = edge_path_to_follow.offset * -1;
-                            }
-                            this.regenerate_edge_path(drawmap.line, edge_path_to_follow);
-                            console.log("line "+drawmap.line.name+" offset "+edge_path_to_follow.offset);
-                            //console.log(edge_path_to_follow);
-                        }
-                        var edge_path = new EdgePath(edge.sid, stop_points, control_points, current_line_index*2 - (drawmaps.length-1), line.color_bg, 1.0);
-                        line_path.edge_paths.push(edge_path);
-                        //console.log(edge_path);
-                        this.refresh_edge_paths(drawmap.line);
-                    // If we already did that, just adjust the remaining drawmaps.
-                    } else if (drawmap.line.sid != line.sid) {
-                        if (drawmap.stops[0].station.sid > drawmap.stops[drawmap.stops.length - 1].station.sid) {
-                            drawmap_edge_order = 1;
-                        }
-                        
-                        for (var j = 1; j < drawmap.stops.length; j++) {
-                            // Set the offset
-                            var edge_to_follow = drawmap.line.get_edge_by_stops([drawmap.stops[j-1], drawmap.stops[j]]);
-                            var edge_path_to_follow = line_path_to_follow.get_path_for_edge(edge_to_follow);
-                            console.log("Edge: "+edge_to_follow.stops[0].station.sid+", "+edge_to_follow.stops[1].station.sid);
-                            edge_path_to_follow.offset = k*2 - (drawmaps.length-1);
-                            if (drawmap_edge_order != base_edge_order) {
-                                console.log("inverting!");
-                                edge_path_to_follow.offset = edge_path_to_follow.offset * -1;
-                            }
-                            this.regenerate_edge_path(drawmap.line, edge_path_to_follow);
-                            console.log("line "+drawmap.line.name+" offset "+edge_path_to_follow.offset);
-                        }
-                        this.refresh_edge_paths(drawmap.line);
-                    }
-                }
-            } else {
-                var edge_path = new EdgePath(edge.sid, raw_edge_path.stop_points, raw_edge_path.control_points, 0, line.color_bg, 1.0);
-                line_path.edge_paths.push(edge_path);
-            }
-        }
-    }
+    */
     
     update_station_markers(line) {
         for (var i = 0; i < line.stops.length; i++) {
@@ -1282,14 +1152,35 @@ class TransitUI {
         }
         return station_pairs;
     }
+    
+    get_station_pairs_for_line(line) {
+        var station_pairs = [];
+        var station_drawmap = this.active_service.station_drawmap(line);
+        //console.log(station_drawmap);
+        for (var i = 0; i < station_drawmap.length; i++) {
+            var branch = station_drawmap[i];
+            // Convert branch to coordinates
+            for (var j = 0; j < branch.length - 1; j++) {
+                // Check for station pair.
+                var station_1 = branch[j];
+                var station_2 = branch[j+1];
+                if (this.has_station_pair(station_1, station_2)) {
+                    var spr = this.get_station_pair(station_1, station_2);
+                    var station_pair = spr[0];
+                    station_pairs.push(station_pair);
+                }
+            }
+        }
+        return station_pairs;
+    }
 
     /**
      * Draw a line.
      * line : line to draw
-     * btf : true if station_markers should be brought to the front after the finish
+     * mm : if this is being called from a mousemove event
      * render : if the station_pairs should actually be rendered (or just updated)
      **/
-    draw_line(line, btf, render) {
+    draw_line(line, mm, render) {
         //console.log("draw line "+line.name);
         
         if (line.sid in this.line_paths) {
@@ -1307,9 +1198,10 @@ class TransitUI {
         // Clear all station pairs.
         for (var i = 0; i < this.station_pairs.length; i++) {
             if (this.station_pairs[i].has_line(line)) {
-                this.station_pairs[i].clear_line_control_points(line);
+                this.station_pairs[i].clear_spline_segment_for_line(line);
+                //this.station_pairs[i].clear_spline_segments();
                 this.station_pairs[i].generate_paths();
-                this.station_pairs[i].draw();
+                if (render) this.station_pairs[i].draw();
             }
         }
         
@@ -1323,11 +1215,36 @@ class TransitUI {
             for (var i = 0; i < station_drawmap.length; i++) {
                 var branch = station_drawmap[i];
                 var branch_coordinates = [];
+                var station_id_to_branch_coordinates = {};
                 // Convert branch to coordinates
+                var coordinate_index = 0;
                 for (var j = 0; j < branch.length; j++) {
-                    branch_coordinates[j] = {"x": branch[j].location[0], "y": branch[j].location[1]};
+                    // Push the station location.
+                    branch_coordinates.push({"x": branch[j].location[0], "y": branch[j].location[1]});
+                    station_id_to_branch_coordinates[branch[j].sid] = coordinate_index;
+                    coordinate_index += 1;
+                    if (j < branch.length - 1) {
+                        // Check for station pair.
+                        var station_1 = branch[j];
+                        var station_2 = branch[j+1];
+                        if (this.has_station_pair(station_1, station_2)) {
+                            var spr = this.get_station_pair(station_1, station_2);
+                            var station_pair = spr[0];
+                            // Push pins.
+                            var pins_to_push = [];
+                            for (var k = 0; k < station_pair.pins.length; k++) {
+                                pins_to_push.push({"x": station_pair.pins[k].location[0], "y": station_pair.pins[k].location[1]});
+                                //branch_coordinates.push({"x": station_pair.pins[k].location[0], "y": station_pair.pins[k].location[1]});
+                                coordinate_index += 1;
+                            }
+                            if (spr[1]) {
+                                pins_to_push = pins_to_push.reverse();
+                            }
+                            branch_coordinates.push.apply(branch_coordinates, pins_to_push);
+                        }
+                    }
                 }
-                var spline = new BezierSpline({points: branch_coordinates, sharpness: 0.6});
+                var spline = new BezierSpline({points: branch_coordinates, sharpness: BEZIER_SHARPNESS, duration: 5});
                 //console.log(spline);
                 
                 for (var j = 0; j < branch.length - 1; j++) {
@@ -1340,18 +1257,40 @@ class TransitUI {
                         var station_pair_polarity = spr[1];
                     } else {
                         var station_pair = new StationPair([station_1, station_2]);
-                        if (station_1.sid > station_2.sid) {
-                            station_pair.draw_inverted = true;
-                        }
                         this.station_pairs.push(station_pair);
                         var station_pair_polarity = 0;
                     }
-                    if (station_pair_polarity == 0) {
-                        station_pair.add_control_points(line, [new BezierControlPoint(spline.controls[j][1].x, spline.controls[j][1].y), new BezierControlPoint(spline.controls[j+1][0].x, spline.controls[j+1][0].y)]);
+                    var bci = station_id_to_branch_coordinates[station_1.sid];
+                    var bci_end = station_id_to_branch_coordinates[station_2.sid];
+                    
+                    var sss = [];
+                    for (var k = 0; k < bci_end-bci; k++) {
+                        if (bci+k+1 <= spline.centers.length) {
+                            var centers = [];
+                            var controls = [];
+                            centers.push(new BezierCenter(branch_coordinates[bci+k].x, branch_coordinates[bci+k].y));
+                            if (station_pair_polarity == 0) {
+                                controls.push(new BezierControlPoint(spline.controls[bci+k][1].x, spline.controls[bci+k][1].y));
+                                controls.push(new BezierControlPoint(spline.controls[bci+k+1][0].x, spline.controls[bci+k+1][0].y));
+                            } else {
+                                controls.push(new BezierControlPoint(spline.controls[bci+k][1].x, spline.controls[bci+k][1].y));
+                                controls.push(new BezierControlPoint(spline.controls[bci+k+1][0].x, spline.controls[bci+k+1][0].y));
+                            }
+                            centers.push(new BezierCenter(branch_coordinates[bci+k+1].x, branch_coordinates[bci+k+1].y));
+                            if (station_pair_polarity == 1) {
+                                centers = centers.reverse();
+                                controls = controls.reverse();
+                            }
+                            var ss = new SplineSegment(controls, centers);
+                            sss.push(ss);
+                        }
+                        
                     }
                     if (station_pair_polarity == 1) {
-                        station_pair.add_control_points(line, [new BezierControlPoint(spline.controls[j+1][0].x, spline.controls[j+1][0].y), new BezierControlPoint(spline.controls[j][1].x, spline.controls[j][1].y)]);
+                        sss = sss.reverse();
                     }
+                    var lss = new LineSplineSegment(line, sss);
+                    station_pair.add_line_spline_segment(lss);
                     
                     station_pair.generate_paths();
                     station_pairs_to_draw.push(station_pair);
@@ -1367,12 +1306,8 @@ class TransitUI {
             // Draw new station pairs.
             for (var i = 0; i < station_pairs_to_draw.length; i++) {
                 station_pairs_to_draw[i].draw();
+                if (mm) station_pairs_to_draw[i].draw_pins();
             }
-        }
-
-        // Bring station marker layer to front.
-        if (btf) {
-            //this.station_marker_layer.bringToFront();
         }
     }
     
@@ -1420,7 +1355,9 @@ class TransitUI {
             var station_pair = this.station_pairs[i];
             if (this.active_service.get_station_by_id(station_pair.stations[0].sid) == null || 
                 this.active_service.get_station_by_id(station_pair.stations[1].sid) == null ||
-                this.active_service.has_edge_for_stations(station_pair.stations[0], station_pair.stations[1]) == false) {
+                this.active_service.has_edge_for_stations(station_pair.stations[0], station_pair.stations[1]) == false ||
+                station_pair.lines().length == 0) {
+                station_pair.undraw_pins();
                 this.station_pairs.splice(i,1);
             }
         }
@@ -1457,30 +1394,113 @@ class TransitUI {
         // Bring station layer to front.
         //this.station_marker_layer.bringToFront();
     }
+    
+    pin_projection(lat, lng) {
+        var best_p = null;
+        var best_distance = -1;
+        var best_station_pair = null;
+        var best_sid = -1;
+        var sids_for_showing_pins = [];
+        for (var j = 0; j < this.station_pairs.length; j++) {
+            var station_pair = this.station_pairs[j];
+            var p = station_pair.project_pin(lat, lng);
+            if (p != null) {
+                if (best_p == null || p.d < best_distance) {
+                    best_p = p;
+                    best_distance = p.d;
+                    best_sid = station_pair.sid;
+                    best_station_pair = station_pair;
+                }
+                if (p.d < PIN_DISTANCE_TO_SHOW_PINS) {
+                    sids_for_showing_pins.push(station_pair.sid);
+                }
+                
+                if (DEBUG_PIN_PROJECTIONS) {
+                    var weight = 1;
+                    if (p.d < PIN_DISTANCE_TO_SHOW_PINS) weight = 2;
+                    var l = L.polyline([L.latLng([p.x, p.y]), L.latLng(lat, lng)], {weight: weight, color: '#00f'});
+                    this.preview_path_layer.addLayer(l);
+                }
+        }
+        }
+            
+        var show_pin_icon = false;
+        if (best_p != null) show_pin_icon = best_p.d < PIN_DISTANCE_MIN;
+        if (DEBUG_PIN_PROJECTIONS && best_p != null) {
+            var l = L.polyline([L.latLng([best_p.x, best_p.y]), L.latLng(lat, lng)], {weight: 1, color: '#f00'});
+            this.preview_path_layer.addLayer(l);
+        }
+        if (show_pin_icon) {
+            var nearest_pin_distance = best_station_pair.distance_to_nearest_pin(lat, lng);
+            //console.log(nearest_pin_distance);
+            if (nearest_pin_distance > -1 && nearest_pin_distance < PIN_DISTANCE_FROM_EXISTING_PIN_MIN) show_pin_icon = false;
+        }
+        return [show_pin_icon, best_p, best_sid, sids_for_showing_pins];
+    }
 
     preview_line(line, lat, lng) {
         this.preview_clear();
+        
+        // Find nearest station?
+        var turf_e = {"type": "Feature", "properties": {}, "geometry": { "type": "Point", "coordinates": [lng, lat]}};
 
-        // Create dummy station and stop
-        var station = new Station("preview", [lat, lng], true);
-        var stop = new Stop(station, true);
+        // Find the nearest station
+        
+        var best_distance = 0;
+        var best_station = null;
+        for (var i = 0; i < NS_interface.active_service.stations.length; i++) {
+            var station = NS_interface.active_service.stations[i];
 
-        // Get the EdgeDelta from this new stop
-        var delta = this.get_insertion_result(line, stop);
+            var turf_s = {"type": "Feature", "properties": {}, "geometry": { "type": "Point", "coordinates": [station.location[1], station.location[0]]}};
+            var distance = turf.distance(turf_e, turf_s, "miles");
 
-        // Draw the edge path
-        for (var j = 0; j < delta.add.length; j++) {
-            var edge = delta.add[j];
-
-            var stop_points = [[edge.stops[0].station.location[0], edge.stops[0].station.location[1]], [edge.stops[1].station.location[0], edge.stops[1].station.location[1]]];
-            var edge_path = new EdgePath(edge.sid, stop_points, [], [], line.color_bg, 0.2);
-
-            this.preview_paths.push(edge_path);
-            this.preview_path_layer.addLayer(edge_path.path);
+            if (best_distance > distance || best_station == null) {
+                best_station = station;
+                best_distance = distance;
+            }
         }
+        
+        // Project onto curve?
+        var pin_projection = this.pin_projection(lat, lng);
+        //console.log(pin_projection);
+        
+        if (pin_projection[0] && best_distance > PIN_DISTANCE_FROM_STATION_MIN) {
+            if (!this.dragging_pin) {
+                var m = L.marker([pin_projection[1].x, pin_projection[1].y], {icon: PIN_ICON});
+                m.id = "pin-preview";
+                this.preview_line_pin_marker = m;
+                this.preview_path_layer.addLayer(m);
+            }
+        } else {
+            // Create dummy station and stop
+            var station = new Station("preview", [lat, lng], true);
+            var stop = new Stop(station, true);
 
-        // Bring station layer to front.
-        //this.station_marker_layer.bringToFront();
+            // Get the EdgeDelta from this new stop
+            var delta = this.get_insertion_result(line, stop);
+
+            // Draw the edge path
+            for (var j = 0; j < delta.add.length; j++) {
+                var edge = delta.add[j];
+
+                var stop_points = [[edge.stops[0].station.location[0], edge.stops[0].station.location[1]], [edge.stops[1].station.location[0], edge.stops[1].station.location[1]]];
+                var edge_path = new EdgePath(edge.sid, stop_points, [], [], line.color_bg, 0.2);
+
+                this.preview_paths.push(edge_path);
+                this.preview_path_layer.addLayer(edge_path.path);
+            }
+        }
+        
+        // Show pins for station pairs
+        //var station_pairs = this.get_station_pairs_for_line(line);
+        for (var j = 0; j < this.station_pairs.length; j++) {
+            var station_pair = this.station_pairs[j];
+            if (pin_projection[3].indexOf(station_pair.sid) > -1) {
+                station_pair.draw_pins();
+            } else {
+                station_pair.undraw_pins();
+            }
+        }
     }
     
     preview_transfer(lat, lng) {
@@ -1535,12 +1555,6 @@ class TransitUI {
                     this.preview_line(this.active_line, e.latlng.lat, e.latlng.lng);
                 }
             }
-            if (this.active_tool == "line") {
-                if (this.active_line != null) {
-                    this.preview_station(e.latlng.lat, e.latlng.lng);
-                    //this.preview_station_pair(e.latlng.lat, e.latlng.lng);
-                }
-            }
             if (this.active_tool == "transfer") {
                 this.preview_transfer(e.latlng.lat, e.latlng.lng);
             }
@@ -1583,224 +1597,6 @@ class TransitUI {
             }
         }
         this.bezier_layer.addLayer(L.polyline(polyline_latlngs, {color: 'red', weight: 1, dashArray: '2,2'}));
-    }
-    /*
-    preview_station_pair(lat, lng) {
-        this.preview_clear();
-        
-        var turf_e = {"type": "Feature", "properties": {}, "geometry": { "type": "Point", "coordinates": [lng, lat]}};
-
-        // Find the nearest station_pair
-        var best_distance = 0;
-        var best_pair = null;
-        var best_pair_markers = null;
-        for (var i = 0; i < this.station_pairs.length; i++) {
-            var pair = this.station_pairs[i];
-            var center_lng = (pair.stations[0].location[1] + pair.stations[1].location[1])/2.0;
-            var center_lat = (pair.stations[0].location[0] + pair.stations[1].location[0])/2.0;
-
-            var turf_s = {"type": "Feature", "properties": {}, "geometry": { "type": "Point", "coordinates": [center_lng, center_lat]}};
-            var distance = turf.distance(turf_e, turf_s, "miles");
-
-            if (best_distance > distance || best_pair == null) {
-                best_pair = pair;
-                best_distance = distance;
-            }
-        }
-        var marker_index = 0;
-        
-        if (best_pair != null) {
-            // Create pair highlighter
-            //var pair_highlight = best_pair.average_path();
-            //this.preview_path_layer.addLayer(pair_highlight);
-            
-            best_pair_markers = best_pair.markers();
-            this.draw_bezier_rep(best_pair, 2, best_pair.stations[0], false);
-            
-            for (var i = 0; i < best_pair_markers.length; i++) {
-                best_pair_markers[i].marker.on('click', function(event) {
-                    
-
-                });
-                best_pair_markers[i].marker.on('mousedown', function (event) {
-                    NS_interface.preview_paths_enabled = false;
-                    console.log("clicked control point");
-                    NS_interface.moving_control_point = this;
-                    NS_interface.moving_control_point_index = this.mcp_index;
-                    NS_interface.moving_control_point_sp_id = this.sp_id;
-            
-                    NS_interface.map.dragging.disable();
-                    let {lat: circleStartingLat, lng: circleStartingLng} = this._latlng;
-                    let {lat: mouseStartingLat, lng: mouseStartingLng} = event.latlng;
-
-                    NS_interface.map.on('mousemove', function(event) {
-                        console.log("control point mousemove");
-                        let {lat: mouseNewLat, lng: mouseNewLng} = event.latlng;
-                        let latDifference = mouseStartingLat - mouseNewLat;
-                        let lngDifference = mouseStartingLng - mouseNewLng;
-
-                        let center = [circleStartingLat-latDifference, circleStartingLng-lngDifference];
-                        NS_interface.moving_control_point.setLatLng(center);
-                        NS_interface.move_control_point(best_pair, NS_interface.moving_control_point_index, center);
-                        NS_interface.draw_bezier_rep(best_pair, 2, best_pair.stations[0], false);
-                        var lines = best_pair.lines();
-                        for (var i = 0; i < lines.length; i++) {
-                            NS_interface.draw_line(lines[i], false);
-                        }
-                        NS_interface.station_marker_layer.bringToFront();
-                    });
-                });
-                this.preview_path_layer.addLayer(best_pair_markers[i].marker);
-            }
-        }
-        
-    }
-    */
-    move_control_point(station_pair, i, location) {
-        station_pair.user_control_points[i] = new BezierControlPoint(location[0], location[1]);
-        station_pair.user_modified = true;
-    }
-    
-    control_point_reflections(station_pair, index) {
-        var returned_points = [];
-        // Find reflected station pairs
-        for (var i = 0; i < this.station_pairs.length; i++) {
-            var candidate_pair = this.station_pairs[i];
-            if (candidate_pair.sid != station_pair.sid) {
-                if (index == 0) {
-                    if (station_pair.stations[0].sid == candidate_pair.stations[0].sid) {
-                        returned_points.push(candidate_pair.markers()[0]);
-                    }
-                    if (station_pair.stations[0].sid == candidate_pair.stations[1].sid) {
-                        returned_points.push(candidate_pair.markers()[1]);
-                    }
-                }
-                if (index == 1) {
-                    if (station_pair.stations[1].sid == candidate_pair.stations[0].sid) {
-                        returned_points.push(candidate_pair.markers()[0]);
-                    }
-                    if (station_pair.stations[1].sid == candidate_pair.stations[1].sid) {
-                        returned_points.push(candidate_pair.markers()[1]);
-                    }
-                }
-            }
-        }
-        return returned_points;
-    }
-
-    preview_station(lat, lng) {
-        this.preview_clear();
-        
-        /*
-        var pin_marker = L.circleMarker(L.latLng(lat, lng), {draggable: false, color: "black", opacity: 1.0, fillColor: "black", fillOpacity: 1.0, zIndexOffset: 100, pane: "stationMarkerPane"}).setRadius(4);
-        NS_interface.preview_line_pin_marker = pin_marker;
-        this.preview_paths.push(pin_marker);
-        this.preview_path_layer.addLayer(pin_marker);
-        */
-        
-        var turf_e = {"type": "Feature", "properties": {}, "geometry": { "type": "Point", "coordinates": [lng, lat]}};
-
-        // Find the nearest station
-        
-        var best_distance = 0;
-        var best_station = null;
-        for (var i = 0; i < NS_interface.active_service.stations.length; i++) {
-            var station = NS_interface.active_service.stations[i];
-
-            var turf_s = {"type": "Feature", "properties": {}, "geometry": { "type": "Point", "coordinates": [station.location[1], station.location[0]]}};
-            var distance = turf.distance(turf_e, turf_s, "miles");
-
-            if (best_distance > distance || best_station == null) {
-                best_station = station;
-                best_distance = distance;
-            }
-        }
-
-        //console.log(best_station);
-        if (best_station != null) {
-            
-            var station_marker = this.get_station_marker_by_station(best_station);
-            
-            this.nearest_station_to_mouse = best_station;
-            
-            // Create station highlighter
-            var station_highlight = L.circleMarker([best_station.location[0], best_station.location[1]], {radius: 10, color: "#A77"});
-            this.preview_paths.push(station_highlight);
-            this.preview_path_layer.addLayer(station_highlight);
-            
-            // Get station pairs containing this station
-            if (this.station_for_bezier_edits == best_station) {
-                this.bezier_layer.clearLayers();
-                var station_pairs = this.get_station_pairs(best_station);
-                for (var i = 0; i < station_pairs.length; i++) {
-                    var pair = station_pairs[i][0];
-                    this.draw_bezier_rep_for_station(best_station);
-                    var pair_highlight = pair.average_path();
-                    this.bezier_layer.addLayer(pair_highlight);
-                    var markers = pair.markers();
-                    for (var j = 0; j < markers.length; j++) {
-                        if (j == 0 && pair.stations[0].sid == best_station.sid || j == 1 && pair.stations[1].sid == best_station.sid) {
-                            markers[j].marker.on('click', function(e) {
-                                //this.station_for_bezier_edits = best_station;
-                            });
-                            markers[j].marker.on('mousedown', function (event) {
-                                NS_interface.preview_paths_enabled = false;
-                                NS_interface.moving_control_point = this;
-                                NS_interface.moving_control_point_index = this.mcp_index;
-                                NS_interface.moving_control_point_sp_id = this.sp_id;
-                                
-                                var reflections = NS_interface.control_point_reflections(NS_interface.get_station_pair_by_sp_id(this.sp_id), this.mcp_index);
-                                if (reflections.length == 1) {
-                                    NS_interface.moving_opp_control_point = reflections[0].marker;
-                                    NS_interface.moving_opp_control_point_index = reflections[0].sid;
-                                    NS_interface.moving_opp_control_point_sp_id = reflections[0].sp_id;
-                                } else {
-                                    NS_interface.moving_opp_control_point = null;
-                                    NS_interface.moving_opp_control_point_index = null;
-                                    NS_interface.moving_opp_control_point_sp_id = null;
-                                }
-                        
-                                NS_interface.map.dragging.disable();
-                                let {lat: circleStartingLat, lng: circleStartingLng} = this._latlng;
-                                let {lat: mouseStartingLat, lng: mouseStartingLng} = event.latlng;
-
-                                NS_interface.map.on('mousemove', function(event) {
-                                    let {lat: mouseNewLat, lng: mouseNewLng} = event.latlng;
-                                    let latDifference = mouseStartingLat - mouseNewLat;
-                                    let lngDifference = mouseStartingLng - mouseNewLng;
-
-                                    let center = [circleStartingLat-latDifference, circleStartingLng-lngDifference];
-                                    NS_interface.moving_control_point.setLatLng(center);
-                                    var p = NS_interface.get_station_pair_by_sp_id(NS_interface.moving_control_point_sp_id);
-                                    NS_interface.move_control_point(p, NS_interface.moving_control_point_index, center);
-                                    
-                                    if (NS_interface.moving_opp_control_point != null) {
-                                        var opp_center_lat = NS_interface.station_for_bezier_edits.location[0]*2 - center[0];
-                                        var opp_center_lng = NS_interface.station_for_bezier_edits.location[1]*2 - center[1];
-                                        var opp_center = [opp_center_lat, opp_center_lng];
-                                        NS_interface.moving_opp_control_point.setLatLng(opp_center);
-                                        var p = NS_interface.get_station_pair_by_sp_id(NS_interface.moving_opp_control_point_sp_id);
-                                        NS_interface.move_control_point(p, NS_interface.moving_opp_control_point_index, opp_center);
-                                    }
-                                    
-                                    NS_interface.bezier_layer.clearLayers();
-                                    NS_interface.draw_bezier_rep_for_station(best_station);
-                                    var lines = p.lines();
-                                    for (var k = 0; k < lines.length; k++) {
-                                        NS_interface.draw_line(lines[k], false, true);
-                                    }
-                                    //NS_interface.station_marker_layer.bringToFront();
-                                });
-                            });
-                            this.bezier_layer.addLayer(markers[j].marker);
-                        }
-                    }
-                }
-            }
-        }
-
-        // Bring station layer to front.
-        //this.station_marker_layer.bringToFront();
     }
 
     update_line_diagram() {
@@ -2065,19 +1861,7 @@ class TransitUI {
     }
     
     settings() {
-        var station_pair_json = [];
-        for (var i = 0; i < this.station_pairs.length; i++) {
-            var station_pair = this.station_pairs[i];
-            if (station_pair.user_modified) {
-                var cps = [];
-                for (var j = 0; j < station_pair.user_control_points.length; j++) {
-                    var cp = station_pair.user_control_points[j];
-                    cps.push([cp.lat, cp.lng]);
-                }
-                var sp_json = {'svc': this.active_service.sid.toString(), 's1': station_pair.stations[0].sid.toString(), 's2': station_pair.stations[1].sid.toString(), 'cps': cps};
-                station_pair_json.push(sp_json);
-            }
-        }
+        var station_pair_json = this.station_pairs;
         return {"station_pairs": station_pair_json};
     }
     
@@ -2136,7 +1920,14 @@ class LineDelta {
 
 function handle_map_click(e) {
     if (NS_interface.active_line != null && NS_interface.active_tool == "station") {
-        NS_interface.add_new_station(e.latlng.lat, e.latlng.lng);
+        var pp = NS_interface.pin_projection(e.latlng.lat, e.latlng.lng);
+        if (!pp[0]) {
+            NS_interface.add_new_station(e.latlng.lat, e.latlng.lng);
+        } else {
+            console.log("adding pin");
+            var sp = NS_interface.get_station_pair_by_sp_id(pp[2]);
+            sp.add_pin(pp[1].x, pp[1].y);
+        }
     }
     if (NS_interface.active_tool == "transfer") {
         NS_interface.active_tool = "station";

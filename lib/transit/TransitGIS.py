@@ -10,6 +10,10 @@ import copy
 import Transit
 import ConfigParser
 
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../pyroutelib2')))
+from route import *
+
 config = ConfigParser.RawConfigParser()
 config.read(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'settings.cfg')))
 DGGRID_HOST = config.get('dggrid', 'host')
@@ -249,6 +253,33 @@ def mapzen_decode(encoded):
     #hand back the list of coordinates
     return decoded
 
+def valhalla_route(station_1_lat, station_1_lng, station_2_lat, station_2_lng):
+    
+    locations = []
+    locations.append({"lat": station_1_lat, "lon": station_1_lng, "type": "break"})
+    locations.append({"lat": station_2_lat, "lon": station_2_lng, "type": "break"})
+    
+    post_data = {
+                "locations": locations,
+                "costing": "auto_shorter",
+                "directions_options": {"units": "miles"}
+            }
+    
+    valhalla_uri = "http://localhost:8002/route"
+    print post_data
+    
+    geocode = requests.post(valhalla_uri, data = json.dumps(post_data))
+    geocode_content = json.loads(geocode.content)
+    #print json.dumps(geocode_content)
+    
+    legs_encoded = geocode_content["trip"]["legs"]
+    
+    legs_decoded = []
+    for leg in legs_encoded:
+        legs_decoded.append(mapzen_decode(leg["shape"]))
+    
+    return legs_decoded
+
 def mapzen_route(service, line):
     
     locations = []
@@ -266,3 +297,34 @@ def mapzen_route(service, line):
     print mapzen_decode(legs[0]["shape"])
     
     return 0
+
+def osm_route(service, line):
+    
+    osm_data = LoadOsm("car")
+    #osm_data.loadOsm("nyc.osm")
+    router = Router(osm_data)
+        
+    for i in range(1, len(line.stops)):
+        stop_1 = line.stops[i-1]
+        stop_2 = line.stops[i]
+        station_1 = service.find_station(stop_1.station_id)
+        station_2 = service.find_station(stop_2.station_id)
+        location_1 = station_1.location
+        location_2 = station_2.location
+
+        node_1 = osm_data.findNode(location_1[0], location_1[1])
+        node_2 = osm_data.findNode(location_2[0], location_2[1])
+
+        print "Routing from %d to %d" % (node_1, node_2)
+        result, route = router.doRoute(node_1, node_2)
+
+        if result == 'success':
+            # list the nodes
+            print(route)
+
+            # list the lat/long
+            for i in route:
+                node = osm_data.rnodes[i]
+                print("%d: %f,%f" % (i, node[0], node[1]))
+        else:
+            print("Failed (%s)" % result)

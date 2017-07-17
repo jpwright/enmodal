@@ -24,7 +24,7 @@ var MAX_TRANSFER_DISTANCE_MILES = 0.25;
 
 var USE_CURVED_TRACKS = true;
 var CURVE_OVERSHOOT = 0.5;
-var BEZIER_SHARPNESS = 0.6;
+var BEZIER_SHARPNESS = 0.4;
 
 var DGGRID_AREA = 0.0733633;
 var MAX_ZOOM = 16;
@@ -64,3 +64,21 @@ var TRANSIT_MODIFIERS = {
 
 // Custom lines
 var CUSTOM_LINE_FIRST_INDEX = 97;
+
+var FOLLOW_STREET_MOVE_THRESH = 20
+
+var PIN_DISTANCE_MIN = 0.0005;
+var PIN_DISTANCE_FROM_STATION_MIN = 0.05;
+var PIN_DISTANCE_TO_SHOW_PINS = 0.01;
+var PIN_DISTANCE_FROM_EXISTING_PIN_MIN = 40;
+
+var BEZIER_LUT_STEPS = 100;
+
+var PIN_ICON = L.icon({
+    iconUrl: 'static/img/pin.png',
+    iconSize: [30, 25],
+    iconAnchor: [15, 25]
+});
+
+var DEBUG_BEZIER_CONTROLS = false;
+var DEBUG_PIN_PROJECTIONS = false;

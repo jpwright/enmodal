@@ -287,30 +287,7 @@ def route_session_push():
     # Copy user settings
     # TODO clean this up!
     settings = jdl['settings']
-    sp_settings = settings['station_pairs']
-    for sp in sp_settings:
-        # Check that both stations exist
-        stations_found = 0
-        stations = []
-        
-        service_id = sp['svc']
-        station_id_1 = int(sp['s1'])
-        station_id_2 = int(sp['s2'])
-        ucp_0_lat = float(sp['cps'][0][0])
-        ucp_0_lng = float(sp['cps'][0][1])
-        ucp_1_lat = float(sp['cps'][1][0])
-        ucp_1_lng = float(sp['cps'][1][1])
-
-        for s in m.services:
-            if service_id == str(s.sid):
-                # Look for matching station.
-                for station in s.stations:
-                    if (station_id_1 == station.sid) or (station_id_2 == station.sid):
-                        stations_found += 1
-                        stations.append(station)
-
-        if stations_found == 2:
-            m.settings.set_user_control_points(station_id_1, station_id_2, ucp_0_lat, ucp_0_lng, ucp_1_lat, ucp_1_lng)
+    m.settings.from_json(settings)
 
     return json.dumps({"result": "OK"})
 
@@ -725,40 +702,21 @@ def route_clear_settings():
     m = session_manager.auth_by_key(h).session.map
     m.settings = TransitSettings.Settings()
 
-@app.route('/station-pair-info')
-def route_station_pair_info():
+@app.route('/street-path')
+def route_street_path():
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
     if e:
         return e
 
     service_id = request.args.get('service-id')
-    station_id_1 = int(request.args.get('station-id-1'))
-    station_id_2 = int(request.args.get('station-id-2'))
-    ucp_0_lat = float(request.args.get('ucp-0-lat'))
-    ucp_0_lng = float(request.args.get('ucp-0-lng'))
-    ucp_1_lat = float(request.args.get('ucp-1-lat'))
-    ucp_1_lng = float(request.args.get('ucp-1-lng'))
+    station_1_lat = float(request.args.get('station-1-lat'))
+    station_1_lng = float(request.args.get('station-1-lng'))
+    station_2_lat = float(request.args.get('station-2-lat'))
+    station_2_lng = float(request.args.get('station-2-lng'))
+    
+    return json.dumps(TransitGIS.valhalla_route(station_1_lat, station_1_lng, station_2_lat, station_2_lng))
 
-    # Check that both stations exist
-    stations_found = 0
-    stations = []
-
-    m = session_manager.auth_by_key(h).session.map
-    for s in m.services:
-        if service_id == str(s.sid):
-            # Look for matching station.
-            for station in s.stations:
-                if (station_id_1 == station.sid) or (station_id_2 == station.sid):
-                    stations_found += 1
-                    stations.append(station)
-
-    #if stations_found != 2:
-        #return json.dumps({"error": "Invalid ID"})
-
-    m.settings.set_user_control_points(station_id_1, station_id_2, ucp_0_lat, ucp_0_lng, ucp_1_lat, ucp_1_lng)
-
-    return json.dumps({"result": "OK"})
 
 def check_for_session_errors(h):
     if session_manager.auth_by_key(h) is None:

@@ -4,6 +4,19 @@ function delay(ms) {
     });
 }
 
+function debug_station_pairs() {
+    for (var i = 0; i < NS_interface.station_pairs.length; i++) {
+        var station_pair = NS_interface.station_pairs[i];
+        var s = "SP ("+station_pair.sid.toString()+") from "+station_pair.stations[0].name+" to "+station_pair.stations[1].name+" on lines ";
+        var lines = station_pair.lines();
+        for (var j = 0; j < lines.length; j++) {
+            s += lines[j].name;
+            if (j < lines.length-1) s += ", ";
+        }
+        console.log(s);
+    }
+}
+
 function run_transit_tests() {
     // Hide stuff
     $("#alpha-warning").hide();
@@ -174,7 +187,7 @@ function run_transit_tests() {
     var edge_6 = line_2.get_edge_by_stops([stop_4_2, stop_2_2]);
     var t10_c2 = edge_6.has_station(station_2) && edge_6.has_station(station_4);
     var t10_c3 = sp_4.stations.indexOf(station_2) > -1 && sp_4.stations.indexOf(station_4) > -1;
-    var sp_4_lines = [sp_4.line_control_points[0].line, sp_4.line_control_points[1].line];
+    var sp_4_lines = [sp_4.line_spline_segments[0].line, sp_4.line_spline_segments[1].line];
     var t10_c4 = sp_4_lines.indexOf(line_1) > -1 && sp_4_lines.indexOf(line_2) > -1;
     if (t10_c1 && t10_c2 && t10_c3 && t10_c4) {
         console.log("TEST-10 pass (add line to station, shared stretch)");
@@ -215,9 +228,9 @@ function run_transit_tests() {
     var sp_9 = NS_interface.get_station_pair(station_8, station_4)[0];
     var t12_c7 = sp_8.stations.indexOf(station_2) > -1 && sp_8.stations.indexOf(station_8) > -1;
     var t12_c8 = sp_9.stations.indexOf(station_8) > -1 && sp_9.stations.indexOf(station_4) > -1;
-    var sp_8_lines = [sp_8.line_control_points[0].line, sp_8.line_control_points[1].line];
+    var sp_8_lines = [sp_8.line_spline_segments[0].line, sp_8.line_spline_segments[1].line];
     var t12_c9 = sp_8_lines.indexOf(line_1) > -1 && sp_8_lines.indexOf(line_2) > -1;
-    var sp_9_lines = [sp_9.line_control_points[0].line, sp_9.line_control_points[1].line];
+    var sp_9_lines = [sp_9.line_spline_segments[0].line, sp_9.line_spline_segments[1].line];
     var t12_c10 = sp_9_lines.indexOf(line_1) > -1 && sp_9_lines.indexOf(line_2) > -1;
     if (t12_c1 && t12_c2 && t12_c3 && t12_c4 && t12_c5 && t12_c6 && t12_c7 && t12_c8 && t12_c9 && t12_c10) {
         console.log("TEST-12 pass (add station, double shared stretch)");
@@ -244,9 +257,9 @@ function run_transit_tests() {
     var edge_11 = line_1.get_edge_by_stops([stop_8_1, stop_4]);
     var t14_c2 = edge_10.has_station(station_2) && edge_10.has_station(station_8);
     var t14_c3 = edge_11.has_station(station_8) && edge_11.has_station(station_4);
-    var sp_8_lines = [sp_8.line_control_points[0].line, sp_8.line_control_points[1].line];
+    var sp_8_lines = [sp_8.line_spline_segments[0].line, sp_8.line_spline_segments[1].line];
     var t14_c4 = sp_8_lines.indexOf(line_1) > -1 && sp_8_lines.indexOf(line_2) > -1;
-    var sp_9_lines = [sp_9.line_control_points[0].line, sp_9.line_control_points[1].line];
+    var sp_9_lines = [sp_9.line_spline_segments[0].line, sp_9.line_spline_segments[1].line];
     var t14_c5 = sp_9_lines.indexOf(line_1) > -1 && sp_9_lines.indexOf(line_2) > -1;
     var t14_c6 = NS_interface.get_station_pair(station_2, station_4) == null;
     if (t14_c1 && t14_c2 && t14_c3 && t14_c4 && t14_c5 && t14_c6) {
@@ -262,9 +275,9 @@ function run_transit_tests() {
     var t15_c2 = line_2.get_edge_by_stops([stop_2_2, stop_8]) == null && line_2.get_edge_by_stops([stop_8, stop_4_2]) == null;
     var edge_12 = line_2.get_edge_by_stops([stop_2_2, stop_4_2]);
     var t15_c3 = edge_12.has_station(station_2) && edge_12.has_station(station_4);
-    var sp_8_lines = [sp_8.line_control_points[0].line, sp_8.line_control_points[1].line];
+    var sp_8_lines = [sp_8.line_spline_segments[0].line, sp_8.line_spline_segments[1].line];
     var t15_c4 = sp_8_lines.indexOf(line_1) > -1 && sp_8_lines.indexOf(line_2) > -1;
-    var sp_9_lines = [sp_9.line_control_points[0].line, sp_9.line_control_points[1].line];
+    var sp_9_lines = [sp_9.line_spline_segments[0].line, sp_9.line_spline_segments[1].line];
     var t15_c5 = sp_9_lines.indexOf(line_1) > -1 && sp_9_lines.indexOf(line_2) > -1; 
     if (t15_c1 && t15_c2 && t15_c3 && t15_c4 && t15_c5) {
         console.log("TEST-15 pass (remove extra line from station)");
@@ -281,7 +294,7 @@ function run_transit_tests() {
     var t16_c3 = edge_13.has_station(station_2) && edge_13.has_station(station_4);
     var t16_c4 = NS_interface.get_station_pair(station_2, station_8) == null && NS_interface.get_station_pair(station_8, station_4) == null;
     var sp_10 = NS_interface.get_station_pair(station_2, station_4)[0];
-    var sp_10_lines = [sp_10.line_control_points[0].line, sp_10.line_control_points[1].line];
+    var sp_10_lines = [sp_10.line_spline_segments[0].line, sp_10.line_spline_segments[1].line];
     var t16_c5 = sp_10_lines.indexOf(line_1) > -1 && sp_10_lines.indexOf(line_2) > -1;
     var t16_c6 = NS_map.primary_service().stations.length == 6;
     var t16_c7 = NS_map.primary_service().stations.indexOf(station_8) == -1;
@@ -299,12 +312,12 @@ function run_transit_tests() {
     var t17_c2 = line_1.get_edge_by_stops([stop_2, stop_4]) == null && line_1.get_edge_by_stops([stop_4, stop_5]) == null;
     var edge_13 = line_1.get_edge_by_stops([stop_2, stop_5]);
     var t17_c3 = edge_13.has_station(station_2) && edge_13.has_station(station_5);
-    var t17_c4 = sp_10.line_control_points.length == 1;
-    var sp_10_lines = [sp_10.line_control_points[0].line];
+    var t17_c4 = sp_10.line_spline_segments.length == 1;
+    var sp_10_lines = [sp_10.line_spline_segments[0].line];
     var t17_c5 = sp_10_lines.indexOf(line_1) == -1 && sp_10_lines.indexOf(line_2) > -1;
     var sp_11 = NS_interface.get_station_pair(station_2, station_5)[0];
-    var t17_c6 = sp_11.line_control_points.length == 1;
-    var sp_11_lines = [sp_11.line_control_points[0].line];
+    var t17_c6 = sp_11.line_spline_segments.length == 1;
+    var sp_11_lines = [sp_11.line_spline_segments[0].line];
     var t17_c7 = sp_11_lines.indexOf(line_1) > -1;
     if (t17_c1 && t17_c2 && t17_c3 && t17_c4 && t17_c5 && t17_c6 && t17_c7) {
         console.log("TEST-17 pass (remove extra line from station)");
@@ -327,12 +340,12 @@ function run_transit_tests() {
     var t18_c8 = NS_interface.get_station_pair(station_2, station_3) == null && NS_interface.get_station_pair(station_2, station_5) == null;
     var t18_c9 = NS_interface.get_station_pair(station_2, station_6) == null && NS_interface.get_station_pair(station_2, station_4) == null;
     var sp_12 = NS_interface.get_station_pair(station_3, station_5)[0];
-    var t18_c10 = sp_12.line_control_points.length == 1;
-    var t18_c11 = sp_12.line_control_points[0].line == line_1;
+    var t18_c10 = sp_12.line_spline_segments.length == 1;
+    var t18_c11 = sp_12.line_spline_segments[0].line == line_1;
     var t18_c12 = sp_12.stations.indexOf(station_3) > -1 && sp_12.stations.indexOf(station_5) > -1;
     var sp_13 = NS_interface.get_station_pair(station_4, station_6)[0];
-    var t18_c13 = sp_13.line_control_points.length == 1;
-    var t18_c14 = sp_13.line_control_points[0].line == line_2;
+    var t18_c13 = sp_13.line_spline_segments.length == 1;
+    var t18_c14 = sp_13.line_spline_segments[0].line == line_2;
     var t18_c15 = sp_13.stations.indexOf(station_4) > -1 && sp_13.stations.indexOf(station_6) > -1;
     if (t18_c1 && t18_c2 && t18_c3 && t18_c4 && t18_c5 && t18_c6 && t18_c7 && t18_c8 && t18_c9 && t18_c10 && t18_c11 && t18_c12 && t18_c13 && t18_c14 && t18_c15) {
         console.log("TEST-18 pass (delete station and edges)");
