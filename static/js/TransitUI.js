@@ -27,6 +27,7 @@ class TransitUI {
         this.nearest_station_to_mouse = null;
         this.station_for_bezier_edits = null;
         this.moving_station_marker = null; // Station marker being dragged
+        this.station_to_merge = null; // Station to be merged with when moving station marker is released
         
         this.dragging_pin = false;
         this.station_pair_id_move_count_map = {};
@@ -65,10 +66,16 @@ class TransitUI {
             });
             if (this.moving_station_marker != null) {
                 console.log("updating moving station");
-                this.update_station_info(this.moving_station_marker.station);
-                this.moving_station_marker.update_tooltip();
-                this.moving_station_marker.generate_popup();
-                this.moving_station_marker.marker.openPopup();
+                if (this.station_to_merge != null) {
+                    this.merge_stations(this.moving_station_marker.station, this.station_to_merge);
+                    //this.get_station_marker_by_station(this.station_to_merge).clear_merge();
+                    this.station_to_merge = null;
+                } else {
+                    this.update_station_info(this.moving_station_marker.station);
+                    this.moving_station_marker.update_tooltip();
+                    this.moving_station_marker.generate_popup();
+                    this.moving_station_marker.marker.openPopup();
+                }
                 this.moving_station_marker = null;
                 this.purge_bad_transfers();
                 this.update_line_diagram();
@@ -91,7 +98,16 @@ class TransitUI {
                 //NS_interface.get_ridership();
             }
             if (NS_interface.hexagon_layer != "none") {
-                NS_interface.get_hexagons(false);
+                if (NS_interface.map.getZoom() >= MIN_ZOOM_FOR_HEXAGONS) {
+                    NS_interface.get_hexagons(false);
+                } else {
+                    $("#scale-boxes").empty();
+                    $("#scale-low").text("");
+                    $("#scale-mid").text("Zoom in to see data");
+                    $("#scale-high").text("");
+                    $("#scale-units").text("");
+                    $("#scale").show();
+                }
             }
         });
     }
@@ -370,6 +386,8 @@ class TransitUI {
 
                     let center = [circleStartingLat-latDifference, circleStartingLng-lngDifference];
                     station_marker.marker.setLatLng(center);
+                    station_marker.marker.closeTooltip();
+                    NS_interface.map.closePopup();
                     station_marker.station.move_to(center[0], center[1]);
 
                     //var lines = NS_interface.active_service.station_lines(station_marker.station);
@@ -390,6 +408,27 @@ class TransitUI {
                         station_pairs_to_draw[i].draw();
                     }
                     NS_interface.draw_transfers();
+                    // Find distance to other stations
+                    if (ALLOW_STATION_MERGING) {
+                        var mergeable = false;
+                        var m_px = NS_interface.map.latLngToLayerPoint(L.latLng(center[0], center[1]));
+                        for (var i = 0; i < NS_interface.active_service.stations.length; i++) {
+                            var station = NS_interface.active_service.stations[i];
+                            var s_px = NS_interface.map.latLngToLayerPoint(L.latLng(station.location[0], station.location[1]));
+                            var d = m_px.distanceTo(s_px);
+                            if (station.sid != station_marker.station.sid) {
+                                if (d < STATION_MERGE_THRESHOLD) {
+                                    NS_interface.get_station_marker_by_station(station).show_merge();
+                                    NS_interface.get_station_marker_by_station(station).marker.bringToFront();
+                                    NS_interface.station_to_merge = station;
+                                    mergeable = true;
+                                } else {
+                                    NS_interface.get_station_marker_by_station(station).clear_merge();
+                                }
+                            }
+                        }
+                        if (!mergeable) NS_interface.station_to_merge = null;
+                    }
                 }
             });
         });
@@ -422,26 +461,6 @@ class TransitUI {
         var stop;
         var line = this.active_line;
         
-        // Sync with server
-        $.ajax({ url: "station-add?i="+NS_session+"&service-id="+this.active_service.sid.toString()+"&station-id="+station.sid.toString()+"&lat="+lat+"&lng="+lng,
-            async: ASYNC_REQUIRED,
-            dataType: 'json',
-            success: function(data, status) {
-                station.name = data["name"];
-                if ("locality" in data) {
-                    station.locality = data["locality"];
-                }
-                if ("neighborhood" in data) {
-                    station.neighborhood = data["neighborhood"];
-                }
-                if ("region" in data) {
-                    station.region = data["region"];
-                }
-                // Update popup.
-                NS_interface.get_station_marker_by_station(station).generate_popup();
-                NS_interface.update_line_diagram();
-            }
-        });
         stop = new Stop(station);
         this.active_service.add_station(station);
         line.add_stop(stop);
@@ -496,22 +515,45 @@ class TransitUI {
             }
         }
         
-        if (INC_UPDATES) {
-            $.ajax({ url: "stop-add?i="+NS_session+"&service-id="+this.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&station-id="+station.sid.toString()+"&stop-id="+stop.sid.toString(),
-                async: ASYNC_REQUIRED,
-                dataType: 'json',
-                success: function(data, status) {
-                    for (var i = 0; i < best_edges.length; i++) {
-                        $.ajax({ url: "edge-add?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-1-id="+best_edges[i].stops[0].sid+"&stop-2-id="+best_edges[i].stops[1].sid+"&edge-id="+best_edges[i].sid.toString(),
-                            async: ASYNC_REQUIRED,
-                            dataType: 'json',
-                            success: function(data, status) {
-                            }
-                        });
-                    }
+        // Sync with server
+        $.ajax({ url: "station-add?i="+NS_session+"&service-id="+this.active_service.sid.toString()+"&station-id="+station.sid.toString()+"&lat="+lat+"&lng="+lng,
+            async: ASYNC_REQUIRED,
+            dataType: 'json',
+            success: function(data, status) {
+                station.name = data["name"];
+                if ("locality" in data) {
+                    station.locality = data["locality"];
                 }
-            });
-        }
+                if ("neighborhood" in data) {
+                    station.neighborhood = data["neighborhood"];
+                }
+                if ("region" in data) {
+                    station.region = data["region"];
+                }
+                // Update popup.
+                var station_marker = NS_interface.get_station_marker_by_station(station);
+                station_marker.generate_popup();
+                station_marker.update_tooltip();
+                NS_interface.update_line_diagram();
+                
+                if (INC_UPDATES) {
+                    $.ajax({ url: "stop-add?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&station-id="+station.sid.toString()+"&stop-id="+stop.sid.toString(),
+                        async: false,
+                        dataType: 'json',
+                        success: function(data, status) {
+                            for (var i = 0; i < best_edges.length; i++) {
+                                $.ajax({ url: "edge-add?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-1-id="+best_edges[i].stops[0].sid+"&stop-2-id="+best_edges[i].stops[1].sid+"&edge-id="+best_edges[i].sid.toString(),
+                                    async: ASYNC_REQUIRED,
+                                    dataType: 'json',
+                                    success: function(data, status) {
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
+            }
+        });
 
         this.create_station_marker(station);
         
@@ -524,6 +566,36 @@ class TransitUI {
         this.update_line_diagram();
         
         return station;
+    }
+    
+    merge_stations(station_to_remove, station_to_keep) {
+        // For all lines
+        for (var i = 0; i < this.active_service.lines.length; i++) {
+            var line = this.active_service.lines[i];
+            // find all stops with this station
+            for (var j = 0; j < line.stops.length; j++) {
+                var stop = line.stops[j];
+                if (stop.station.sid == station_to_remove.sid) {
+                    // change the stop's station to the new one
+                    stop.station = station_to_keep;
+                    if (INC_UPDATES) {
+                        $.ajax({ url: "stop-update-station?i="+NS_session+"&service-id="+this.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&station-id="+station_to_keep.sid.toString()+"&stop-id="+stop.sid.toString(),
+                            async: ASYNC_REQUIRED,
+                            dataType: 'json',
+                            success: function(data, status) {
+                            }
+                        });
+                    }
+                }
+            }
+        }
+        // remove station
+        this.remove_station(station_to_remove.sid);
+        // draw lines
+        var lines = this.active_service.station_lines(station_to_keep);
+        for (var i = 0; i < lines.length; i++) {
+            this.draw_line(lines[i], false, true);
+        }
     }
 
     update_station_info(station) {
@@ -747,15 +819,17 @@ class TransitUI {
                             spoke_stop = edge.stops[1];
                         }
                         if (spoke_stop.sid != central_stop.sid) {
-                            var new_edge = new Edge([central_stop, spoke_stop]);
-                            line.add_edge(new_edge);
-                            if (INC_UPDATES) {
-                                $.ajax({ url: "edge-add?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-1-id="+new_edge.stops[0].sid.toString()+"&stop-2-id="+new_edge.stops[1].sid.toString()+"&edge-id="+new_edge.sid.toString(),
-                                    async: ASYNC_REQUIRED,
-                                    dataType: 'json',
-                                    success: function(data, status) {
-                                    }
-                                });
+                            if (!line.path_between_stops(spoke_stop, central_stop)) {
+                                var new_edge = new Edge([central_stop, spoke_stop]);
+                                line.add_edge(new_edge);
+                                if (INC_UPDATES) {
+                                    $.ajax({ url: "edge-add?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-1-id="+new_edge.stops[0].sid.toString()+"&stop-2-id="+new_edge.stops[1].sid.toString()+"&edge-id="+new_edge.sid.toString(),
+                                        async: ASYNC_REQUIRED,
+                                        dataType: 'json',
+                                        success: function(data, status) {
+                                        }
+                                    });
+                                }
                             }
                         }
                     }
@@ -798,6 +872,22 @@ class TransitUI {
                                     }
                                 });
                             }
+                        }
+                    }
+                }
+                
+                // Check for self-edges
+                for (var l = 0; l < line.edges.length; l++) {
+                    var edge = line.edges[l];
+                    if (edge.stops[0].sid == edge.stops[1].sid) {
+                        line.remove_edge(edge);
+                        if (INC_UPDATES) {
+                            $.ajax({ url: "edge-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&edge-id="+edge.sid.toString(),
+                                async: ASYNC_REQUIRED,
+                                dataType: 'json',
+                                success: function(data, status) {
+                                }
+                            });
                         }
                     }
                 }
@@ -862,42 +952,45 @@ class TransitUI {
 
         var line = this.active_service.get_line_by_id(line_id);
         var station = this.active_service.get_station_by_id(station_id);
-        var stop = line.get_stop_by_station(station);
+        var stops = line.get_stops_by_station(station);
         var impacted_lines = this.active_service.station_lines(station);
         
         if (impacted_lines.length == 1) {
             this.remove_station(station_id);
             return 0;
         }
-            
-        line.remove_stop(stop);
         
-        if (INC_UPDATES) {
-            $.ajax({ url: "stop-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-id="+stop.sid.toString(),
-                async: ASYNC_REQUIRED,
-                dataType: 'json',
-                success: function(data, status) {
-                }
-            });
-        }
+        for (var i = 0; i < stops.length; i++) {
+            var stop = stops[i];
+            line.remove_stop(stop);
+            
+            if (INC_UPDATES) {
+                $.ajax({ url: "stop-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-id="+stop.sid.toString(),
+                    async: ASYNC_REQUIRED,
+                    dataType: 'json',
+                    success: function(data, status) {
+                    }
+                });
+            }
 
-        // Remove all edges that use this station.
+            // Remove all edges that use this station.
 
-        var impacted_edges = [];
-        for (var j = 0; j < line.edges.length; j++) {
-            var edge = line.edges[j];
-            if (edge.has_stop(stop)) {
-                impacted_edges.push(edge);
-                line.remove_edge(edge);
-                if (INC_UPDATES) {
-                    $.ajax({ url: "edge-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&edge-id="+edge.sid.toString(),
-                        async: ASYNC_REQUIRED,
-                        dataType: 'json',
-                        success: function(data, status) {
-                        }
-                    });
+            var impacted_edges = [];
+            for (var j = 0; j < line.edges.length; j++) {
+                var edge = line.edges[j];
+                if (edge.has_stop(stop)) {
+                    impacted_edges.push(edge);
+                    line.remove_edge(edge);
+                    if (INC_UPDATES) {
+                        $.ajax({ url: "edge-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&edge-id="+edge.sid.toString(),
+                            async: ASYNC_REQUIRED,
+                            dataType: 'json',
+                            success: function(data, status) {
+                            }
+                        });
+                    }
+                    j -= 1;
                 }
-                j -= 1;
             }
         }
 
@@ -1221,7 +1314,11 @@ class TransitUI {
                 for (var j = 0; j < branch.length; j++) {
                     // Push the station location.
                     branch_coordinates.push({"x": branch[j].location[0], "y": branch[j].location[1]});
-                    station_id_to_branch_coordinates[branch[j].sid] = coordinate_index;
+                    if (!(branch[j].sid in station_id_to_branch_coordinates)) {
+                        station_id_to_branch_coordinates[branch[j].sid] = [coordinate_index];
+                    } else {
+                        station_id_to_branch_coordinates[branch[j].sid].push(coordinate_index);
+                    }
                     coordinate_index += 1;
                     if (j < branch.length - 1) {
                         // Check for station pair.
@@ -1244,7 +1341,7 @@ class TransitUI {
                         }
                     }
                 }
-                var spline = new BezierSpline({points: branch_coordinates, sharpness: BEZIER_SHARPNESS, duration: 5});
+                var spline = new BezierSpline({points: branch_coordinates, sharpness: BEZIER_SHARPNESS, duration: 2});
                 //console.log(spline);
                 
                 for (var j = 0; j < branch.length - 1; j++) {
@@ -1260,8 +1357,8 @@ class TransitUI {
                         this.station_pairs.push(station_pair);
                         var station_pair_polarity = 0;
                     }
-                    var bci = station_id_to_branch_coordinates[station_1.sid];
-                    var bci_end = station_id_to_branch_coordinates[station_2.sid];
+                    var bci = station_id_to_branch_coordinates[station_1.sid][0];
+                    var bci_end = station_id_to_branch_coordinates[station_2.sid][0];
                     
                     var sss = [];
                     for (var k = 0; k < bci_end-bci; k++) {
@@ -1294,6 +1391,9 @@ class TransitUI {
                     
                     station_pair.generate_paths();
                     station_pairs_to_draw.push(station_pair);
+                    
+                    // Remove start index from station_id map
+                    station_id_to_branch_coordinates[station_1.sid].splice(0, 1);
                     
                     // Draw now, for debug only
                     //station_pair.draw();
@@ -1396,6 +1496,7 @@ class TransitUI {
     }
     
     pin_projection(lat, lng) {
+        var m_px = this.map.latLngToLayerPoint(L.latLng(lat, lng));
         var best_p = null;
         var best_distance = -1;
         var best_station_pair = null;
@@ -1411,13 +1512,14 @@ class TransitUI {
                     best_sid = station_pair.sid;
                     best_station_pair = station_pair;
                 }
-                if (p.d < PIN_DISTANCE_TO_SHOW_PINS) {
+                var d = m_px.distanceTo(this.map.latLngToLayerPoint(L.latLng(p.x, p.y)));
+                if (d < PIN_DISTANCE_TO_SHOW_PINS) {
                     sids_for_showing_pins.push(station_pair.sid);
                 }
                 
                 if (DEBUG_PIN_PROJECTIONS) {
                     var weight = 1;
-                    if (p.d < PIN_DISTANCE_TO_SHOW_PINS) weight = 2;
+                    if (d < PIN_DISTANCE_TO_SHOW_PINS) weight = 2;
                     var l = L.polyline([L.latLng([p.x, p.y]), L.latLng(lat, lng)], {weight: weight, color: '#00f'});
                     this.preview_path_layer.addLayer(l);
                 }
@@ -1425,7 +1527,13 @@ class TransitUI {
         }
             
         var show_pin_icon = false;
-        if (best_p != null) show_pin_icon = best_p.d < PIN_DISTANCE_MIN;
+        if (best_p != null) {
+            // Convert best_p distance to pixels
+            var m_px = this.map.latLngToLayerPoint(L.latLng(lat, lng));
+            var p_px = this.map.latLngToLayerPoint(L.latLng(best_p.x, best_p.y));
+            var d = m_px.distanceTo(p_px);
+            show_pin_icon = d < PIN_DISTANCE_MIN;
+        }
         if (DEBUG_PIN_PROJECTIONS && best_p != null) {
             var l = L.polyline([L.latLng([best_p.x, best_p.y]), L.latLng(lat, lng)], {weight: 1, color: '#f00'});
             this.preview_path_layer.addLayer(l);
@@ -1442,17 +1550,14 @@ class TransitUI {
         this.preview_clear();
         
         // Find nearest station?
-        var turf_e = {"type": "Feature", "properties": {}, "geometry": { "type": "Point", "coordinates": [lng, lat]}};
 
         // Find the nearest station
-        
+        var m_px = this.map.latLngToLayerPoint(L.latLng(lat, lng));
         var best_distance = 0;
         var best_station = null;
         for (var i = 0; i < NS_interface.active_service.stations.length; i++) {
             var station = NS_interface.active_service.stations[i];
-
-            var turf_s = {"type": "Feature", "properties": {}, "geometry": { "type": "Point", "coordinates": [station.location[1], station.location[0]]}};
-            var distance = turf.distance(turf_e, turf_s, "miles");
+            var distance = m_px.distanceTo(this.map.latLngToLayerPoint(L.latLng(station.location[0], station.location[1])));
 
             if (best_distance > distance || best_station == null) {
                 best_station = station;

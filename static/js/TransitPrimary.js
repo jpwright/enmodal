@@ -96,7 +96,7 @@ function initialize_game_state() {
         attributionControl: false
     }).setView([40.713, -74.006], START_ZOOM);
 
-    L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+    L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
             attribution: '',
             maxZoom: MAX_ZOOM,
             minZoom: MIN_ZOOM

@@ -5,6 +5,7 @@ class StationMarker {
         this.tooltip_options = {direction: 'top', offset: L.point(0, -5), className: 'station-marker-tooltip'};
         this.marker = this.generate_marker();
         this.popup = L.popup({'className': 'station-popup'});
+        this.merge_pending = false;
         this.marker.bindPopup(this.popup);
         this.generate_popup();
     }
@@ -47,6 +48,18 @@ class StationMarker {
             }
         });
         return marker;
+    }
+    
+    show_merge() {
+        this.marker.setRadius(this.marker.getRadius() + MARKER_MERGE_DELTA);
+        this.merge_pending = true;
+    }
+    
+    clear_merge() {
+        if (this.merge_pending) {
+            this.marker.setRadius(this.marker.getRadius() - MARKER_MERGE_DELTA);
+            this.merge_pending = false;
+        }
     }
 
     generate_popup() {

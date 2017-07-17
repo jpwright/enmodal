@@ -457,6 +457,33 @@ def route_stop_remove():
 
     return json.dumps({"error": "Invalid ID"})
 
+@app.route('/stop-update-station')
+def route_stop_update_station():
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
+    if e:
+        return e
+
+    service_id = request.args.get('service-id')
+    line_id = request.args.get('line-id')
+    station_id = request.args.get('station-id')
+    stop_id = request.args.get('stop-id')
+
+    m = session_manager.auth_by_key(h).session.map
+    for s in m.services:
+        if int(service_id) == s.sid:
+            # Look for matching line.
+            for line in s.lines:
+                if int(line_id) == line.sid:
+                    if s.has_station(int(station_id)):
+                        station = s.find_station(int(station_id))
+                    for stop in line.stops:
+                        if int(stop_id) == stop.sid:
+                            stop.station_id = int(station_id)
+                            return stop.to_json()
+
+    return json.dumps({"error": "Invalid ID"})
+
 @app.route('/line-add')
 def route_line_add():
     h = int(request.args.get('i'), 16)
@@ -574,12 +601,16 @@ def route_edge_add():
                     if stop_2_id == str(stop.sid):
                         stop_2 = stop
                         stops_found += 1
+            else:
+                return json.dumps({"error": "Line Not Found"})
 
             # Add the edge.
             if (stops_found == 2):
                 edge = Transit.Edge(int(edge_id), [stop_1_id, stop_2_id])
                 line_to_use.add_edge(edge)
                 return edge.to_json()
+            else:
+                return json.dumps({"error": "Stops Not Found"})
 
     return json.dumps({"error": "Invalid ID"})
 

@@ -167,13 +167,14 @@ class Line {
         return null;
     }
 
-    get_stop_by_station(station) {
+    get_stops_by_station(station) {
+        var stops = [];
         for (var i = 0; i < this.stops.length; i++) {
             if (this.stops[i].station.sid == station.sid) {
-                return this.stops[i];
+                stops.push(this.stops[i]);
             }
         }
-        return null;
+        return stops;
     }
 
     has_station(station) {
@@ -320,7 +321,7 @@ class Line {
             return [this.stops[0]];
         }
 
-        // Otherwise, we should have at least one edge to work with.
+        // Otherwise, we should probably have at least one edge to work with.
         for (var i = 0; i < this.edges.length; i++) {
             var edge = this.edges[i];
             for (var j = 0; j < edge.stops.length; j++) {
@@ -339,8 +340,49 @@ class Line {
                 }
             }
         }
+        
+        // If we still have no outer stops (maybe a loop in the line) just give the first stop.
+        if (outer_stops.length == 0) return [this.stops[0]];
 
         return outer_stops;
+    }
+    
+    path_between_stops(stop_1, stop_2) {
+        
+        var dfs_stops = [];
+        var dfs_path = [];
+        var dfs_path_found = false;
+        var visited = {};
+
+        var max_depth = 10;
+
+        // recursive DFS to find all the paths
+        function dfs(v, target, l) {
+            //console.log("DFS: node "+v.station.name);
+
+            // Add new stop.
+            dfs_stops.push(v);
+            if (v == target) {
+                dfs_path_found = true;
+                dfs_path = dfs_stops;
+            }
+
+            visited[v.sid] = 1;
+            var neighbors = l.neighbors(v);
+            for (var i = 0; i < neighbors.length; i++) {
+                var w = neighbors[i];
+                if (!visited[w.sid] && !dfs_path_found) {
+                    dfs(w, target, l);
+                }
+            }
+            if (!dfs_path_found) {
+                var v_i = dfs_stops.indexOf(v);
+                dfs_stops.splice(v_i, 1);
+            }
+        }
+        
+        dfs(stop_1, stop_2, this);
+        return dfs_path_found;
     }
 
     overlapping_stops(stop) {
@@ -522,12 +564,14 @@ class Service {
     
     has_edge_for_stations(station_1, station_2) {
         for (var i = 0; i < this.lines.length; i++) {
-            var stop_1 = this.lines[i].get_stop_by_station(station_1);
-            var stop_2 = this.lines[i].get_stop_by_station(station_2);
-            if (stop_1 != null && stop_2 != null) {
-                var edge = this.lines[i].get_edge_by_stops([stop_1, stop_2]);
-                if (edge != null) {
-                    return true;
+            var stops_1 = this.lines[i].get_stops_by_station(station_1);
+            var stops_2 = this.lines[i].get_stops_by_station(station_2);
+            for (var j = 0; j < stops_1.length; j++) {
+                for (var k = 0; k < stops_2.length; k++) {
+                    var edge = this.lines[i].get_edge_by_stops([stops_1[j], stops_2[k]]);
+                    if (edge != null) {
+                        return true;
+                    }
                 }
             }
         }
@@ -554,7 +598,7 @@ class Service {
             var line = this.lines[i];
             for (var j = 0; j < line.stops.length; j++) {
                 var stop = line.stops[j];
-                if (stop.station.sid == station.sid) {
+                if (stop.station.sid == station.sid && lines.indexOf(line) == -1) {
                     lines.push(line);
                 }
             }
