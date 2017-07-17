@@ -12,7 +12,6 @@ venv/*
 vm_setup.sh
 *.csv
 data/*
-*.png
 *.zip
 *.gz
 *.osm
