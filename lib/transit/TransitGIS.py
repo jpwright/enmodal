@@ -11,8 +11,6 @@ import Transit
 import ConfigParser
 
 import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../pyroutelib2')))
-from route import *
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'settings.cfg')))
