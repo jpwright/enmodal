@@ -8,6 +8,10 @@ enmodal is a browser-based service for transit planning and analysis. users can 
 
 This guide is written for Ubuntu (16.04.2). enmodal is not tested on other platforms, though it may be possible to get it running.
 
+### Create config file
+
+Copy `settings.cfg.example` to `settings.cfg` and edit fields to appropriate values.
+
 ### Install Postgres and PostGIS
 
     sudo apt-get install postgresql postgresql-contrib
