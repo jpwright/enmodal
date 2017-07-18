@@ -254,7 +254,7 @@ $(function() {
     });
 
     $(document).on("click", ".line-selector-option", function(e) {
-        NS_interface.update_line_selector(parseInt(e.target.id));
+        NS_interface.update_line_selector(parseInt(e.currentTarget.id));
     });
 
     $("#custom-line-save").click(function() {

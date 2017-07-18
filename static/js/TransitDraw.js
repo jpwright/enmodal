@@ -223,9 +223,10 @@ class SplineSegment {
 }
 
 class LineSplineSegment {
-    constructor(line, spline_segments) {
+    constructor(line, spline_segments, reverse) {
         this.line = line;
         this.spline_segments = spline_segments;
+        this.reverse = reverse;
     }
 }
 
@@ -487,7 +488,9 @@ class StationPair {
                 new_options.push([ss.centers[1].lat, ss.centers[1].lng]);
                 bezier_options.push.apply(bezier_options, new_options);
             }
-            var curve_options = {"color": color, "weight": weight, "opacity": opacity, "fill": false, "smoothFactor": 1.0, "offset": offset*(weight/2), "clickable": false, "pointer-events": "none", "className": "no-hover"};
+            var o = offset*(weight/2);
+            //if (lss.reverse) o = o*-1;
+            var curve_options = {"color": color, "weight": weight, "opacity": opacity, "fill": false, "smoothFactor": 1.0, "offset": o, "clickable": false, "pointer-events": "none", "className": "no-hover"};
             path = L.curve(bezier_options, curve_options);
         }
         return path;

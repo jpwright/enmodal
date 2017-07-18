@@ -1386,7 +1386,7 @@ class TransitUI {
                     if (station_pair_polarity == 1) {
                         sss = sss.reverse();
                     }
-                    var lss = new LineSplineSegment(line, sss);
+                    var lss = new LineSplineSegment(line, sss, station_pair_polarity);
                     station_pair.add_line_spline_segment(lss);
                     
                     station_pair.generate_paths();

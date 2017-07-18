@@ -874,6 +874,10 @@ ul.ui-autocomplete {
     color: #bbbbbb;
 }
 
+#map.leaflet-container {
+    background-color: #474749;
+}
+
 .leaflet-tooltip.station-marker-tooltip {
   width: auto;
   background: black;
