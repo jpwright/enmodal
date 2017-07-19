@@ -7,7 +7,7 @@ class Map {
      */
 
     constructor() {
-        this.sid = NS_id.id();
+        this.sid = _id_factory.id();
         this.services = [];
     }
 
@@ -17,6 +17,13 @@ class Map {
 
     primary_service() {
         return this.services[0];
+    }
+    
+    get_service_by_id(id) {
+        for (var i = 0; i < this.services.length; i++) {
+            if (this.services[i].sid == id) return this.services[i];
+        }
+        return null;
     }
 
     to_json() {
@@ -50,7 +57,7 @@ class Station {
 
     constructor(name, location, preview) {
         if (preview === undefined || preview == false) {
-            this.sid = NS_id.id();
+            this.sid = _id_factory.id();
         } else {
             this.sid = 0;
         }
@@ -92,7 +99,7 @@ class Stop {
 
     constructor(station, preview) {
         if (preview === undefined || preview == false) {
-            this.sid = NS_id.id();
+            this.sid = _id_factory.id();
         } else {
             this.sid = 0;
         }
@@ -128,7 +135,7 @@ class Line {
      */
 
     constructor(name) {
-        this.sid = NS_id.id();
+        this.sid = _id_factory.id();
         this.name = name;
         this.full_name = name;
         this.color_bg = "#000000";
@@ -438,7 +445,7 @@ class Edge {
 
     constructor(stops, preview) {
         if (preview === undefined || preview == false) {
-            this.sid = NS_id.id();
+            this.sid = _id_factory.id();
         } else {
             this.sid = 0;
         }
@@ -498,7 +505,7 @@ class Transfer {
      *  stations: array of connected Stations
      */
     constructor(stations) {
-        this.sid = NS_id.id();
+        this.sid = _id_factory.id();
         this.stations = stations;
     }
     
@@ -533,11 +540,12 @@ class Service {
      */
 
     constructor(name) {
-        this.sid = NS_id.id();
+        this.sid = _id_factory.id();
         this.name = name;
         this.lines = [];
         this.stations = [];
         this.transfers = [];
+        this.type = "";
     }
 
     add_line(l) {

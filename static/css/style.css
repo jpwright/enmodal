@@ -26,21 +26,21 @@ html, body {
     width: 100%;
 }
 
-#line-selector {
+.dropdown-selector {
     width: 100%;
 }
 
-#dropdown-line-button {
+button.dropdown-button {
     width: 100%;
     text-align: left;
     background-color: rgba(0, 0, 0, 0);
 }
 
-#dropdown-line-button:hover, #dropdown-line-button:focus {
+button.dropdown-button:hover, button.dropdown-button:focus {
     color: #FFF;
 }
 
-#dropdown-line-menu {
+.dropdown-menu {
     width: 100%;
 }
 
@@ -317,20 +317,13 @@ textarea.station-name-edit {
     margin: 2px;
 }
 
-#custom-line-container {
-    position: relative;
-    float: left;
-    left: 50%;
-    margin-top: 20px;
-}
-
 #custom-line-marker {
     position: relative;
     float: left;
     left: -50%;
 }
 
-#custom-line-options {
+.custom-options {
     width: 100%;
     font-size: small;
     position: relative;
@@ -349,12 +342,12 @@ textarea.station-name-edit {
     padding-top: 1em;
 }
 
-.custom-line-options-label {
+.custom-options-label {
     margin: 5px;
     line-height: 1.6em;
 }
 
-.custom-line-options-label input {
+.custom-options-label input {
     width: 75%;
     background-color: rgba(255, 255, 255, 0.2);
     border: 0;
@@ -362,17 +355,12 @@ textarea.station-name-edit {
     padding: 5px;
 }
 
-.custom-line-options-label input:focus {
+.custom-options-label input:focus {
     outline-width: 0;
 }
 
-.custom-line-options-label input.issue {
+.custom-options-label input.issue {
     background-color: rgba(50, 0, 0, 0.5);
-}
-
-#custom-line-add {
-    width: 75%;
-    text-align: center;
 }
 
 #route-header {
@@ -752,6 +740,13 @@ ul.ui-autocomplete {
     overflow-y: auto;
     overflow-x: visible;
 }
+
+#option-section-services {
+    height: 120px;
+    overflow-y: auto;
+    overflow-x: visible;
+}
+
 
 #option-section-route {
     display: block;

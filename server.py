@@ -182,12 +182,12 @@ def route_session_status():
         return_obj["private_key"] = '{:16x}'.format(a.session.private_key())
     return json.dumps(return_obj)
 
-@app.route('/session-links')
+@app.route('/session_links')
 def route_session_links():
 
     return json.dumps({})
 
-@app.route('/session-save')
+@app.route('/session_save')
 def route_session_save():
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
@@ -216,7 +216,7 @@ def route_session_save():
     else:
         return json.dumps({"error": "Non-editable session"})
 
-@app.route('/session-load')
+@app.route('/session_load')
 def route_session_load():
     h = int(request.args.get('i'), 16)
 
@@ -263,7 +263,7 @@ def route_session_load():
         return_obj["private_key"] = '{:16x}'.format(a.session.private_key())
     return json.dumps(return_obj)
 
-@app.route('/session-push', methods=['GET', 'POST'])
+@app.route('/session_push', methods=['GET', 'POST'])
 def route_session_push():
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
@@ -292,18 +292,18 @@ def route_session_push():
     return json.dumps({"result": "OK"})
 
 
-@app.route('/station-add')
+@app.route('/station_add')
 def route_station_add():
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
     if e:
         return e
 
-    service_id = request.args.get('service-id')
+    service_id = request.args.get('service_id')
 
     lat = request.args.get('lat')
     lng = request.args.get('lng')
-    station_id = request.args.get('station-id')
+    station_id = request.args.get('station_id')
     m = session_manager.auth_by_key(h).session.map
 
     for service in m.services:
@@ -314,7 +314,7 @@ def route_station_add():
 
     return json.dumps({"error": "Invalid ID"})
 
-@app.route('/lat-lng-info')
+@app.route('/lat_lng_info')
 def route_lat_lng_info():
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
@@ -327,15 +327,15 @@ def route_lat_lng_info():
     station = TransitGIS.station_constructor(0, lat, lng)
     return station.to_json()
 
-@app.route('/station-remove')
+@app.route('/station_remove')
 def route_station_remove():
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
     if e:
         return e
 
-    service_id = request.args.get('service-id')
-    station_id = request.args.get('station-id')
+    service_id = request.args.get('service_id')
+    station_id = request.args.get('station_id')
 
     m = session_manager.auth_by_key(h).session.map
     for s in m.services:
@@ -349,15 +349,15 @@ def route_station_remove():
 
     return json.dumps({"error": "Invalid ID"})
 
-@app.route('/station-update')
+@app.route('/station_update')
 def route_station_update():
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
     if e:
         return e
 
-    service_id = request.args.get('service-id')
-    station_id = request.args.get('station-id')
+    service_id = request.args.get('service_id')
+    station_id = request.args.get('station_id')
     name = request.args.get('name')
     location = request.args.get('location')
     streets = request.args.get('streets')
@@ -390,28 +390,28 @@ def route_station_update():
 
     return json.dumps({"error": "Invalid ID"})
 
-@app.route('/transfer-add')
+@app.route('/transfer_add')
 def route_transfer_add():
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
     if e:
         return e
 
-    service_id = request.args.get('service-id')
-    station_1_id = request.args.get('station-1-id')
-    station_2_id = request.args.get('station-2-id')
+    service_id = request.args.get('service_id')
+    station_1_id = request.args.get('station_1_id')
+    station_2_id = request.args.get('station_2_id')
 
-@app.route('/stop-add')
+@app.route('/stop_add')
 def route_stop_add():
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
     if e:
         return e
 
-    service_id = request.args.get('service-id')
-    line_id = request.args.get('line-id')
-    station_id = request.args.get('station-id')
-    stop_id = request.args.get('stop-id')
+    service_id = request.args.get('service_id')
+    line_id = request.args.get('line_id')
+    station_id = request.args.get('station_id')
+    stop_id = request.args.get('stop_id')
 
     m = session_manager.auth_by_key(h).session.map
     for service in m.services:
@@ -432,16 +432,16 @@ def route_stop_add():
 
     return json.dumps({"error": "Invalid ID"})
 
-@app.route('/stop-remove')
+@app.route('/stop_remove')
 def route_stop_remove():
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
     if e:
         return e
 
-    service_id = request.args.get('service-id')
-    line_id = request.args.get('line-id')
-    stop_id = request.args.get('stop-id')
+    service_id = request.args.get('service_id')
+    line_id = request.args.get('line_id')
+    stop_id = request.args.get('stop_id')
 
     m = session_manager.auth_by_key(h).session.map
     for s in m.services:
@@ -457,17 +457,17 @@ def route_stop_remove():
 
     return json.dumps({"error": "Invalid ID"})
 
-@app.route('/stop-update-station')
+@app.route('/stop_update_station')
 def route_stop_update_station():
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
     if e:
         return e
 
-    service_id = request.args.get('service-id')
-    line_id = request.args.get('line-id')
-    station_id = request.args.get('station-id')
-    stop_id = request.args.get('stop-id')
+    service_id = request.args.get('service_id')
+    line_id = request.args.get('line_id')
+    station_id = request.args.get('station_id')
+    stop_id = request.args.get('stop_id')
 
     m = session_manager.auth_by_key(h).session.map
     for s in m.services:
@@ -484,7 +484,7 @@ def route_stop_update_station():
 
     return json.dumps({"error": "Invalid ID"})
 
-@app.route('/line-add')
+@app.route('/line_add')
 def route_line_add():
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
@@ -492,12 +492,12 @@ def route_line_add():
         return e
 
     name = request.args.get('name')
-    full_name = request.args.get('full-name')
-    color_bg = request.args.get('color-bg')
-    color_fg = request.args.get('color-fg')
+    full_name = request.args.get('full_name')
+    color_bg = request.args.get('color_bg')
+    color_fg = request.args.get('color_fg')
 
-    service_id = request.args.get('service-id')
-    line_id = request.args.get('line-id')
+    service_id = request.args.get('service_id')
+    line_id = request.args.get('line_id')
 
     m = session_manager.auth_by_key(h).session.map
     line = Transit.Line(int(line_id), name)
@@ -512,19 +512,19 @@ def route_line_add():
 
     return json.dumps({"error": "Invalid ID"})
 
-@app.route('/line-update')
+@app.route('/line_update')
 def route_line_update():
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
     if e:
         return e
 
-    service_id = request.args.get('service-id')
-    line_id = request.args.get('line-id')
+    service_id = request.args.get('service_id')
+    line_id = request.args.get('line_id')
     name = request.args.get('name')
-    full_name = request.args.get('full-name')
-    color_bg = request.args.get('color-bg')
-    color_fg = request.args.get('color-fg')
+    full_name = request.args.get('full_name')
+    color_bg = request.args.get('color_bg')
+    color_fg = request.args.get('color_fg')
 
     m = session_manager.auth_by_key(h).session.map
     for s in m.services:
@@ -545,15 +545,15 @@ def route_line_update():
 
     return json.dumps({"error": "Invalid ID"})
 
-@app.route('/line-info')
+@app.route('/line_info')
 def route_line_info():
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
     if e:
         return e
 
-    line_id = request.args.get('line-id')
-    line_name = request.args.get('line-name')
+    line_id = request.args.get('line_id')
+    line_name = request.args.get('line_name')
 
     sid = request.args.get('id')
     m = session_manager.auth_by_key(h).session.map
@@ -564,18 +564,18 @@ def route_line_info():
 
     return json.dumps({"error": "Invalid ID"})
 
-@app.route('/edge-add')
+@app.route('/edge_add')
 def route_edge_add():
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
     if e:
         return e
 
-    service_id = request.args.get('service-id')
-    line_id = request.args.get('line-id')
-    stop_1_id = request.args.get('stop-1-id')
-    stop_2_id = request.args.get('stop-2-id')
-    edge_id = request.args.get('edge-id')
+    service_id = request.args.get('service_id')
+    line_id = request.args.get('line_id')
+    stop_1_id = request.args.get('stop_1_id')
+    stop_2_id = request.args.get('stop_2_id')
+    edge_id = request.args.get('edge_id')
 
     if (stop_1_id == stop_2_id):
         return json.dumps({"error": "Duplicate Stop IDs"})
@@ -614,16 +614,16 @@ def route_edge_add():
 
     return json.dumps({"error": "Invalid ID"})
 
-@app.route('/edge-remove')
+@app.route('/edge_remove')
 def route_edge_remove():
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
     if e:
         return e
 
-    service_id = request.args.get('service-id')
-    line_id = request.args.get('line-id')
-    edge_id = request.args.get('edge-id')
+    service_id = request.args.get('service_id')
+    line_id = request.args.get('line_id')
+    edge_id = request.args.get('edge_id')
 
     m = session_manager.auth_by_key(h).session.map
     for s in m.services:
@@ -639,7 +639,7 @@ def route_edge_remove():
 
     return json.dumps({"error": "Invalid ID"})
 
-@app.route('/service-add')
+@app.route('/service_add')
 def route_service_add():
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
@@ -647,7 +647,7 @@ def route_service_add():
         return e
 
     name = request.args.get('name')
-    service_id = request.args.get('service-id')
+    service_id = request.args.get('service_id')
 
     m = session_manager.auth_by_key(h).session.map
     service = Transit.Service(int(service_id), name)
@@ -655,7 +655,7 @@ def route_service_add():
 
     return service.to_json()
 
-@app.route('/service-info')
+@app.route('/service_info')
 def route_service_info():
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
@@ -670,7 +670,7 @@ def route_service_info():
 
     return json.dumps({"error": "Invalid ID"})
 
-@app.route('/map-info')
+@app.route('/map_info')
 def route_map_info():
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
@@ -684,7 +684,7 @@ def route_map_info():
 def route_graphviz():
     return app.send_static_file('graphviz.html')
 
-@app.route('/get-hexagons')
+@app.route('/get_hexagons')
 @gzipped
 def route_get_hexagons():
     h = int(request.args.get('i'), 16)
@@ -692,10 +692,10 @@ def route_get_hexagons():
     if e:
         return e
 
-    lat_min = float(request.args.get('lat-min'))
-    lng_min = float(request.args.get('lng-min'))
-    lat_max = float(request.args.get('lat-max'))
-    lng_max = float(request.args.get('lng-max'))
+    lat_min = float(request.args.get('lat_min'))
+    lng_min = float(request.args.get('lng_min'))
+    lat_max = float(request.args.get('lat_max'))
+    lng_max = float(request.args.get('lng_max'))
     
     #bb = TransitGIS.BoundingBox(m)
     bb = TransitGIS.BoundingBox()
@@ -711,7 +711,7 @@ def route_get_hexagons():
     #return encoded
     return json.dumps(hexagons.geojson())
 
-@app.route('/transit-model')
+@app.route('/transit_model')
 def route_transit_model():
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
@@ -723,7 +723,7 @@ def route_transit_model():
 
     return model.ridership_json()
 
-@app.route('/clear-settings')
+@app.route('/clear_settings')
 def route_clear_settings():
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
@@ -733,18 +733,18 @@ def route_clear_settings():
     m = session_manager.auth_by_key(h).session.map
     m.settings = TransitSettings.Settings()
 
-@app.route('/street-path')
+@app.route('/street_path')
 def route_street_path():
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
     if e:
         return e
 
-    service_id = request.args.get('service-id')
-    station_1_lat = float(request.args.get('station-1-lat'))
-    station_1_lng = float(request.args.get('station-1-lng'))
-    station_2_lat = float(request.args.get('station-2-lat'))
-    station_2_lng = float(request.args.get('station-2-lng'))
+    service_id = request.args.get('service_id')
+    station_1_lat = float(request.args.get('station_1_lat'))
+    station_1_lng = float(request.args.get('station_1_lng'))
+    station_2_lat = float(request.args.get('station_2_lat'))
+    station_2_lng = float(request.args.get('station_2_lng'))
     
     return json.dumps(TransitGIS.valhalla_route(station_1_lat, station_1_lng, station_2_lat, station_2_lng))
 

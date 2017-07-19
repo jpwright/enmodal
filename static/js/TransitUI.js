@@ -37,35 +37,52 @@ class TransitUI {
         this.active_transfer_station = null;
         
         this.pane_station_markers = this.map.createPane("stationMarkerPane");
+        this.pane_station_markers = this.map.createPane("inactiveStationMarkerPane");
         //this.pane_station_markers.style.zIndex = 8000;
         
-        this.line_path_layer = L.featureGroup();
-        this.transfer_layer = L.featureGroup();
-        this.station_marker_layer = L.featureGroup({pane: "stationMarkerPane"});
-        this.preview_path_layer = L.featureGroup();
-        this.bezier_layer = L.featureGroup();
-        this.data_layer = L.featureGroup();
+        this.layers = {
+            active: {
+                line_paths: L.featureGroup(),
+                transfers: L.featureGroup(),
+                station_markers: L.featureGroup({pane: "stationMarkerPane"}),
+            },
+            inactive: {
+                line_paths: L.featureGroup(),
+                transfers: L.featureGroup(),
+                station_markers: L.featureGroup({pane: "inactiveStationMarkerPane"}),
+            },
+            preview: L.featureGroup(),
+            data: L.featureGroup(),
+        };
+            
+        //this.layers.active.line_paths = L.featureGroup();
+        //this.transfer_layer = L.featureGroup();
+        //this.layers.active.station_markers = L.featureGroup({pane: "stationMarkerPane"});
+        //this.layers.preview = L.featureGroup();
+        //this.bezier_layer = L.featureGroup();
+        //this.data_layer = L.featureGroup();
         
         this.hexagons = {}; // Indexed by hexagon gid
         this.chroma_scale = chroma.scale('YlGnBu');
 
         
-        this.map.addLayer(this.data_layer);
-        this.map.addLayer(this.line_path_layer);
-        this.map.addLayer(this.preview_path_layer);
-        this.map.addLayer(this.transfer_layer);
-        this.map.addLayer(this.bezier_layer);
-        this.map.addLayer(this.station_marker_layer);
+        this.map.addLayer(this.layers.data);
+        this.map.addLayer(this.layers.active.line_paths);
+        this.map.addLayer(this.layers.active.transfers);
+        this.map.addLayer(this.layers.active.station_markers);
+        this.map.addLayer(this.layers.inactive.line_paths);
+        this.map.addLayer(this.layers.inactive.transfers);
+        this.map.addLayer(this.layers.inactive.station_markers);
+        this.map.addLayer(this.layers.preview);
 
         this.map.on('mouseup', () => {
             this.map.dragging.enable();
             this.map.removeEventListener('mousemove');
             this.preview_paths_enabled = true;
             this.map.on('mousemove', function(e) {
-                NS_interface.preview_handler(e);
+                enmodal.transit_interface.preview_handler(e);
             });
             if (this.moving_station_marker != null) {
-                console.log("updating moving station");
                 if (this.station_to_merge != null) {
                     this.merge_stations(this.moving_station_marker.station, this.station_to_merge);
                     //this.get_station_marker_by_station(this.station_to_merge).clear_merge();
@@ -78,28 +95,18 @@ class TransitUI {
                 }
                 this.moving_station_marker = null;
                 this.purge_bad_transfers();
-                this.update_line_diagram();
-            }
-            if (this.moving_control_point != null) {
-                console.log("updating moving control point");
-                if (INC_UPDATES) {
-                    //this.sync_station_pair_info(this.get_station_pair_by_sp_id(this.moving_control_point_sp_id));
-                    //this.sync_station_pair_info(this.get_station_pair_by_sp_id(this.moving_opp_control_point_sp_id));
-                }
+                enmodal.sidebar.update_line_diagram();
             }
         });
 
         this.map.on('mousemove', function(e) {
-            NS_interface.preview_handler(e);
+            enmodal.transit_interface.preview_handler(e);
         });
 
         this.map.on('moveend', function(e) {
-            if (NS_interface.active_tool == "station") {
-                //NS_interface.get_ridership();
-            }
-            if (NS_interface.hexagon_layer != "none") {
-                if (NS_interface.map.getZoom() >= MIN_ZOOM_FOR_HEXAGONS) {
-                    NS_interface.get_hexagons(false);
+            if (enmodal.transit_interface.hexagon_layer != "none") {
+                if (enmodal.transit_interface.map.getZoom() >= MIN_ZOOM_FOR_HEXAGONS) {
+                    enmodal.transit_interface.get_hexagons(false);
                 } else {
                     $("#scale-boxes").empty();
                     $("#scale-low").text("");
@@ -111,166 +118,16 @@ class TransitUI {
             }
         });
     }
-
-    add_to_line_selector(line) {
-        // Add a line to the line selector dropdown.
-
-        $("#dropdown-line-menu").prepend("<li class=\"line-selector-item\"><a class=\"line-selector-option\" id=\""+line.sid.toString()+"\" href=\"#\"> <div class=\"subway-line-long\" style=\"background-color: "+line.color_bg+"; color: "+line.color_fg+";\"><div class=\"content\">"+line.name+"</div></div> "+line.full_name+"</a></li>");
-
-    }
-
-    new_line_name() {
-        // Generate a new line name, based on used names.
-        // Letters A-Z are 0-25. Numbers 1-infinity start at 26
-
-        var used_names = [];
-        for (var i = 0; i < this.active_service.lines.length; i++) {
-            var line = this.active_service.lines[i];
-            if (line.name.length == 1) {
-                if (isNaN(line.name)) {
-                    used_names[line.name.charCodeAt(0) - 65] = 1;
-                } else {
-                    used_names[parseInt(line.name) + 25] = 1;
-                }
-            }
+    
+    // Draw all stations and lines of a service onto a particular layer
+    draw_service(service, layer) {
+        for (var i = 0; i < service.stations.length; i++) {
+            var station = service.stations[i];
+            this.create_station_marker(station, layer.station_markers);
         }
-        for (var i = 0; i < used_names.length; i++) {
-            if (used_names[i] != 1) {
-                if (i < 26) {
-                    return String.fromCharCode(65 + i);
-                } else {
-                    return (i - 25).toString();
-                }
-            }
-        }
-
-        if (used_names.length < 26) {
-            return String.fromCharCode(65 + used_names.length);
-        } else {
-            return (used_names.length - 25).toString();
-        }
-    }
-
-    random_color() {
-        var r = Math.floor(Math.random() * 200);
-        var g = Math.floor(Math.random() * 200);
-        var b = Math.floor(Math.random() * 200);
-        return new LineColor(r, g, b);
-    }
-
-    line_selector_new() {
-        var line = new Line(this.new_line_name());
-        line.full_name = "Line";
-
-        var color = NS_interface.random_color();
-        line.color_bg = color.bg_hex();
-        line.color_fg = color.fg_hex();
-
-        //console.log(line);
-        if (INC_UPDATES) {
-            $.ajax({ url: "line-add?i="+NS_session+"&service-id="+NS_map.primary_service().sid.toString()+"&name="+encodeURIComponent(line.name)+"&full-name="+encodeURIComponent(line.full_name)+"&color-bg="+encodeURIComponent(line.color_bg)+"&color-fg="+encodeURIComponent(line.color_fg)+"&line-id="+line.sid.toString(),
-                async: ASYNC_REQUIRED,
-                dataType: 'json',
-                success: function(data, status) {
-                    NS_map.primary_service().add_line(line);
-                    NS_interface.add_to_line_selector(line);
-                    NS_interface.update_line_selector(line.sid);
-                }
-            });
-        } else {
-            NS_map.primary_service().add_line(line);
-            NS_interface.add_to_line_selector(line);
-            NS_interface.update_line_selector(line.sid);
-        }
-        return line;
-    }
-
-    update_line_selector(id) {
-        // Update system state based on line selector click.
-        var line = this.active_service.get_line_by_id(id);
-        this.active_line = line;
-
-        $("#dropdown-line-button").html("<div class=\"subway-line-long\" style=\"background-color: "+line.color_bg+"; color: "+line.color_fg+";\"><div class=\"content\">"+line.name+"</div></div> "+line.full_name+" <span class=\"caret\"></span>");
-
-        $('#custom-line-name').removeClass('issue');
-        $('#custom-line-error').text('');
-
-        $("#custom-line-name").val(line.name);
-        $("#color-picker-bg").spectrum("set", line.color_bg);
-        $("#color-picker-fg").spectrum("set", line.color_fg);
-        NS_interface.update_line_editor();
-        NS_interface.update_line_diagram();
-    }
-
-    update_line_editor() {
-        var line_name = $("#custom-line-name").val().substring(0, 20);
-        $("#custom-line-marker-content").text(line_name);
-
-        var line_color_bg = $("#color-picker-bg").val();
-        $('#custom-line-marker').css('background-color', line_color_bg);
-
-        var line_color_fg = $("#color-picker-fg").val();
-        $('#custom-line-marker').css('color', line_color_fg);
-    }
-
-    refresh_line_editor() {
-        $(".line-selector-item").remove();
-        for (var i = 0; i < this.active_service.lines.length; i++) {
-            var line = this.active_service.lines[i];
-            $("#dropdown-line-menu").prepend("<li class=\"line-selector-item\"><a class=\"line-selector-option\" id=\""+line.sid+"\" href=\"#\"> <div class=\"subway-line-long\" style=\"background-color: "+line.color_bg+"; color: "+line.color_fg+";\"><div class=\"content\">"+line.name+"</div></div> "+line.full_name+"</a></li>");
-        }
-        $('#custom-line-marker').css('background-color', this.active_line.color_bg);
-        $('#custom-line-marker').css('color', this.active_line.color_fg);
-        $("#color-picker-bg").spectrum("set", this.active_line.color_bg);
-        $("#color-picker-fg").spectrum("set", this.active_line.color_fg);
-    }
-
-    line_editor_save() {
-        var line = this.active_line;
-
-        var custom_line_name = $("#custom-line-name").val().substring(0, 20);
-        var custom_line_color_bg = $("#color-picker-bg").val();
-        var custom_line_color_fg = $("#color-picker-fg").val();
-        var issue = false;
-
-        if (custom_line_name.length == 0) {
-            $('#custom-line-name').addClass('issue');
-            $('#custom-line-error').text('Enter a name.');
-            issue = true;
-        }
-
-        /*
-        if (find_line_by_name(custom_line_name) != null) {
-            $('#custom-line-name').addClass('issue');
-            $('#custom-line-error').text('Name already in use.');
-            issue = true;
-        }
-        */
-
-        if (!issue) {
-            line.name = custom_line_name;
-            line.color_bg = custom_line_color_bg;
-            line.color_fg = custom_line_color_fg;
-
-            $('#custom-line-name').removeClass('issue');
-            $('#custom-line-css-bg').removeClass('issue');
-            $('#custom-line-css-text').removeClass('issue');
-            $('#custom-line-error').text('');
-
-            this.update_line_selector(line.sid);
-            $("#"+line.sid).html("<div class=\"subway-line-long\" style=\"background-color: "+line.color_bg+"; color: "+line.color_fg+";\"><div class=\"content\">"+line.name+"</div></div> "+line.full_name);
-            this.draw_line(line, false, true);
-            
-            if (INC_UPDATES) {
-                /*$.ajax({ url: "line-update?i="+NS_session+"&service-id="+NS_map.primary_service().sid.toString()+"&line-id="+line.sid.toString()+"&name="+encodeURIComponent(line.name)+"&full-name="+encodeURIComponent(line.full_name)+"&color-bg="+encodeURIComponent(line.color_bg)+"&color-fg="+encodeURIComponent(line.color_fg),
-                    async: ASYNC_REQUIRED,
-                    dataType: 'json',
-                    success: function(data, status) {
-                    }
-                });*/
-            }
-        } else {
-            $("#option-section-lines").animate({scrollTop: $('#option-section-lines').prop('scrollHeight')}, 1000);
+        for (var i = 0; i < service.lines.length; i++) {
+            var line = service.lines[i];
+            this.draw_line(line, false, false, layer.line_paths);
         }
     }
 
@@ -349,7 +206,7 @@ class TransitUI {
         return lines;
     }
 
-    create_station_marker(station) {
+    create_station_marker(station, layer) {
         var station_marker = new StationMarker(station);
 
         this.station_markers.push(station_marker);
@@ -357,9 +214,9 @@ class TransitUI {
         station_marker.marker.on('click', function(e) {
             station_marker.marker.closeTooltip();
             // Disable new station creation.
-            NS_interface.map.off('click', handle_map_click);
+            enmodal.transit_interface.map.off('click', handle_map_click);
             setTimeout(function() {
-                NS_interface.map.on('click', handle_map_click);
+                enmodal.transit_interface.map.on('click', handle_map_click);
             }, 1000);
 
             // Update popup.
@@ -369,16 +226,16 @@ class TransitUI {
 
         station_marker.marker.on('mousedown', function (event) {
             //L.DomEvent.stop(event);
-            NS_interface.preview_paths_enabled = false;
-            NS_interface.preview_clear();
-            NS_interface.map.dragging.disable();
+            enmodal.transit_interface.preview_paths_enabled = false;
+            enmodal.transit_interface.preview_clear();
+            enmodal.transit_interface.map.dragging.disable();
             let {lat: circleStartingLat, lng: circleStartingLng} = station_marker.marker._latlng;
             let {lat: mouseStartingLat, lng: mouseStartingLng} = event.latlng;
 
-            NS_interface.map.on('mousemove', event => {
-                if (NS_interface.active_tool == "station") {
-                    if (NS_interface.moving_station_marker == null) {
-                        NS_interface.moving_station_marker = station_marker;
+            enmodal.transit_interface.map.on('mousemove', event => {
+                if (enmodal.transit_interface.active_tool == "station") {
+                    if (enmodal.transit_interface.moving_station_marker == null) {
+                        enmodal.transit_interface.moving_station_marker = station_marker;
                     }
                     let {lat: mouseNewLat, lng: mouseNewLng} = event.latlng;
                     let latDifference = mouseStartingLat - mouseNewLat;
@@ -387,16 +244,16 @@ class TransitUI {
                     let center = [circleStartingLat-latDifference, circleStartingLng-lngDifference];
                     station_marker.marker.setLatLng(center);
                     station_marker.marker.closeTooltip();
-                    NS_interface.map.closePopup();
+                    enmodal.transit_interface.map.closePopup();
                     station_marker.station.move_to(center[0], center[1]);
 
-                    //var lines = NS_interface.active_service.station_lines(station_marker.station);
-                    var lines = NS_interface.lines_for_station_by_station_pair(station_marker.station);
+                    //var lines = enmodal.transit_interface.active_service.station_lines(station_marker.station);
+                    var lines = enmodal.transit_interface.lines_for_station_by_station_pair(station_marker.station);
                     var station_pairs_to_draw = [];
                     for (var i = 0; i < lines.length; i++) {
                         // Re-draw lines (but don't render)
-                        NS_interface.draw_line(lines[i], true, false);
-                        var station_pairs = NS_interface.get_station_pairs_for_line(lines[i]);
+                        enmodal.transit_interface.draw_line(lines[i], true, false, enmodal.transit_interface.layers.active.line_paths);
+                        var station_pairs = enmodal.transit_interface.get_station_pairs_for_line(lines[i]);
                         for (var j = 0; j < station_pairs.length; j++) {
                             if (!(station_pairs[j] in station_pairs_to_draw)) {
                                 station_pairs_to_draw.push(station_pairs[j]);
@@ -407,33 +264,33 @@ class TransitUI {
                     for (var i = 0; i < station_pairs_to_draw.length; i++) {
                         station_pairs_to_draw[i].draw();
                     }
-                    NS_interface.draw_transfers();
+                    enmodal.transit_interface.draw_transfers();
                     // Find distance to other stations
                     if (ALLOW_STATION_MERGING) {
                         var mergeable = false;
-                        var m_px = NS_interface.map.latLngToLayerPoint(L.latLng(center[0], center[1]));
-                        for (var i = 0; i < NS_interface.active_service.stations.length; i++) {
-                            var station = NS_interface.active_service.stations[i];
-                            var s_px = NS_interface.map.latLngToLayerPoint(L.latLng(station.location[0], station.location[1]));
+                        var m_px = enmodal.transit_interface.map.latLngToLayerPoint(L.latLng(center[0], center[1]));
+                        for (var i = 0; i < enmodal.transit_interface.active_service.stations.length; i++) {
+                            var station = enmodal.transit_interface.active_service.stations[i];
+                            var s_px = enmodal.transit_interface.map.latLngToLayerPoint(L.latLng(station.location[0], station.location[1]));
                             var d = m_px.distanceTo(s_px);
                             if (station.sid != station_marker.station.sid) {
                                 if (d < STATION_MERGE_THRESHOLD) {
-                                    NS_interface.get_station_marker_by_station(station).show_merge();
-                                    NS_interface.get_station_marker_by_station(station).marker.bringToFront();
-                                    NS_interface.station_to_merge = station;
+                                    enmodal.transit_interface.get_station_marker_by_station(station).show_merge();
+                                    enmodal.transit_interface.get_station_marker_by_station(station).marker.bringToFront();
+                                    enmodal.transit_interface.station_to_merge = station;
                                     mergeable = true;
                                 } else {
-                                    NS_interface.get_station_marker_by_station(station).clear_merge();
+                                    enmodal.transit_interface.get_station_marker_by_station(station).clear_merge();
                                 }
                             }
                         }
-                        if (!mergeable) NS_interface.station_to_merge = null;
+                        if (!mergeable) enmodal.transit_interface.station_to_merge = null;
                     }
                 }
             });
         });
 
-        station_marker.marker.addTo(this.station_marker_layer);
+        station_marker.marker.addTo(layer);
         station_marker.marker.openPopup();
     }
     
@@ -476,7 +333,7 @@ class TransitUI {
 
             for (var i = 0; i < best_edges.length; i++) {
                 // Give it a real ID
-                best_edges[i].sid = NS_id.id();
+                best_edges[i].sid = enmodal.id_factory.id();
                 line.add_edge(best_edges[i]);
                 
                 // Add any impacted lines
@@ -505,7 +362,13 @@ class TransitUI {
                 }
                 line.remove_edge(edges_to_remove[i]);
                 if (INC_UPDATES) {
-                    $.ajax({ url: "edge-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&edge-id="+edges_to_remove[i].sid.toString(),
+                    var params = $.param({
+                        i: enmodal.session_id,
+                        service_id: this.active_service.sid,
+                        line_id: line.sid,
+                        edge_id: edges_to_remove[i].sid
+                    });
+                    $.ajax({ url: "edge_remove?"+params,
                         async: ASYNC_REQUIRED,
                         dataType: 'json',
                         success: function(data, status) {
@@ -516,7 +379,14 @@ class TransitUI {
         }
         
         // Sync with server
-        $.ajax({ url: "station-add?i="+NS_session+"&service-id="+this.active_service.sid.toString()+"&station-id="+station.sid.toString()+"&lat="+lat+"&lng="+lng,
+        var params = $.param({
+            i: enmodal.session_id,
+            service_id: this.active_service.sid,
+            station_id: station.sid,
+            lat: lat,
+            lng: lng
+        });
+        $.ajax({ url: "station_add?"+params,
             async: ASYNC_REQUIRED,
             dataType: 'json',
             success: function(data, status) {
@@ -531,18 +401,33 @@ class TransitUI {
                     station.region = data["region"];
                 }
                 // Update popup.
-                var station_marker = NS_interface.get_station_marker_by_station(station);
+                var station_marker = enmodal.transit_interface.get_station_marker_by_station(station);
                 station_marker.generate_popup();
                 station_marker.update_tooltip();
-                NS_interface.update_line_diagram();
+                enmodal.sidebar.update_line_diagram();
                 
+                var params = $.param({
+                    i: enmodal.session_id,
+                    service_id: enmodal.transit_interface.active_service.sid,
+                    line_id: line.sid,
+                    station_id: station.sid,
+                    stop_id: stop.sid
+                });
                 if (INC_UPDATES) {
-                    $.ajax({ url: "stop-add?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&station-id="+station.sid.toString()+"&stop-id="+stop.sid.toString(),
+                    $.ajax({ url: "stop_add?"+params,
                         async: false,
                         dataType: 'json',
                         success: function(data, status) {
                             for (var i = 0; i < best_edges.length; i++) {
-                                $.ajax({ url: "edge-add?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-1-id="+best_edges[i].stops[0].sid+"&stop-2-id="+best_edges[i].stops[1].sid+"&edge-id="+best_edges[i].sid.toString(),
+                                var params = $.param({
+                                    i: enmodal.session_id,
+                                    service_id: enmodal.transit_interface.active_service.sid,
+                                    line_id: line.sid,
+                                    stop_1_id: best_edges[i].stops[0].sid,
+                                    stop_2_id: best_edges[i].stops[1].sid,
+                                    edge_id: best_edges[i].sid
+                                });
+                                $.ajax({ url: "edge_add?"+params,
                                     async: ASYNC_REQUIRED,
                                     dataType: 'json',
                                     success: function(data, status) {
@@ -555,7 +440,7 @@ class TransitUI {
             }
         });
 
-        this.create_station_marker(station);
+        this.create_station_marker(station, this.layers.active.station_markers);
         
         for (var i = 0; i < lines_to_draw.length; i++) {
             this.draw_line(lines_to_draw[i], false, true);
@@ -563,7 +448,7 @@ class TransitUI {
         
         this.purge_station_pairs();
         this.get_ridership();
-        this.update_line_diagram();
+        enmodal.sidebar.update_line_diagram();
         
         return station;
     }
@@ -579,7 +464,14 @@ class TransitUI {
                     // change the stop's station to the new one
                     stop.station = station_to_keep;
                     if (INC_UPDATES) {
-                        $.ajax({ url: "stop-update-station?i="+NS_session+"&service-id="+this.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&station-id="+station_to_keep.sid.toString()+"&stop-id="+stop.sid.toString(),
+                        var params = $.param({
+                            i: enmodal.session_id,
+                            service_id: this.active_service.sid,
+                            line_id: line.sid,
+                            station_id: station_to_keep.sid,
+                            stop_id: stop.sid
+                        });
+                        $.ajax({ url: "stop_update_station?"+params,
                             async: ASYNC_REQUIRED,
                             dataType: 'json',
                             success: function(data, status) {
@@ -594,7 +486,7 @@ class TransitUI {
         // draw lines
         var lines = this.active_service.station_lines(station_to_keep);
         for (var i = 0; i < lines.length; i++) {
-            this.draw_line(lines[i], false, true);
+            this.draw_line(lines[i], false, true, this.layers.active.line_paths);
         }
     }
 
@@ -603,7 +495,12 @@ class TransitUI {
         var lat = station.location[0];
         var lng = station.location[1];
 
-        $.ajax({ url: "lat-lng-info?i="+NS_session+"&lat="+lat+"&lng="+lng,
+        var params = $.param({
+            i: enmodal.session_id,
+            lat: lat,
+            lng: lng
+        });
+        $.ajax({ url: "lat_lng_info?"+params,
             async: ASYNC_OPTIONAL,
             dataType: 'json',
             success: function(data, status) {
@@ -619,7 +516,7 @@ class TransitUI {
                     station.region = data["region"];
                 }
                 if (INC_UPDATES) {
-                    NS_interface.sync_station_info(station);
+                    enmodal.transit_interface.sync_station_info(station);
                 }
             }
         });
@@ -627,11 +524,19 @@ class TransitUI {
     }
 
     sync_station_info(station) {
-        $.ajax({ url: "station-update?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&station-id="+station.sid.toString()+"&name="+encodeURIComponent(station.name)+"&location="+station.location[0].toString()+","+station.location[1].toString()+"&neighborhood="+encodeURIComponent(station.neighborhood),
+        var params = $.param({
+            i: enmodal.session_id,
+            service_id: this.active_service.sid,
+            station_id: station.sid,
+            name: station.name,
+            location: station.location[0].toString()+","+station.location[1].toString(),
+            neighborhood: station.neighborhood
+        });
+        $.ajax({ url: "station_update?"+params,
             async: ASYNC_REQUIRED,
             dataType: 'json',
             success: function(data, status) {
-                NS_interface.get_ridership();
+                enmodal.transit_interface.get_ridership();
             }
         });
     }
@@ -658,7 +563,7 @@ class TransitUI {
             var edges_to_remove = delta.remove;
 
             for (var i = 0; i < best_edges.length; i++) {
-                best_edges[i].sid = NS_id.id();
+                best_edges[i].sid = _id_factory.id();
                 for (var j = 0; j < best_edges[i].stops.length; j++) {
                     var affected_station = best_edges[i].stops[j].station;
                     var station_lines = this.active_service.station_lines(affected_station);
@@ -682,7 +587,13 @@ class TransitUI {
                 }
                 this.active_line.remove_edge(edges_to_remove[i]);
                 if (INC_UPDATES) {
-                    $.ajax({ url: "edge-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+this.active_line.sid.toString()+"&edge-id="+edges_to_remove[i].sid.toString(),
+                    var params = $.param({
+                        i: enmodal.session_id,
+                        service_id: this.active_service.sid,
+                        line_id: this.active_line.sid,
+                        edge_id: edges_to_remove[i].sid
+                    });
+                    $.ajax({ url: "edge_remove?"+params,
                         async: ASYNC_REQUIRED,
                         dataType: 'json',
                         success: function(data, status) {
@@ -694,12 +605,27 @@ class TransitUI {
         
         
         if (INC_UPDATES) {
-            $.ajax({ url: "stop-add?i="+NS_session+"&service-id="+this.active_service.sid.toString()+"&line-id="+this.active_line.sid.toString()+"&station-id="+station.sid.toString()+"&stop-id="+stop.sid.toString(),
+            var params = $.param({
+                i: enmodal.session_id,
+                service_id: this.active_service.sid,
+                line_id: this.active_line.sid,
+                station_id: station.sid,
+                stop_id: stop.sid
+            });
+            $.ajax({ url: "stop_add?"+params,
                 async: ASYNC_REQUIRED,
                 dataType: 'json',
                 success: function(data, status) {
                     for (var i = 0; i < best_edges.length; i++) {
-                        $.ajax({ url: "edge-add?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+NS_interface.active_line.sid.toString()+"&stop-1-id="+best_edges[i].stops[0].sid.toString()+"&stop-2-id="+best_edges[i].stops[1].sid.toString()+"&edge-id="+best_edges[i].sid.toString(),
+                        var params = $.param({
+                            i: enmodal.session_id,
+                            service_id: enmodal.transit_interface.active_service.sid,
+                            line_id: enmodal.transit_interface.active_line.sid,
+                            stop_1_id: best_edges[i].stops[0].sid,
+                            stop_2_id: best_edges[i].stops[1].sid,
+                            edge_id: best_edges[i].sid
+                        });
+                        $.ajax({ url: "edge_add?"+params,
                             async: ASYNC_REQUIRED,
                             dataType: 'json',
                             success: function(data, status) {
@@ -718,14 +644,13 @@ class TransitUI {
         }
 
         for (var i = 0; i < lines_to_draw.length; i++) {
-            this.draw_line(lines_to_draw[i], false, true);
+            this.draw_line(lines_to_draw[i], false, true, this.layers.active.line_paths);
         }
         
         this.purge_station_pairs();
-        //this.station_marker_layer.bringToFront();
         
         this.get_ridership();
-        this.update_line_diagram();
+        enmodal.sidebar.update_line_diagram();
 
     }
 
@@ -745,7 +670,13 @@ class TransitUI {
                     line.stops.splice(j, 1);
 
                     if (INC_UPDATES) {
-                        $.ajax({ url: "stop-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-id="+stop.sid.toString(),
+                        var params = $.param({
+                            i: enmodal.session_id,
+                            service_id: this.active_service.sid,
+                            line_id: this.active_line.sid,
+                            stop_id: stop.sid
+                        });
+                        $.ajax({ url: "stop_remove?"+params,
                             async: ASYNC_REQUIRED,
                             dataType: 'json',
                             success: function(data, status) {
@@ -788,8 +719,14 @@ class TransitUI {
                             }
                         }
                         line.remove_edge(edge);
+                        var params = $.param({
+                            i: enmodal.session_id,
+                            service_id: this.active_service.sid,
+                            line_id: this.active_line.sid,
+                            edge_id: edge.sid
+                        });
                         if (INC_UPDATES) {
-                            $.ajax({ url: "edge-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&edge-id="+edge.sid.toString(),
+                            $.ajax({ url: "edge_remove?"+params,
                                 async: ASYNC_REQUIRED,
                                 dataType: 'json',
                                 success: function(data, status) {
@@ -823,7 +760,15 @@ class TransitUI {
                                 var new_edge = new Edge([central_stop, spoke_stop]);
                                 line.add_edge(new_edge);
                                 if (INC_UPDATES) {
-                                    $.ajax({ url: "edge-add?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-1-id="+new_edge.stops[0].sid.toString()+"&stop-2-id="+new_edge.stops[1].sid.toString()+"&edge-id="+new_edge.sid.toString(),
+                                    var params = $.param({
+                                        i: enmodal.session_id,
+                                        service_id: this.active_service.sid,
+                                        line_id: this.active_line.sid,
+                                        stop_1_id: new_edge.stops[0].sid,
+                                        stop_2_id: new_edge.stops[1].sid,
+                                        edge_id: new_edge.sid
+                                    });
+                                    $.ajax({ url: "edge_add?"+params,
                                         async: ASYNC_REQUIRED,
                                         dataType: 'json',
                                         success: function(data, status) {
@@ -854,7 +799,15 @@ class TransitUI {
                             best_edges[i].sid = NS_id.id();
                             line.add_edge(best_edges[i]);
                             if (INC_UPDATES) {
-                                $.ajax({ url: "edge-add?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-1-id="+best_edges[i].stops[0].sid.toString()+"&stop-2-id="+best_edges[i].stops[1].sid.toString()+"&edge-id="+best_edges[i].sid.toString(),
+                                var params = $.param({
+                                    i: enmodal.session_id,
+                                    service_id: this.active_service.sid,
+                                    line_id: line.sid,
+                                    stop_1_id: best_edges[i].stops[0].sid,
+                                    stop_2_id: best_edges[i].stops[1].sid,
+                                    edge_id: best_edges[i].sid
+                                });
+                                $.ajax({ url: "edge_add?"+params,
                                     async: ASYNC_REQUIRED,
                                     dataType: 'json',
                                     success: function(data, status) {
@@ -865,7 +818,13 @@ class TransitUI {
                         for (var i = 0; i < edges_to_remove.length; i++) {
                             line.remove_edge(edges_to_remove[i]);
                             if (INC_UPDATES) {
-                                $.ajax({ url: "edge-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&edge-id="+edges_to_remove[i].sid.toString(),
+                                var params = $.param({
+                                    i: enmodal.session_id,
+                                    service_id: this.active_service.sid,
+                                    line_id: line.sid,
+                                    edge_id: edges_to_remove[i].sid
+                                });
+                                $.ajax({ url: "edge_remove?"+params,
                                     async: ASYNC_REQUIRED,
                                     dataType: 'json',
                                     success: function(data, status) {
@@ -882,7 +841,13 @@ class TransitUI {
                     if (edge.stops[0].sid == edge.stops[1].sid) {
                         line.remove_edge(edge);
                         if (INC_UPDATES) {
-                            $.ajax({ url: "edge-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&edge-id="+edge.sid.toString(),
+                            var params = $.param({
+                                i: enmodal.session_id,
+                                service_id: this.active_service.sid,
+                                line_id: line.sid,
+                                edge_id: edge.sid
+                            });
+                            $.ajax({ url: "edge_remove?"+params,
                                 async: ASYNC_REQUIRED,
                                 dataType: 'json',
                                 success: function(data, status) {
@@ -901,7 +866,12 @@ class TransitUI {
             if (station.sid == id) {
                 this.active_service.stations.splice(i, 1);
                 if (INC_UPDATES) {
-                    $.ajax({ url: "station-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&station-id="+station.sid.toString(),
+                    var params = $.param({
+                        i: enmodal.session_id,
+                        service_id: this.active_service.sid,
+                        station_id: station.sid
+                    });
+                    $.ajax({ url: "station_remove?"+params,
                         async: ASYNC_REQUIRED,
                         dataType: 'json',
                         success: function(data, status) {
@@ -922,7 +892,7 @@ class TransitUI {
         for (var i = 0; i < this.station_markers.length; i++) {
             var station_marker = this.station_markers[i];
             if (station_marker.station.sid == id) {
-                this.station_marker_layer.removeLayer(station_marker.marker);
+                this.layers.active.station_markers.removeLayer(station_marker.marker);
                 this.station_markers.splice(i, 1);
             }
         }
@@ -939,12 +909,12 @@ class TransitUI {
 
         // Redraw all impacted lines.
         for (var i = 0; i < impacted_lines.length; i++) {
-            this.draw_line(impacted_lines[i], false, true);
+            this.draw_line(impacted_lines[i], false, true, this.layers.active.line_paths);
         }
-        //this.station_marker_layer.bringToFront();
+        //this.layers.active.station_markers.bringToFront();
 
         this.get_ridership();
-        this.update_line_diagram();
+        enmodal.sidebar.update_line_diagram();
 
     }
     
@@ -965,7 +935,13 @@ class TransitUI {
             line.remove_stop(stop);
             
             if (INC_UPDATES) {
-                $.ajax({ url: "stop-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-id="+stop.sid.toString(),
+                var params = $.param({
+                    i: enmodal.session_id,
+                    service_id: this.active_service.sid,
+                    line_id: line.sid,
+                    stop_id: stop.sid
+                });
+                $.ajax({ url: "stop_remove?"+params,
                     async: ASYNC_REQUIRED,
                     dataType: 'json',
                     success: function(data, status) {
@@ -982,7 +958,13 @@ class TransitUI {
                     impacted_edges.push(edge);
                     line.remove_edge(edge);
                     if (INC_UPDATES) {
-                        $.ajax({ url: "edge-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&edge-id="+edge.sid.toString(),
+                        var params = $.param({
+                            i: enmodal.session_id,
+                            service_id: this.active_service.sid,
+                            line_id: line.sid,
+                            edge_id: edge.sid
+                        });
+                        $.ajax({ url: "edge_remove?"+params,
                             async: ASYNC_REQUIRED,
                             dataType: 'json',
                             success: function(data, status) {
@@ -1016,7 +998,15 @@ class TransitUI {
                         var new_edge = new Edge([central_stop, spoke_stop]);
                         line.add_edge(new_edge);
                         if (INC_UPDATES) {
-                            $.ajax({ url: "edge-add?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-1-id="+new_edge.stops[0].sid.toString()+"&stop-2-id="+new_edge.stops[1].sid.toString()+"&edge-id="+new_edge.sid.toString(),
+                            var params = $.param({
+                                i: enmodal.session_id,
+                                service_id: this.active_service.sid,
+                                line_id: line.sid,
+                                stop_1_id: new_edge.stops[0].sid,
+                                stop_2_id: new_edge.stops[1].sid,
+                                edge_id: new_edge.sid
+                            });
+                            $.ajax({ url: "edge_add?"+params,
                                 async: ASYNC_REQUIRED,
                                 dataType: 'json',
                                 success: function(data, status) {
@@ -1046,7 +1036,15 @@ class TransitUI {
                         best_edges[i].sid = NS_id.id();
                         line.add_edge(best_edges[i]);
                         if (INC_UPDATES) {
-                            $.ajax({ url: "edge-add?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&stop-1-id="+best_edges[i].stops[0].sid+"&stop-2-id="+best_edges[i].stops[1].sid+"&edge-id="+best_edges[i].sid.toString(),
+                            var params = $.param({
+                                i: enmodal.session_id,
+                                service_id: this.active_service.sid,
+                                line_id: line.sid,
+                                stop_1_id: best_edges[i].stops[0].sid,
+                                stop_2_id: best_edges[i].stops[1].sid,
+                                edge_id: best_edges[i].sid
+                            });
+                            $.ajax({ url: "edge_add?"+params,
                                 async: ASYNC_REQUIRED,
                                 dataType: 'json',
                                 success: function(data, status) {
@@ -1057,7 +1055,13 @@ class TransitUI {
                     for (var i = 0; i < edges_to_remove.length; i++) {
                         line.remove_edge(edges_to_remove[i]);
                         if (INC_UPDATES) {
-                            $.ajax({ url: "edge-remove?i="+NS_session+"&service-id="+NS_interface.active_service.sid.toString()+"&line-id="+line.sid.toString()+"&edge-id="+edges_to_remove[i].sid.toString(),
+                            var params = $.param({
+                                i: enmodal.session_id,
+                                service_id: this.active_service.sid,
+                                line_id: line.sid,
+                                edge_id: edges_to_remove[i].sid
+                            });
+                            $.ajax({ url: "edge_remove?"+params,
                                 async: ASYNC_REQUIRED,
                                 dataType: 'json',
                                 success: function(data, status) {
@@ -1071,122 +1075,15 @@ class TransitUI {
 
         // Redraw all impacted lines.
         for (var i = 0; i < impacted_lines.length; i++) {
-            this.draw_line(impacted_lines[i], false, true);
+            this.draw_line(impacted_lines[i], false, true, this.layers.active.line_paths);
         }
         // Refresh the marker
         this.get_station_marker_by_station(station).generate_popup();
-        
-        //this.station_marker_layer.bringToFront();
 
         this.get_ridership();
-        this.update_line_diagram();
+        enmodal.sidebar.update_line_diagram();
 
     }
-    /*
-    update_edge_paths(line) {
-        if (line.sid in this.line_paths) {
-            var line_path = this.line_paths[line.sid];
-        } else {
-            var line_path = new LinePath();
-            this.line_paths[line.sid] = line_path;
-        }
-
-        // Clear edge paths array.
-        line_path.raw_edge_paths = [];
-
-        // Initialize control points array.
-        var edge_tentative_control_points = [];
-        for (var j = 0; j < line.edges.length; j++) {
-            edge_tentative_control_points[j] = [];
-        }
-
-        // Get the outer stops.
-        var outer_stops = line.outer_stops();
-        var active_stop = outer_stops[0];
-
-        // Initialize visited stops.
-        var visited = {};
-        var visited_stops_count = 0;
-        for (var j = 0; j < line.stops.length; j++) {
-            visited[line.stops[j].sid] = 0;
-        }
-
-        var bezier_coordinates = [[]];
-        var bezier_stops = [[]];
-        var control_points = {}; // edge.sid :: control_points
-
-        // recursive DFS to find all the paths
-        function dfs(v) {
-            //console.log("DFS: node "+v.station.name);
-
-            // Add new stop.
-            bezier_stops[bezier_stops.length-1].push(v);
-            bezier_coordinates[bezier_coordinates.length-1].push({"x": v.station.location[0], "y": v.station.location[1]});
-
-            visited[v.sid] = 1;
-            var neighbors = line.neighbors(v);
-            var new_neighbor_count = 0;
-            for (var i = 0; i < neighbors.length; i++) {
-                var w = neighbors[i];
-                if (!visited[w.sid]) {
-                    if (new_neighbor_count > 0) {
-                        // Expand the Bezier arrays to start a new path.
-                        bezier_coordinates.push([]);
-                        bezier_stops.push([]);
-                        bezier_coordinates[bezier_coordinates.length-1].push({"x": v.station.location[0], "y": v.station.location[1]});
-                        bezier_stops[bezier_stops.length-1].push(v);
-                    }
-                    new_neighbor_count += 1;
-                    dfs(w);
-                }
-            }
-        }
-        
-        if (outer_stops.length > 0) {
-            dfs(active_stop);
-        }
-
-        if (line.edges.length > 0) {
-            for (var i = 0; i < bezier_coordinates.length; i++) {
-
-                var spline = new BezierSpline({points: bezier_coordinates[i], sharpness: 0.6});
-
-                for (var j = 1; j < bezier_stops[i].length; j++) {
-                    for (var k = 0; k < line.edges.length; k++) {
-                        var stops_to_compare = [bezier_stops[i][j-1], bezier_stops[i][j]];
-                        var compare_result = line.edges[k].compare_stops(stops_to_compare);
-                        if (compare_result) {
-                            // Edge matches. Add the control points
-                            if (compare_result == 1) {
-                                var cp_0 = new BezierControlPoint(spline.controls[j-1][1].y, spline.controls[j-1][1].x);
-                                var cp_1 = new BezierControlPoint(spline.controls[j][0].y, spline.controls[j][0].x);
-                            } else {
-                                var cp_0 = new BezierControlPoint(spline.controls[j][0].y, spline.controls[j][0].x);
-                                var cp_1 = new BezierControlPoint(spline.controls[j-1][1].y, spline.controls[j-1][1].x);
-                            }
-                            control_points[line.edges[k].sid] = [cp_0, cp_1];
-                        }
-                    }
-                }
-            }
-        }
-
-        // Draw new edge paths.
-        for (var j = 0; j < line.edges.length; j++) {
-            var edge = line.edges[j];
-            var stop_points = [[edge.stops[0].station.location[0], edge.stops[0].station.location[1]], [edge.stops[1].station.location[0], edge.stops[1].station.location[1]]];
-
-            var edge_control_points = [];
-            if (edge.sid in control_points) {
-                edge_control_points = control_points[edge.sid];
-            }
-            var raw_edge_path = new EdgePath(edge.sid, stop_points, [edge_control_points], 0, line.color_bg, 1.0);
-
-            line_path.raw_edge_paths.push(raw_edge_path);
-        }
-
-    }
-    */
     
     update_station_markers(line) {
         for (var i = 0; i < line.stops.length; i++) {
@@ -1272,8 +1169,9 @@ class TransitUI {
      * line : line to draw
      * mm : if this is being called from a mousemove event
      * render : if the station_pairs should actually be rendered (or just updated)
+     * layer : layer on which to draw
      **/
-    draw_line(line, mm, render) {
+    draw_line(line, mm, render, layer) {
         //console.log("draw line "+line.name);
         
         if (line.sid in this.line_paths) {
@@ -1285,7 +1183,7 @@ class TransitUI {
 
         // Remove existing edge paths.
         for (var i = 0; i < line_path.edge_paths.length; i++) {
-            this.line_path_layer.removeLayer(line_path.edge_paths[i].path);
+            this.layers.active.line_paths.removeLayer(line_path.edge_paths[i].path);
         }
         
         // Clear all station pairs.
@@ -1293,8 +1191,9 @@ class TransitUI {
             if (this.station_pairs[i].has_line(line)) {
                 this.station_pairs[i].clear_spline_segment_for_line(line);
                 //this.station_pairs[i].clear_spline_segments();
-                this.station_pairs[i].generate_paths();
-                if (render) this.station_pairs[i].draw();
+                this.station_pairs[i].generate_paths(layer);
+                //this.station_pairs[i].undraw(layer);
+                if (render) this.station_pairs[i].draw(layer);
             }
         }
         
@@ -1303,7 +1202,7 @@ class TransitUI {
         if (line.stops.length > 1) {
             //this.update_edge_paths(line);
             //this.tweak_line_path(line);
-            var station_drawmap = NS_interface.active_service.station_drawmap(line);
+            var station_drawmap = enmodal.transit_interface.active_service.station_drawmap(line);
             //console.log(station_drawmap);
             for (var i = 0; i < station_drawmap.length; i++) {
                 var branch = station_drawmap[i];
@@ -1353,7 +1252,7 @@ class TransitUI {
                         var station_pair = spr[0];
                         var station_pair_polarity = spr[1];
                     } else {
-                        var station_pair = new StationPair([station_1, station_2]);
+                        var station_pair = new StationPair([station_1, station_2], this.layers.active.line_paths);
                         this.station_pairs.push(station_pair);
                         var station_pair_polarity = 0;
                     }
@@ -1389,7 +1288,7 @@ class TransitUI {
                     var lss = new LineSplineSegment(line, sss, station_pair_polarity);
                     station_pair.add_line_spline_segment(lss);
                     
-                    station_pair.generate_paths();
+                    station_pair.generate_paths(layer);
                     station_pairs_to_draw.push(station_pair);
                     
                     // Remove start index from station_id map
@@ -1405,19 +1304,17 @@ class TransitUI {
         if (render) {
             // Draw new station pairs.
             for (var i = 0; i < station_pairs_to_draw.length; i++) {
-                station_pairs_to_draw[i].draw();
-                if (mm) station_pairs_to_draw[i].draw_pins();
+                station_pairs_to_draw[i].draw(layer);
+                if (mm) station_pairs_to_draw[i].draw_pins(layer);
             }
         }
     }
     
     draw_transfers() {
-        this.transfer_layer.clearLayers();
-        for (var i = 0; i < NS_interface.active_service.transfers.length; i++) {
-            this.draw_transfer(NS_interface.active_service.transfers[i]);
+        this.layers.active.transfers.clearLayers();
+        for (var i = 0; i < enmodal.transit_interface.active_service.transfers.length; i++) {
+            this.draw_transfer(enmodal.transit_interface.active_service.transfers[i]);
         }
-        // Bring station layer to front.
-        //this.station_marker_layer.bringToFront();
     }
     
     draw_transfer(transfer) {
@@ -1429,18 +1326,18 @@ class TransitUI {
             options["opacity"] = TRANSFER_PREVIEW_OPACITY;
         }
         var path = L.polyline([L.latLng(station_1.location), L.latLng(station_2.location)], options);
-        this.transfer_layer.addLayer(path);
+        this.layers.active.transfers.addLayer(path);
     }
     
     draw_transfers_for_station(station) {
         this.transfer_layer.clearLayers();
-        for (var i = 0; i < NS_interface.active_service.transfers.length; i++) {
-            if (NS_interface.active_service.transfers[i].has_station(station)) {
-                this.draw_transfer(NS_interface.active_service.transfers[i]);
+        for (var i = 0; i < enmodal.transit_interface.active_service.transfers.length; i++) {
+            if (enmodal.transit_interface.active_service.transfers[i].has_station(station)) {
+                this.draw_transfer(enmodal.transit_interface.active_service.transfers[i]);
             }
         }
         // Bring station layer to front.
-        //this.station_marker_layer.bringToFront();
+        //this.layers.active.station_markers.bringToFront();
     }
     
     purge_bad_transfers() {
@@ -1472,9 +1369,9 @@ class TransitUI {
     
     regenerate_edge_path(line, edge_path) {
         var line_path = this.line_paths[line.sid];
-        this.line_path_layer.removeLayer(edge_path.path);
+        this.layers.active.line_paths.removeLayer(edge_path.path);
         edge_path.regenerate_path();
-        this.line_path_layer.addLayer(edge_path.path);
+        this.layers.active.line_paths.addLayer(edge_path.path);
     }
 
     refresh_edge_paths(line) {
@@ -1482,17 +1379,17 @@ class TransitUI {
         var line_path = this.line_paths[line.sid];
         // Remove existing edge paths.
         for (var i = 0; i < line_path.edge_paths.length; i++) {
-            this.line_path_layer.removeLayer(line_path.edge_paths[i].path);
+            this.layers.active.line_paths.removeLayer(line_path.edge_paths[i].path);
         }
 
         // Draw new edge paths.
         for (var j = 0; j < line_path.edge_paths.length; j++) {
             line_path.edge_paths[j].regenerate_path();
             var path = line_path.edge_paths[j].path;
-            this.line_path_layer.addLayer(path);
+            this.layers.active.line_paths.addLayer(path);
         }
         // Bring station layer to front.
-        //this.station_marker_layer.bringToFront();
+        //this.layers.active.station_markers.bringToFront();
     }
     
     pin_projection(lat, lng) {
@@ -1521,7 +1418,7 @@ class TransitUI {
                     var weight = 1;
                     if (d < PIN_DISTANCE_TO_SHOW_PINS) weight = 2;
                     var l = L.polyline([L.latLng([p.x, p.y]), L.latLng(lat, lng)], {weight: weight, color: '#00f'});
-                    this.preview_path_layer.addLayer(l);
+                    this.layers.preview.addLayer(l);
                 }
         }
         }
@@ -1536,7 +1433,7 @@ class TransitUI {
         }
         if (DEBUG_PIN_PROJECTIONS && best_p != null) {
             var l = L.polyline([L.latLng([best_p.x, best_p.y]), L.latLng(lat, lng)], {weight: 1, color: '#f00'});
-            this.preview_path_layer.addLayer(l);
+            this.layers.preview.addLayer(l);
         }
         if (show_pin_icon) {
             var nearest_pin_distance = best_station_pair.distance_to_nearest_pin(lat, lng);
@@ -1555,8 +1452,8 @@ class TransitUI {
         var m_px = this.map.latLngToLayerPoint(L.latLng(lat, lng));
         var best_distance = 0;
         var best_station = null;
-        for (var i = 0; i < NS_interface.active_service.stations.length; i++) {
-            var station = NS_interface.active_service.stations[i];
+        for (var i = 0; i < enmodal.transit_interface.active_service.stations.length; i++) {
+            var station = enmodal.transit_interface.active_service.stations[i];
             var distance = m_px.distanceTo(this.map.latLngToLayerPoint(L.latLng(station.location[0], station.location[1])));
 
             if (best_distance > distance || best_station == null) {
@@ -1574,7 +1471,7 @@ class TransitUI {
                 var m = L.marker([pin_projection[1].x, pin_projection[1].y], {icon: PIN_ICON});
                 m.id = "pin-preview";
                 this.preview_line_pin_marker = m;
-                this.preview_path_layer.addLayer(m);
+                this.layers.preview.addLayer(m);
             }
         } else {
             // Create dummy station and stop
@@ -1592,7 +1489,7 @@ class TransitUI {
                 var edge_path = new EdgePath(edge.sid, stop_points, [], [], line.color_bg, 0.2);
 
                 this.preview_paths.push(edge_path);
-                this.preview_path_layer.addLayer(edge_path.path);
+                this.layers.preview.addLayer(edge_path.path);
             }
         }
         
@@ -1640,14 +1537,14 @@ class TransitUI {
         var distance = turf.distance(station_loc, mouse_loc, "miles");
 
         var path = L.polyline([L.latLng(chunk.features[0].geometry.coordinates[1][1], chunk.features[0].geometry.coordinates[1][0]), L.latLng(this.active_transfer_station.location[0], this.active_transfer_station.location[1])], {weight: TRANSFER_WIDTH, color: 'black', opacity: TRANSFER_PREVIEW_OPACITY});
-        this.preview_path_layer.addLayer(path);
+        this.layers.preview.addLayer(path);
         // Bring station layer to front.
-        //this.station_marker_layer.bringToFront();
+        //this.layers.active.station_markers.bringToFront();
     }
 
     preview_clear() {
         // Remove existing preview paths.
-        this.preview_path_layer.clearLayers();
+        this.layers.preview.clearLayers();
 
         // Clear preview paths array.
         this.preview_paths = [];
@@ -1704,151 +1601,18 @@ class TransitUI {
         this.bezier_layer.addLayer(L.polyline(polyline_latlngs, {color: 'red', weight: 1, dashArray: '2,2'}));
     }
 
-    update_line_diagram() {
-        var line = this.active_line;
-
-        // Get the outer stops.
-        var outer_stops = line.outer_stops();
-        var active_stop = outer_stops[0];
-
-        // Initialize visited stops.
-        var visited = {};
-        var visited_stops_count = 0;
-        for (var j = 0; j < line.stops.length; j++) {
-            visited[line.stops[j].sid] = 0;
-        }
-
-        var stop_groups = [[]];
-        var branch_pos = [];
-
-        // recursive DFS to find all the paths
-        function dfs(v) {
-            //console.log("DFS: node "+v.station.name);
-
-            stop_groups[stop_groups.length-1].push(v);
-
-            visited[v.sid] = 1;
-            var neighbors = line.neighbors(v);
-            var new_neighbor_count = 0;
-            for (var i = 0; i < neighbors.length; i++) {
-                var w = neighbors[i];
-                if (!visited[w.sid]) {
-                    if (new_neighbor_count > 0) {
-                        // Expand the arrays to start a new path.
-                        stop_groups.push([]);
-                        stop_groups[stop_groups.length-1].push(v);
-                        branch_pos.push(v.sid);
-                    }
-                    new_neighbor_count += 1;
-                    dfs(w);
-                }
-            }
-        }
-
-        if (line.stops.length > 0) {
-            dfs(active_stop);
-        }
-
-        //console.log(stop_groups);
-
-        $("#route-diagram").empty();
-
-        var stop_index = 0;
-        var stop_position = {}; // stop id :: position in route diagram list
-
-        var branch_div = $('<div class="route-diagram-branch"></div>');
-        $("#route-diagram").append(branch_div);
-
-        for (var i = 0; i < stop_groups.length; i++) {
-            var stop_group = stop_groups[i];
-
-            // For everything past the 1st stop group, it's a branch. Ignore the first stop, it will be redundant.
-            var start_index = 0;
-            if (i > 0) {
-                start_index = 1;
-            }
-
-
-            for (var j = start_index; j < stop_group.length; j++) {
-                var stop = stop_group[j];
-
-                // Add a leading connector if this is the start of a branch.
-                if (j == start_index+1 && i > 0) {
-                    branch_div = $('<div class="route-diagram-branch"></div>');
-                    $("#route-diagram").append(branch_div);
-                }
-                
-                if (branch_pos.indexOf(stop.sid) > -1) {
-                    branch_div = $('<div class="route-diagram-branch"></div>');
-                    $("#route-diagram").append(branch_div);
-                    var connector_div = $('<div class="route-diagram-branch-connectors"></div>');
-                    branch_div.append(connector_div);
-                    connector_div.append('<div class="route-diagram-connector-top-joint" style="background-color: '+line.color_bg+';"></div>');
-                    connector_div.append('<div class="route-diagram-connector-branch"><div class="route-diagram-connector-internal" style="background-color: '+line.color_bg+';"></div></div>');
-                    connector_div.append('<div class="route-diagram-connector-bottom-joint" style="background-color: '+line.color_bg+';"></div>');
-                }
-
-                var stop_div = $('<div class="route-diagram-stop"></div>');
-                branch_div.append(stop_div);
-                stop_div.append('<div class="route-diagram-station-marker"></div>');
-
-                // Add a trailing connector if this isn't the end of a branch.
-                if (j != stop_group.length - 1) {
-                    stop_div.append('<div class="route-diagram-connector" style="background-color: '+line.color_bg+'"></div>');
-                }
-                
-                var stop_info_div = $('<div class="route-diagram-stop-info" id="station-'+stop.station.sid.toString()+'"></div>');
-                stop_div.append(stop_info_div);
-                stop_info_div.append('<div class="route-diagram-stop-name">'+stop.station.name+'</div>');
-                
-                var stop_connectors = $('<div class="route-diagram-stop-connectors"></div>');
-                stop_info_div.append(stop_connectors);
-                // Add an empty connector just to make sure each stop row has the height it needs
-                stop_connectors.append('<div class="subway-line-long subway-line-mini subway-line-marker-diagram subway-line-marker-diagram-fake" style="font-size: 1em;"><div class="content"></div></div>');
-                var connecting_lines = []
-                for (var k = 0; k < this.active_service.lines.length; k++) {
-                    if (this.active_service.lines[k].sid != line.sid) {
-                        if (this.active_service.lines[k].has_station(stop.station)) {
-                            connecting_lines.push(this.active_service.lines[k]);
-                        }
-                    }
-                }
-                for (var k = 0; k < this.active_service.transfers.length; k++) {
-                    if (this.active_service.transfers[k].has_station(stop.station)) {
-                        var transfer_stations = this.active_service.transfers[k].stations;
-                        for (var l = 0; l < transfer_stations.length; l++) {
-                            if (transfer_stations[l] != stop.station) {
-                                var transfer_station_lines = this.active_service.station_lines(transfer_stations[l]);
-                                for (var m = 0; m < transfer_station_lines.length; m++) {
-                                    if (connecting_lines.indexOf(transfer_station_lines[m]) == -1) {
-                                        connecting_lines.push(transfer_station_lines[m]);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                for (var k = 0; k < connecting_lines.length; k++) {
-                    stop_connectors.append('<div class="subway-line-long subway-line-mini subway-line-marker-diagram" style="font-size: 1em; background-color: '+connecting_lines[k].color_bg+'; color: '+connecting_lines[k].color_fg+';"><div class="content">'+connecting_lines[k].name+'</div></div>');
-                }
-
-                // Store the stop index.
-                stop_position[stop.sid] = stop_index;
-                stop_index += 1;
-            }
-        }
-
-    }
-
     get_ridership() {
-        $.ajax({ url: "transit-model?i="+NS_session,
+        var params = $.param({
+            i: enmodal.session_id
+        });
+        $.ajax({ url: "transit_model?"+params,
             async: ASYNC_REQUIRED,
             dataType: 'json',
             success: function(data, status) {
                 //console.log(data);
                 for (var i in data) {
                     var ridership = data[i];
-                    var station = NS_interface.active_service.get_station_by_id(parseInt(i));
+                    var station = enmodal.transit_interface.active_service.get_station_by_id(parseInt(i));
                     station.ridership = ridership;
                     $("#stationriders-"+station.sid.toString()).text(Math.round(station.ridership).toString());
                 }
@@ -1862,23 +1626,30 @@ class TransitUI {
         
         var do_it = true;
         if (this.hexagon_bounds != null && this.hexagon_zoom != null) {
-            if (this.hexagon_bounds.contains(initial_bounds) && NS_interface.map.getZoom() == this.hexagon_zoom) {
+            if (this.hexagon_bounds.contains(initial_bounds) && enmodal.transit_interface.map.getZoom() == this.hexagon_zoom) {
                 do_it = false;
             }
         }
-        if(NS_interface.map.getZoom() < MIN_ZOOM) do_it = false;
-        var request_num = NS_interface.data_layer_request_num;
+        if(enmodal.transit_interface.map.getZoom() < MIN_ZOOM) do_it = false;
+        var request_num = enmodal.transit_interface.data_layer_request_num;
         if (force) do_it = true;
         
         if (do_it) {
             this.hexagon_bounds = bounds;
-            this.hexagon_zoom = NS_interface.map.getZoom();
-            $.ajax({ url: "get-hexagons?i="+NS_session+"&lat-min="+bounds.getSouth().toString()+"&lat-max="+bounds.getNorth().toString()+"&lng-min="+bounds.getWest().toString()+"&lng-max="+bounds.getEast().toString(),
+            this.hexagon_zoom = enmodal.transit_interface.map.getZoom();
+            var params = $.param({
+                i: enmodal.session_id,
+                lat_min: bounds.getSouth(),
+                lat_max: bounds.getNorth(),
+                lng_min: bounds.getWest(),
+                lng_max: bounds.getEast()
+            });
+            $.ajax({ url: "get_hexagons?"+params,
                 async: ASYNC_REQUIRED,
                 dataType: 'text',
                 success: function(data_zip, status) {
                     var data = JSON.parse(data_zip);
-                    //NS_interface.data_layer.clearLayers();
+                    //enmodal.transit_interface.data_layer.clearLayers();
                     /*
                     var max_population = 0.0;
                     var min_population = -1.0;
@@ -1889,21 +1660,21 @@ class TransitUI {
                         if (population < min_population || min_population == -1.0) min_population = population;
                         populations.push(population);
                     }
-                    NS_interface.chroma_scale.domain([min_population, max_population], 7, 'quantiles');
+                    enmodal.transit_interface.chroma_scale.domain([min_population, max_population], 7, 'quantiles');
                     for (var i = 0; i < data.length; i++) {
                         var hexagon = data[i];
                         var population = hexagon["population"];
                         var opacity = 0.7;
-                        var color = NS_interface.chroma_scale(population).hex();
-                        if (hexagon["gid"] in NS_interface.hexagons) {
-                            var h = NS_interface.hexagons[hexagon["gid"]];
+                        var color = enmodal.transit_interface.chroma_scale(population).hex();
+                        if (hexagon["gid"] in enmodal.transit_interface.hexagons) {
+                            var h = enmodal.transit_interface.hexagons[hexagon["gid"]];
                             if (h.color != color) {
                                 h.color = color;
                                 h.update_style();
                             }
                         } else {
                             var h = new Hexagon(hexagon["gid"], hexagon["geo"], color, opacity);
-                            NS_interface.hexagons[hexagon["gid"]] = h;
+                            enmodal.transit_interface.hexagons[hexagon["gid"]] = h;
                             if (initial_bounds.contains(h.poly.getBounds())) {
                                 h.draw();
                             }
@@ -1911,8 +1682,8 @@ class TransitUI {
                     }
                     */
                     var num_breaks = 8;
-                    var breaks = quantiles(data, num_breaks, NS_interface.hexagon_layer);
-                    var scale = NS_interface.hexagon_scales[NS_interface.hexagon_layer];
+                    var breaks = quantiles(data, num_breaks, enmodal.transit_interface.hexagon_layer);
+                    var scale = enmodal.transit_interface.hexagon_scales[enmodal.transit_interface.hexagon_layer];
                     $("#scale-boxes").empty();
                     for (var i = 0; i < num_breaks; i++) {
                         $("#scale-boxes").append('<div class="scale-box" style="background-color: '+scale((num_breaks-i)/num_breaks).hex()+' "></div>');
@@ -1920,18 +1691,18 @@ class TransitUI {
                     $("#scale-low").text("0");
                     $("#scale-mid").text(Math.round(breaks[Math.round((num_breaks-1)/2)]/DGGRID_AREA).toString());
                     $("#scale-high").text(Math.round(breaks[0]/DGGRID_AREA).toString());
-                    $("#scale-units").html(NS_interface.hexagon_units[NS_interface.hexagon_layer]);
+                    $("#scale-units").html(enmodal.transit_interface.hexagon_units[enmodal.transit_interface.hexagon_layer]);
                     $("#scale").show();
                     
-                    NS_interface.data_layer.clearLayers();
+                    enmodal.transit_interface.layers.data.clearLayers();
                     /**/
-                    if (NS_interface.map.getZoom() < 14) {
-                        NS_interface.data_layer.addLayer(L.vectorGrid.slicer(data, {
+                    if (enmodal.leaflet_map.getZoom() < 14) {
+                        enmodal.transit_interface.layers.data.addLayer(L.vectorGrid.slicer(data, {
                             vectorTileLayerStyles: {
                                 sliced: function(properties, zoom) {
                                     var property = 0;
-                                    if (NS_interface.hexagon_layer == "population") property = properties.population;
-                                    if (NS_interface.hexagon_layer == "employment") property = properties.employment;
+                                    if (enmodal.transit_interface.hexagon_layer == "population") property = properties.population;
+                                    if (enmodal.transit_interface.hexagon_layer == "employment") property = properties.employment;
                                     return {
                                         fillColor: populationColor(property, breaks, scale),
                                         fill: true,
@@ -1944,10 +1715,10 @@ class TransitUI {
                             }
                         }));
                     } else {
-                        NS_interface.data_layer.addLayer(L.geoJson(data, {style: function(feature) {
+                        enmodal.transit_interface.layers.data.addLayer(L.geoJson(data, {style: function(feature) {
                             var property = 0;
-                            if (NS_interface.hexagon_layer == "population") property = feature.properties.population;
-                            if (NS_interface.hexagon_layer == "employment") property = feature.properties.employment;
+                            if (enmodal.transit_interface.hexagon_layer == "population") property = feature.properties.population;
+                            if (enmodal.transit_interface.hexagon_layer == "employment") property = feature.properties.employment;
                             return {
                                 fillColor: populationColor(property, breaks, scale),
                                 weight: 0,
@@ -1957,9 +1728,9 @@ class TransitUI {
                             };
                         }}));
                     }
-                    NS_interface.line_path_layer.bringToFront();
-                    //NS_interface.station_marker_layer.bringToFront();
-                    NS_interface.map.setMinZoom(MIN_ZOOM);
+                    enmodal.transit_interface.layers.active.line_paths.bringToFront();
+                    //enmodal.transit_interface.layers.active.station_markers.bringToFront();
+                    enmodal.leaflet_map.setMinZoom(MIN_ZOOM);
                 }
             });
         }
@@ -1969,19 +1740,6 @@ class TransitUI {
         var station_pair_json = this.station_pairs;
         return {"station_pairs": station_pair_json};
     }
-    
-    sync_json() {
-        var ret = {
-            "map": NS_map,
-            "settings": this.settings()
-        }
-        return JSON.stringify(ret);
-    }
-
-    load_session(session_id) {
-
-    }
-
 }
 
 function sortNumber(a,b) {
@@ -2023,36 +1781,19 @@ class LineDelta {
 
 }
 
-function handle_map_click(e) {
-    if (NS_interface.active_line != null && NS_interface.active_tool == "station") {
-        var pp = NS_interface.pin_projection(e.latlng.lat, e.latlng.lng);
-        if (!pp[0]) {
-            NS_interface.add_new_station(e.latlng.lat, e.latlng.lng);
-        } else {
-            console.log("adding pin");
-            var sp = NS_interface.get_station_pair_by_sp_id(pp[2]);
-            sp.add_pin(pp[1].x, pp[1].y);
-        }
-    }
-    if (NS_interface.active_tool == "transfer") {
-        NS_interface.active_tool = "station";
-        NS_interface.preview_clear();
-    }
-}
-
 
 function delete_station_event(e) {
-    var station_id = $(this).attr('id').replace('delete-', '');
-    NS_interface.remove_station(station_id);
+    var station_id = parseInt($(this).attr('transit-station-id'));
+    enmodal.transit_interface.remove_station(station_id);
 }
 
 function transfer_station_event(e) {
     var station_id = $(this).attr('id').replace('transfer-', '');
-    NS_interface.active_transfer_station = NS_interface.active_service.get_station_by_id(station_id);
-    NS_interface.active_tool = "transfer";
+    enmodal.transit_interface.active_transfer_station = enmodal.transit_interface.active_service.get_station_by_id(station_id);
+    enmodal.transit_interface.active_tool = "transfer";
 }
 
 function build_to_station_event(e) {
     var station_id = $(this).attr('id');
-    NS_interface.add_stop_to_station(station_id);
+    enmodal.transit_interface.add_stop_to_station(station_id);
 }

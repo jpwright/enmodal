@@ -46,6 +46,13 @@
     <script src='static/js/TransitUtils.js'></script>
     <script src='static/js/TransitTest.js'></script>
 
+    <script src='static/js/enmodal/session.js'></script>
+    <script src='static/js/enmodal/sidebar.js'></script>
+    <script src='static/js/enmodal/sharing.js'></script>
+    <script src='static/js/enmodal/station-pair.js'></script>
+    <script src='static/js/enmodal/bezier.js'></script>
+    <script src='static/js/enmodal/markers.js'></script>
+    
     <script src="static/js/bootstrap.min.js"></script>
     <script src="static/js/chroma.min.js"></script>
     <script src='static/js/lz-string.min.js'></script>
@@ -100,9 +107,25 @@
         <div id="tool-station" class="tool-button game-button-large"><i class="fa fa-map-marker fa-2x"></i></div>
         <div id="tool-data" class="tool-button game-button-large"><i class="fa fa-th fa-2x"></i></div>
     </div>
+    <div id="option-section-services">
+        <div id="service-selector" class="dropdown dropdown-selector game-button">
+            <button class="btn btn-secondary dropdown-toggle dropdown-button" id="dropdown-service-button" type="button" data-toggle="dropdown">Select a service...
+            <span class="caret"></span></button>
+            <ul class="dropdown-menu" id="dropdown-service-menu">
+            <div class="dropdown-divider"></div>
+            <li><a id="service-selector-new" href="#">New Service</a></li>
+            </ul>
+        </div>
+
+        <div id="custom-service-options" class="custom-options">
+            <div class="custom-options-label">Service name<br />
+            <input type="text" id="custom-service-name" name="custom-service-name" placeholder="?" /></div>
+            <div id="custom-service-error"></div>
+        </div>
+    </div>
     <div id="option-section-lines">
-        <div id="line-selector" class="dropdown game-button">
-            <button class="btn btn-secondary dropdown-toggle" id="dropdown-line-button" type="button" data-toggle="dropdown">Select a line...
+        <div id="line-selector" class="dropdown dropdown-selector game-button">
+            <button class="btn btn-secondary dropdown-toggle dropdown-button" id="dropdown-line-button" type="button" data-toggle="dropdown">Select a line...
             <span class="caret"></span></button>
             <ul class="dropdown-menu" id="dropdown-line-menu">
             <div class="dropdown-divider"></div>
@@ -110,14 +133,14 @@
             </ul>
         </div>
 
-        <div id="custom-line-options">
+        <div id="custom-line-options" class="custom-options">
             <div id="custom-line-options-color-pickers">
                     <input type="color" id="color-picker-bg" /><br />
                     <input type="color" id="color-picker-fg" />
                 </div>
             <div id="custom-line-options-column-inputs">
 
-                <div class="custom-line-options-label">Line name<br />
+                <div class="custom-options-label">Line name<br />
                 <input type="text" id="custom-line-name" name="custom-line-name" placeholder="?" /></div>
                 <div id="custom-line-error"></div>
             </div>
@@ -152,8 +175,7 @@
 
     </div>
 
-
-    <script src='static/js/TransitPrimary.js'></script>
+    <script src='static/js/enmodal/main.js'></script>
     <script>
     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),

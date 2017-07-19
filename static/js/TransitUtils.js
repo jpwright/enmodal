@@ -7,8 +7,8 @@ function get_url_parameter(param) {
             }
     );
 
-    if ( param ) {
-            return vars[param] ? vars[param] : null;
+    if (param) {
+        return vars[param] ? vars[param].replace(/\#$/, '') : null;
     }
     return vars;
 }
