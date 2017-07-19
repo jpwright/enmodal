@@ -1,7 +1,4 @@
 function session_new() {
-    var initial_lines = [
-        new Line(0, 'A')
-    ];
     // Initialize server
     $.ajax({ url: "session",
         async: false,
@@ -15,6 +12,10 @@ function session_new() {
         
     // Initialize service
     var service = new Service("MTA");
+    enmodal.transit_map.add_service(service);
+    enmodal.transit_interface.active_service = service;
+    enmodal.sidebar.update_service_selector(enmodal.transit_interface.active_service.sid);
+    enmodal.sidebar.refresh_service_editor();
     var params = $.param({
         i: enmodal.session_id,
         service_id: service.sid,
@@ -24,9 +25,6 @@ function session_new() {
         async: false,
         dataType: 'json',
         success: function(data, status) {
-            enmodal.transit_map.add_service(NS_service);
-            enmodal.transit_interface.active_service = enmodal.map.primary_service();
-            enmodal.transit_interface.active_line = enmodal.map.primary_service().lines[0];
         }
     });
 }
