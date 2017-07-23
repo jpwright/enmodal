@@ -225,7 +225,7 @@ class StationPair {
     }
     
     generate_path(lss, color, offset, weight, opacity) {  
-        var path;
+        var path = null;
         if (this.service.mode == "bus") {
             path = this.street_path;
             if (this.increment_draw_counter() || this.street_path == null) {
@@ -247,7 +247,7 @@ class StationPair {
                             ll.push([data[0][i][1], data[0][i][0]]);
                         }
                         path = L.polyline(ll, {weight: weight, color: color, opacity: opacity, offset: offset*(weight/2)});
-                        self.street_path = path;
+                        self.paths = [path];
                         self.draw_paths(self.layer);
                     }
                 });
@@ -325,7 +325,8 @@ class StationPair {
         for (var i = 0; i < this.line_spline_segments.length; i++) {
             var lss = this.line_spline_segments[i];
             var offset = this.lss_pos_color(lss)*2 - (this.num_lines_color()-1);
-            this.paths.push(this.generate_path(lss, lss.line.color_bg, offset, 6, opacity));
+            var path = this.generate_path(lss, lss.line.color_bg, offset, 6, opacity);
+            if (path != null) this.paths.push(path);
             // for debug only
             //this.draw_paths();
             if (DEBUG_BEZIER_CONTROLS) {

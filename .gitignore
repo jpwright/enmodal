@@ -14,6 +14,10 @@ vm_setup.sh
 data/*
 *.zip
 *.gz
+*.tar
 *.osm
-valhalla/
+valhalla/*.bin
+valhalla/*.txt
+valhalla/demos
+valhalla/tiles
 tools/cache/
