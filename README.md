@@ -8,28 +8,22 @@ enmodal is a browser-based service for transit planning and analysis. users can 
 
 This guide is written for Ubuntu (16.04.2). enmodal is not tested on other platforms, though it may be possible to get it running.
 
+### Clone this repo
+
+    git clone https://github.com/jpwright/enmodal.git && cd enmodal
+
 ### Create config file
 
 Copy `settings.cfg.example` to `settings.cfg` and edit fields to appropriate values.
 
-### Install Postgres and PostGIS
+### Install Postgres (9.6) and PostGIS (2.3)
 
-    sudo apt-get install postgresql postgresql-contrib
+    sudo add-apt-repository "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main"
+    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+    sudo apt-get update
+    sudo apt-get install postgresql-9.6
     sudo apt-get install postgresql-server-dev-9.6
     sudo apt-get install postgresql-9.6-postgis-2.3 postgresql-9.6-postgis-scripts
-
-### Install virtualenv and set up Python requirements
-
-    pip install virtualenv
-    virtualenv venv
-    source venv/bin/activate
-    pip install -r requirements.txt
-
-### Set up Flask
-
-    sudo apt-get install python-setuptools python-dev build-essential
-    sudo easy_install pip
-    sudo pip install --upgrade virtualenv
 
 ### Set up Postgres user
 
@@ -44,6 +38,32 @@ Copy `settings.cfg.example` to `settings.cfg` and edit fields to appropriate val
 ### Install PostGIS extensions
 
     sudo -u postgres psql -c "CREATE EXTENSION postgis; CREATE EXTENSION postgis_topology;" dggrid
+
+### Set up Valhalla
+
+    sudo add-apt-repository -y ppa:valhalla-core/valhalla
+    sudo apt-get update
+    sudo apt-get install -y valhalla-bin
+    
+### Install virtualenv and set up Python requirements
+
+    pip install virtualenv
+    virtualenv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+
+### Set up Flask
+
+    sudo apt-get install python-setuptools python-dev build-essential
+    sudo easy_install pip
+    sudo pip install --upgrade virtualenv
+    
+### Install NPM and grunt
+
+    sudo apt-get install nodejs-legacy npm
+    npm install grunt grunt-contrib-jshint grunt-contrib-watch grunt-contrib-copy grunt-contrib-concat grunt-contrib-uglify --save-dev
+    sudo npm install -g grunt-cli
+    grunt --force
 
 ## Populating dggrid database
 
