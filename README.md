@@ -38,6 +38,12 @@ Copy `settings.cfg.example` to `settings.cfg` and edit fields to appropriate val
 ### Install PostGIS extensions
 
     sudo -u postgres psql -c "CREATE EXTENSION postgis; CREATE EXTENSION postgis_topology;" dggrid
+
+### Set up Valhalla
+
+    sudo add-apt-repository -y ppa:valhalla-core/valhalla
+    sudo apt-get update
+    sudo apt-get install -y valhalla-bin
     
 ### Install virtualenv and set up Python requirements
 
@@ -52,11 +58,12 @@ Copy `settings.cfg.example` to `settings.cfg` and edit fields to appropriate val
     sudo easy_install pip
     sudo pip install --upgrade virtualenv
     
-### Set up Valhalla
+### Install NPM and grunt
 
-    sudo add-apt-repository -y ppa:valhalla-core/valhalla
-    sudo apt-get update
-    sudo apt-get install -y valhalla-bin
+    sudo apt-get install nodejs-legacy npm
+    npm install grunt grunt-contrib-jshint grunt-contrib-watch grunt-contrib-copy grunt-contrib-concat grunt-contrib-uglify --save-dev
+    sudo npm install -g grunt-cli
+    grunt --force
 
 ## Populating dggrid database
 
