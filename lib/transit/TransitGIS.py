@@ -212,7 +212,7 @@ def reverse_geocode(provider, lat, lng):
                 result.set_neighborhood(neighborhood)
                 
     if provider == "mapbox":
-        mapbox_uri = "https://api.mapbox.com/geocoding/v5/mapbox.places/"+str(lng)+","+str(lat)+".json?access_token="+MAPBOX_KEY
+        mapbox_uri = "https://api.mapbox.com/geocoding/v5/mapbox.places/"+str(lng)+","+str(lat)+".json?access_token="+MAPBOX_KEY+"&types=locality,neighborhood,address"
         geocode = requests.get(mapbox_uri)
         geocode_content = json.loads(geocode.content)
         if (len(geocode_content["features"]) < 1):

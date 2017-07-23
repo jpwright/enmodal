@@ -8,6 +8,7 @@ class StationPair {
         this.line_spline_segments = [];
         this.paths = [];
         this.street_path = null;
+        this.street_path_is_valid = false;
         this.pins = [];
         this.draw_counter = 0;
         this.group_sss = null;
@@ -227,8 +228,8 @@ class StationPair {
     generate_path(lss, color, offset, weight, opacity) {  
         var path = null;
         if (this.service.mode == "bus") {
-            path = this.street_path;
-            if (this.increment_draw_counter() || this.street_path == null) {
+            if (this.increment_draw_counter() || !this.street_path_is_valid) {
+                var self = this;
                 var params = $.param({
                     i: enmodal.session_id,
                     service_id: enmodal.transit_interface.active_service.sid,
@@ -237,7 +238,6 @@ class StationPair {
                     station_2_lat: this.stations[1].location[0],
                     station_2_lng: this.stations[1].location[1]
                 });
-                var self = this;
                 $.ajax({ url: "street_path?"+params,
                     async: true,
                     dataType: 'json',
@@ -246,11 +246,16 @@ class StationPair {
                         for (var i = 0; i < data[0].length; i++) {
                             ll.push([data[0][i][1], data[0][i][0]]);
                         }
+                        this.street_path = ll;
+                        this.street_path_is_valid = true;
                         path = L.polyline(ll, {weight: weight, color: color, opacity: opacity, offset: offset*(weight/2)});
-                        self.paths = [path];
-                        self.draw_paths(self.layer);
+                        self.undraw_paths();
+                        self.paths.push(path);
+                        self.draw_paths();
                     }
                 });
+            } else {
+                path = L.polyline(self.street_path, {weight: weight, color: color, opacity: opacity, offset: offset*(weight/2)});
             }
         } else {
             var sss = this.average_sss();
@@ -349,7 +354,7 @@ class StationPair {
         }
     }
     
-    draw_paths(layer) {
+    draw_paths() {
         for (var j = 0; j < this.paths.length; j++) {
             this.layer.addLayer(this.paths[j]);
         }

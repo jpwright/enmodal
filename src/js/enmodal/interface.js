@@ -87,10 +87,12 @@ class TransitUI {
                     // draw lines
                     var lines = this.active_service.station_lines(this.moving_station_marker.station);
                     for (var i = 0; i < lines.length; i++) {
-                        // reset draw counter for all station pairs to force an update
+                        // force an update
                         var station_pairs = enmodal.transit_interface.get_station_pairs_for_line(lines[i]);
                         for (var j = 0; j < station_pairs.length; j++) {
-                            station_pairs[j].draw_counter = FOLLOW_STREET_MOVE_THRESH;
+                            station_pairs[j].undraw_paths();
+                            station_pairs[j].paths = [];
+                            station_pairs[j].street_path_is_valid = false;
                         }
                         this.draw_line(lines[i], false, true, this.layers.active.line_paths, true, this.active_service);
                     }
