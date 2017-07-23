@@ -42,7 +42,7 @@ SESSIONS_SECRET_KEY_PUBLIC = int(config.get('sessions', 'secret_key_public'), 16
 SESSIONS_SECRET_KEY_PRIVATE = int(config.get('sessions', 'secret_key_private'), 16)
 SESSION_EXPIRATION_TIME = int(config.get('sessions', 'expiration_time'))
 
-app = Flask(__name__, static_url_path='/static')
+app = Flask(__name__, static_folder='dist', static_url_path='/static')
 app.secret_key = config.get('flask', 'secret_key')
 
 class SessionManager(object):

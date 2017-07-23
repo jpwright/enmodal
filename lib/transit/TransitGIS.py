@@ -131,7 +131,7 @@ def hexagons_bb(bb):
     conn = psycopg2.connect(DGGRID_CONN_STRING)
     cursor = conn.cursor()
      
-    query = "SELECT gid, ST_AsGeoJSON(center), coalesce(population,0) as p, coalesce(employment,0) as e FROM dggrid WHERE ST_Within(center, ST_MakeEnvelope("+str(bb.min_lng)+", "+str(bb.min_lat)+", "+str(bb.max_lng)+", "+str(bb.max_lat)+")) LIMIT 5000;"
+    query = "SELECT gid, ST_AsGeoJSON(center), coalesce(population,0) as p, coalesce(employment,0) as e FROM dggrid WHERE ST_Within(center, ST_MakeEnvelope("+str(bb.min_lng)+", "+str(bb.min_lat)+", "+str(bb.max_lng)+", "+str(bb.max_lat)+")) LIMIT 20000;"
     print query
     cursor.execute(query)
     #cursor.execute("SELECT gid FROM dggrid WHERE ST_DWithin(geo, 'POINT("+lng+" "+lat+")', 0.01) LIMIT 1000;")

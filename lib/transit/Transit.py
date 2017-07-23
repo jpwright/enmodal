@@ -310,6 +310,7 @@ class Service(object):
         self.lines = []
         self.stations = []
         self.transfers = []
+        self.mode = ""
 
     def add_line(self, l):
         self.lines.append(l)
@@ -402,3 +403,7 @@ class Service(object):
                 t = Transfer(transfer['sid'], transfer['station_ids'])
                 t.from_json(transfer)
                 self.add_transfer(t)
+        if 'mode' in j:
+            self.mode = j['mode']
+        else:
+            self.mode = "heavy_rail"
