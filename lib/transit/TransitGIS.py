@@ -21,7 +21,9 @@ DGGRID_USER = config.get('dggrid', 'user')
 DGGRID_PASSWORD = config.get('dggrid', 'password')
 DGGRID_CONN_STRING = "host='"+DGGRID_HOST+"' port='"+DGGRID_PORT+"' dbname='"+DGGRID_DBNAME+"' user='"+DGGRID_USER+"' password='"+DGGRID_PASSWORD+"'"
 
-MAPZEN_KEY = config.get('flask', 'mapzen_key')
+REVERSE_GEOCODE_PROVIDER = config.get('geocode', 'reverse_geocode_provider')
+MAPZEN_KEY = config.get('geocode', 'mapzen_key')
+MAPBOX_KEY = config.get('geocode', 'mapbox_key')
 
 class HexagonRegion(object):
     
@@ -126,8 +128,31 @@ class BoundingBox(object):
                     self.max_lng = station.location[1]
                     max_lng_set = True
 
-def hexagons_bb(bb):
+class ReverseGeocodeResult(object):
+    
+    def __init__(self, lat, lng):
+        self.lat = lat
+        self.lng = lng
+        self.streets = []
+        self.neighborhood = ""
+        self.locality = ""
+        self.has_street = False
+        self.has_neighborhood = False
+        self.has_locality = False
+    
+    def set_streets(self, streets):
+        self.streets = streets
+        self.has_street = True
+        
+    def set_neighborhood(self, neighborhood):
+        self.neighborhood = neighborhood
+        self.has_neighborhood = True
+        
+    def set_locality(self, locality):
+        self.locality = locality
+        self.has_locality = True
 
+def hexagons_bb(bb):
     conn = psycopg2.connect(DGGRID_CONN_STRING)
     cursor = conn.cursor()
      
@@ -159,65 +184,81 @@ def hexagons_bb(bb):
     
     return region
 
+def reverse_geocode(provider, lat, lng):
+    
+    result = ReverseGeocodeResult(lat, lng)
+    
+    if provider == "mapzen":
+        mapzen_uri = "https://search.mapzen.com/v1/reverse?api_key="+MAPZEN_KEY+"&point.lat="+lat+"&point.lon="+lng+"&size=1&layers=address"
+        geocode = requests.get(mapzen_uri)
+        geocode_content = json.loads(geocode.content)
+        
+        if (len(geocode_content["features"]) < 1):
+            # Flag an error?
+            print "Error in reverse geocoding"
+        else:
+            properties = geocode_content["features"][0]["properties"]
+            if ("street" in properties):
+                streets = [properties["street"]]
+                result.set_streets(streets)
+            if ("locality" in properties):
+                locality = properties["locality"]
+                result.set_locality(locality)
+            if ("borough" in properties):
+                locality = properties["borough"]
+                result.set_locality(locality)
+            if ("neighbourhood" in properties):
+                neighborhood = properties["neighbourhood"]
+                result.set_neighborhood(neighborhood)
+                
+    if provider == "mapbox":
+        mapbox_uri = "https://api.mapbox.com/geocoding/v5/mapbox.places/"+str(lng)+","+str(lat)+".json?access_token="+MAPBOX_KEY
+        geocode = requests.get(mapbox_uri)
+        geocode_content = json.loads(geocode.content)
+        if (len(geocode_content["features"]) < 1):
+            # Flag an error?
+            print "Error in reverse geocoding"
+        else:
+            for feature in geocode_content["features"]:
+                place_type = feature["place_type"][0]
+                if place_type == "address":
+                    result.set_streets([feature["text"]])
+                if place_type == "neighborhood":
+                    result.set_neighborhood(feature["text"])
+                if place_type == "locality":
+                    result.set_locality(feature["text"])
+            
+    return result
+        
+
 def station_constructor(sid, lat, lng):
     
-    mapzen_uri = "https://search.mapzen.com/v1/reverse?api_key="+MAPZEN_KEY+"&point.lat="+lat+"&point.lon="+lng+"&size=1&layers=address"
-    
-    geocode = requests.get(mapzen_uri)
-    geocode_content = json.loads(geocode.content)
-    
     name = ""
-    streets = []
-    neighborhood = ""
-    locality = ""
-    region = ""
     
-    if (len(geocode_content["features"]) < 1):
-        # Flag an error?
-        print "Error in reverse geocoding"
+    rgr = reverse_geocode(REVERSE_GEOCODE_PROVIDER, lat, lng)
+    
+    if (rgr.has_street):
+        name = rgr.streets[0]
+    elif (rgr.has_neighborhood):
+        name = rgr.neighborhood
+    elif (rgr.has_locality):
+        name = rgr.locality
     else:
-        properties = geocode_content["features"][0]["properties"]
-        
-        has_street = False
-        has_locality = False
-        has_neighborhood = False
-        
-        if ("street" in properties):
-            streets = [properties["street"]]
-            has_street = True
-        if ("locality" in properties):
-            locality = properties["locality"]
-            has_locality = True
-        if ("borough" in properties):
-            locality = properties["borough"]
-            has_locality = True
-        if ("neighbourhood" in properties):
-            neighborhood = properties["neighbourhood"]
-            has_neighborhood = True
-        
-        if (has_street):
-            name = properties["street"]
-        elif (has_neighborhood):
-            name = properties["neighbourhood"]
-        elif (has_locality):
-            name = properties["locality"]
-        else:
-            name = "Station"
-        if len(name) <= 1:
-            name = "Station"
+        name = "Station"
+    if len(name) <= 1:
+        name = "Station"
     
-        name = re.sub(r'(\w+\s)\b(Street)\b', r'\1St', name)
-        name = re.sub(r'(\w+\s)\b(Road)\b', r'\1Rd', name)
-        name = re.sub(r'(\w+\s)\b(Drive)\b', r'\1Dr', name)
-        name = re.sub(r'(\w+\s)\b(Avenue)\b', r'\1Av', name)
-        name = re.sub(r'(\w+\s)\b(Lane)\b', r'\1Ln', name)
-        name = re.sub(r'(\w+\s)\b(Boulevard)\b', r'\1Blvd', name)
+    name = re.sub(r'(\w+\s)\b(Street)\b', r'\1St', name)
+    name = re.sub(r'(\w+\s)\b(Road)\b', r'\1Rd', name)
+    name = re.sub(r'(\w+\s)\b(Drive)\b', r'\1Dr', name)
+    name = re.sub(r'(\w+\s)\b(Avenue)\b', r'\1Av', name)
+    name = re.sub(r'(\w+\s)\b(Lane)\b', r'\1Ln', name)
+    name = re.sub(r'(\w+\s)\b(Boulevard)\b', r'\1Blvd', name)
     
     s = Transit.Station(sid, name, [lat, lng])
-    s.streets = streets
-    s.neighborhood = neighborhood
-    s.locality = locality
-    s.region = region
+    s.streets = rgr.streets
+    s.neighborhood = rgr.neighborhood
+    s.locality = rgr.locality
     
     return s
 
