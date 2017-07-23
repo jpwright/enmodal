@@ -41,9 +41,13 @@ Copy `settings.cfg.example` to `settings.cfg` and edit fields to appropriate val
 
 ### Set up Valhalla
 
+Note: best to follow the [Valhalla setup guide](https://github.com/valhalla/valhalla/)
+
     sudo add-apt-repository -y ppa:valhalla-core/valhalla
     sudo apt-get update
     sudo apt-get install -y valhalla-bin
+    cd valhalla
+    valhalla_route_service valhalla.json 1 &
     
 ### Install virtualenv and set up Python requirements
 
