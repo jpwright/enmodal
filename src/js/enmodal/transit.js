@@ -34,6 +34,45 @@ class Map {
         }
         return null;
     }
+    
+    geographic_bounds() {
+        var lat_min = 0.0;
+        var lat_min_set = false;
+        var lat_max = 0.0;
+        var lat_max_set = false;
+        var lng_min = 0.0;
+        var lng_min_set = false;
+        var lng_max = 0.0;
+        var lng_max_set = false;
+        var num_stations = 0;
+
+        for (var i = 0; i < this.services.length; i++) {
+            for (var j = 0; j < this.services[i].stations.length; j++) {
+                var station = this.services[i].stations[j];
+                num_stations += 1;
+                if (!lat_min_set || station.location[0] < lat_min) {
+                    lat_min = station.location[0];
+                    lat_min_set = true;
+                }
+                if (!lat_max_set || station.location[0] > lat_max) {
+                    lat_max = station.location[0];
+                    lat_max_set = true;
+                }
+                if (!lng_min_set || station.location[1] < lng_min) {
+                    lng_min = station.location[1];
+                    lng_min_set = true;
+                }
+                if (!lng_max_set || station.location[1] > lng_max) {
+                    lng_max = station.location[1];
+                    lng_max_set = true;
+                }
+            }
+        }
+        if (num_stations == 0) return null;
+        
+        var bounds = L.latLngBounds(L.latLng(lat_min, lng_min), L.latLng(lat_max, lng_max));
+        return bounds;
+    }
 
     to_json() {
         return JSON.stringify(this);

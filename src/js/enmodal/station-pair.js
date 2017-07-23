@@ -326,7 +326,7 @@ class StationPair {
         this.undraw_paths();
         this.paths = [];
         var opacity = 1.0;
-        if (!active) opacity = INACTIVE_OPACITY;
+        if (!active) opacity = INACTIVE_OPACITY / this.num_lines();
         for (var i = 0; i < this.line_spline_segments.length; i++) {
             var lss = this.line_spline_segments[i];
             var offset = this.lss_pos_color(lss)*2 - (this.num_lines_color()-1);

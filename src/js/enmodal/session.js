@@ -81,7 +81,9 @@ function session_load() {
                 }
                 
                 enmodal.transit_interface.draw_transfers();
-                enmodal.transit_interface.map.closePopup();
+                //enmodal.transit_interface.map.closePopup();
+                var bounds = enmodal.transit_map.geographic_bounds();
+                if (bounds != null) enmodal.leaflet_map.fitBounds(bounds);
                 enmodal.data.get_ridership();
                 $("#starter-city-picker").hide();
                 $("#starter").hide();
