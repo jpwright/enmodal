@@ -21,3 +21,4 @@ valhalla/*.txt
 valhalla/demos
 valhalla/tiles
 tools/cache/
+dist/*
