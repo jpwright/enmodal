@@ -404,6 +404,7 @@ class TransitUI {
                         async: ASYNC_REQUIRED,
                         dataType: 'json',
                         success: function(data, status) {
+                            handle_server_error(data);
                         }
                     });
                 }
@@ -422,6 +423,7 @@ class TransitUI {
             async: ASYNC_REQUIRED,
             dataType: 'json',
             success: function(data, status) {
+                handle_server_error(data);
                 station.name = data["name"];
                 if ("locality" in data) {
                     station.locality = data["locality"];
@@ -450,6 +452,7 @@ class TransitUI {
                         async: false,
                         dataType: 'json',
                         success: function(data, status) {
+                            handle_server_error(data);
                             for (var i = 0; i < best_edges.length; i++) {
                                 var params = $.param({
                                     i: enmodal.session_id,
@@ -463,6 +466,7 @@ class TransitUI {
                                     async: ASYNC_REQUIRED,
                                     dataType: 'json',
                                     success: function(data, status) {
+                                        handle_server_error(data);
                                     }
                                 });
                             }
@@ -485,36 +489,96 @@ class TransitUI {
         return station;
     }
     
+    clean_edges(line) {
+        // Check for self-edges
+        var edges_removed = line.remove_self_edges();
+        for (var j = 0; j < edges_removed.length; j++) {
+            var edge = edges_removed[j];
+            if (INC_UPDATES) {
+                var params = $.param({
+                    i: enmodal.session_id,
+                    service_id: this.active_service.sid,
+                    line_id: line.sid,
+                    edge_id: edge.sid
+                });
+                $.ajax({ url: "edge_remove?"+params,
+                    async: ASYNC_REQUIRED,
+                    dataType: 'json',
+                    success: function(data, status) {
+                        handle_server_error(data);
+                    }
+                });
+            }
+        }
+        // Check for duplicate edges
+        edges_removed = line.remove_duplicate_edges();
+        for (var j = 0; j < edges_removed.length; j++) {
+            var edge = edges_removed[j];
+            if (INC_UPDATES) {
+                var params = $.param({
+                    i: enmodal.session_id,
+                    service_id: this.active_service.sid,
+                    line_id: line.sid,
+                    edge_id: edge.sid
+                });
+                $.ajax({ url: "edge_remove?"+params,
+                    async: ASYNC_REQUIRED,
+                    dataType: 'json',
+                    success: function(data, status) {
+                        handle_server_error(data);
+                    }
+                });
+            }
+        }
+    }
+    
     merge_stations(station_to_remove, station_to_keep) {
         // For all lines
         for (var i = 0; i < this.active_service.lines.length; i++) {
             var line = this.active_service.lines[i];
-            // find all stops with this station
+            // Find relevant stops
+            var stop_to_remove = null;
+            var stop_to_keep = null;
             for (var j = 0; j < line.stops.length; j++) {
                 var stop = line.stops[j];
                 if (stop.station.sid == station_to_remove.sid) {
-                    // change the stop's station to the new one
-                    stop.station = station_to_keep;
-                    if (INC_UPDATES) {
-                        var params = $.param({
-                            i: enmodal.session_id,
-                            service_id: this.active_service.sid,
-                            line_id: line.sid,
-                            station_id: station_to_keep.sid,
-                            stop_id: stop.sid
-                        });
-                        $.ajax({ url: "stop_update_station?"+params,
-                            async: ASYNC_REQUIRED,
-                            dataType: 'json',
-                            success: function(data, status) {
-                            }
-                        });
-                    }
+                    stop_to_remove = stop;
+                }
+                if (stop.station.sid == station_to_keep.sid) {
+                    stop_to_keep = stop;
                 }
             }
+            // If both stops exists on this line
+            if (stop_to_remove != null && stop_to_keep != null) {
+                // Connect with an edge
+                var new_edge = new Edge([stop_to_remove, stop_to_keep]);
+                line.add_edge(new_edge);
+                if (INC_UPDATES) {
+                    var params = $.param({
+                        i: enmodal.session_id,
+                        service_id: this.active_service.sid,
+                        line_id: line.sid,
+                        stop_1_id: new_edge.stops[0].sid,
+                        stop_2_id: new_edge.stops[1].sid,
+                        edge_id: new_edge.sid
+                    });
+                    $.ajax({ url: "edge_add?"+params,
+                        async: ASYNC_REQUIRED,
+                        dataType: 'json',
+                        success: function(data, status) {
+                            handle_server_error(data);
+                        }
+                    });
+                }
+            }
+            // If stop to remove exists on this line but not stop to keep
+            this.clean_edges(line);
+            
         }
-        // remove station
-        this.remove_station(station_to_remove.sid);
+        // remove station with forced closure
+        this.remove_station(station_to_remove.sid, true);
+        
+        
         // draw lines
         var lines = this.active_service.station_lines(station_to_keep);
         for (var i = 0; i < lines.length; i++) {
@@ -536,7 +600,7 @@ class TransitUI {
             async: ASYNC_OPTIONAL,
             dataType: 'json',
             success: function(data, status) {
-
+                handle_server_error(data);
                 station.name = data["name"];
                 if ("locality" in data) {
                     station.locality = data["locality"];
@@ -568,6 +632,7 @@ class TransitUI {
             async: ASYNC_REQUIRED,
             dataType: 'json',
             success: function(data, status) {
+                handle_server_error(data);
                 enmodal.data.get_ridership();
             }
         });
@@ -629,6 +694,7 @@ class TransitUI {
                         async: ASYNC_REQUIRED,
                         dataType: 'json',
                         success: function(data, status) {
+                            handle_server_error(data);
                         }
                     });
                 }
@@ -661,6 +727,7 @@ class TransitUI {
                             async: ASYNC_REQUIRED,
                             dataType: 'json',
                             success: function(data, status) {
+                                handle_server_error(data);
                             }
                         });
                     }
@@ -686,7 +753,7 @@ class TransitUI {
 
     }
 
-    remove_station(id) {
+    remove_station(id, force_closure) {
 
         var impacted_lines = [];
         var impacted_stops = [];
@@ -705,13 +772,14 @@ class TransitUI {
                         var params = $.param({
                             i: enmodal.session_id,
                             service_id: this.active_service.sid,
-                            line_id: this.active_line.sid,
+                            line_id: line.sid,
                             stop_id: stop.sid
                         });
                         $.ajax({ url: "stop_remove?"+params,
                             async: ASYNC_REQUIRED,
                             dataType: 'json',
                             success: function(data, status) {
+                                handle_server_error(data);
                             }
                         });
                     }
@@ -754,7 +822,7 @@ class TransitUI {
                         var params = $.param({
                             i: enmodal.session_id,
                             service_id: this.active_service.sid,
-                            line_id: this.active_line.sid,
+                            line_id: line.sid,
                             edge_id: edge.sid
                         });
                         if (INC_UPDATES) {
@@ -762,6 +830,7 @@ class TransitUI {
                                 async: ASYNC_REQUIRED,
                                 dataType: 'json',
                                 success: function(data, status) {
+                                    handle_server_error(data);
                                 }
                             });
                         }
@@ -788,14 +857,14 @@ class TransitUI {
                             spoke_stop = edge.stops[1];
                         }
                         if (spoke_stop.sid != central_stop.sid) {
-                            if (!line.path_between_stops(spoke_stop, central_stop)) {
+                            if (!line.path_between_stops(spoke_stop, central_stop) || force_closure) {
                                 var new_edge = new Edge([central_stop, spoke_stop]);
                                 line.add_edge(new_edge);
                                 if (INC_UPDATES) {
                                     var params = $.param({
                                         i: enmodal.session_id,
                                         service_id: this.active_service.sid,
-                                        line_id: this.active_line.sid,
+                                        line_id: line.sid,
                                         stop_1_id: new_edge.stops[0].sid,
                                         stop_2_id: new_edge.stops[1].sid,
                                         edge_id: new_edge.sid
@@ -804,6 +873,7 @@ class TransitUI {
                                         async: ASYNC_REQUIRED,
                                         dataType: 'json',
                                         success: function(data, status) {
+                                            handle_server_error(data);
                                         }
                                     });
                                 }
@@ -843,6 +913,7 @@ class TransitUI {
                                     async: ASYNC_REQUIRED,
                                     dataType: 'json',
                                     success: function(data, status) {
+                                        handle_server_error(data);
                                     }
                                 });
                             }
@@ -860,6 +931,7 @@ class TransitUI {
                                     async: ASYNC_REQUIRED,
                                     dataType: 'json',
                                     success: function(data, status) {
+                                        handle_server_error(data);
                                     }
                                 });
                             }
@@ -867,27 +939,7 @@ class TransitUI {
                     }
                 }
                 
-                // Check for self-edges
-                for (var l = 0; l < line.edges.length; l++) {
-                    var edge = line.edges[l];
-                    if (edge.stops[0].sid == edge.stops[1].sid) {
-                        line.remove_edge(edge);
-                        if (INC_UPDATES) {
-                            var params = $.param({
-                                i: enmodal.session_id,
-                                service_id: this.active_service.sid,
-                                line_id: line.sid,
-                                edge_id: edge.sid
-                            });
-                            $.ajax({ url: "edge_remove?"+params,
-                                async: ASYNC_REQUIRED,
-                                dataType: 'json',
-                                success: function(data, status) {
-                                }
-                            });
-                        }
-                    }
-                }
+                this.clean_edges(line);
             }
         }
 
@@ -907,7 +959,7 @@ class TransitUI {
                         async: ASYNC_REQUIRED,
                         dataType: 'json',
                         success: function(data, status) {
-
+                            handle_server_error(data);
                         }
                     });
                 }
@@ -958,7 +1010,7 @@ class TransitUI {
         var impacted_lines = this.active_service.station_lines(station);
         
         if (impacted_lines.length == 1) {
-            this.remove_station(station_id);
+            this.remove_station(station_id, false);
             return 0;
         }
         
@@ -977,6 +1029,7 @@ class TransitUI {
                     async: ASYNC_REQUIRED,
                     dataType: 'json',
                     success: function(data, status) {
+                        handle_server_error(data);
                     }
                 });
             }
@@ -1000,6 +1053,7 @@ class TransitUI {
                             async: ASYNC_REQUIRED,
                             dataType: 'json',
                             success: function(data, status) {
+                                handle_server_error(data);
                             }
                         });
                     }
@@ -1042,6 +1096,7 @@ class TransitUI {
                                 async: ASYNC_REQUIRED,
                                 dataType: 'json',
                                 success: function(data, status) {
+                                    handle_server_error(data);
                                 }
                             });
                         }
@@ -1080,6 +1135,7 @@ class TransitUI {
                                 async: ASYNC_REQUIRED,
                                 dataType: 'json',
                                 success: function(data, status) {
+                                    handle_server_error(data);
                                 }
                             });
                         }
@@ -1097,6 +1153,7 @@ class TransitUI {
                                 async: ASYNC_REQUIRED,
                                 dataType: 'json',
                                 success: function(data, status) {
+                                    handle_server_error(data);
                                 }
                             });
                         }
@@ -1122,7 +1179,7 @@ class TransitUI {
             var station = line.stops[i].station;
             var station_marker = this.get_station_marker_by_station(station);
             var num_colors = num_unique_colors(this.active_service.station_lines(station));
-            station_marker.marker.setRadius(Math.max(num_colors, 2) * 3);
+            station_marker.set_radius(Math.max(num_colors, 2) * 3);
         }
     }
     
@@ -1500,30 +1557,30 @@ class TransitUI {
         var pin_projection = this.pin_projection(lat, lng);
         //console.log(pin_projection);
         
-        if (pin_projection[0] && best_distance > PIN_DISTANCE_FROM_STATION_MIN) {
-            if (!this.dragging_pin) {
+        if (!this.dragging_pin) {
+            if (pin_projection[0] && best_distance > PIN_DISTANCE_FROM_STATION_MIN) {
                 var m = L.marker([pin_projection[1].x, pin_projection[1].y], {icon: PIN_ICON});
                 m.id = "pin-preview";
                 this.preview_line_pin_marker = m;
                 this.layers.preview.addLayer(m);
-            }
-        } else {
-            // Create dummy station and stop
-            var station = new Station("preview", [lat, lng], true);
-            var stop = new Stop(station, true);
+            } else {
+                // Create dummy station and stop
+                var station = new Station("preview", [lat, lng], true);
+                var stop = new Stop(station, true);
 
-            // Get the EdgeDelta from this new stop
-            var delta = this.get_insertion_result(line, stop);
+                // Get the EdgeDelta from this new stop
+                var delta = this.get_insertion_result(line, stop);
 
-            // Draw the edge path
-            for (var j = 0; j < delta.add.length; j++) {
-                var edge = delta.add[j];
+                // Draw the edge path
+                for (var j = 0; j < delta.add.length; j++) {
+                    var edge = delta.add[j];
 
-                var stop_points = [[edge.stops[0].station.location[0], edge.stops[0].station.location[1]], [edge.stops[1].station.location[0], edge.stops[1].station.location[1]]];
-                var edge_path = new EdgePath(edge.sid, stop_points, [], [], line.color_bg, 0.2);
+                    var stop_points = [[edge.stops[0].station.location[0], edge.stops[0].station.location[1]], [edge.stops[1].station.location[0], edge.stops[1].station.location[1]]];
+                    var edge_path = new EdgePath(edge.sid, stop_points, [], [], line.color_bg, 0.2);
 
-                this.preview_paths.push(edge_path);
-                this.layers.preview.addLayer(edge_path.path);
+                    this.preview_paths.push(edge_path);
+                    this.layers.preview.addLayer(edge_path.path);
+                }
             }
         }
         
@@ -1654,10 +1711,22 @@ class LineDelta {
 
 }
 
+function handle_server_error(data) {
+    if ("error" in data) {
+        console.log(data["error"]);
+        if (data["error"] == "Invalid session") {
+            $("#session-expired").show();
+            $("#starter").show();
+            setTimeout(function() {
+                location.reload();
+            }, 5000);
+        }
+    }
+}
 
 function delete_station_event(e) {
     var station_id = parseInt($(this).attr('transit-station-id'));
-    enmodal.transit_interface.remove_station(station_id);
+    enmodal.transit_interface.remove_station(station_id, false);
 }
 
 function transfer_station_event(e) {

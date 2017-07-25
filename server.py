@@ -100,6 +100,9 @@ class SessionManager(object):
     
     def purge(self):
         num_sessions_start = len(self.sessions)
+        for session in self.sessions:
+            if session.is_expired():
+                save_session(session)
         self.sessions = [x for x in self.sessions if not x.is_expired()]
         return num_sessions_start - len(self.sessions)
 
@@ -187,6 +190,22 @@ def route_session_links():
 
     return json.dumps({})
 
+def save_session(s):
+    sid = s.sid
+    print "saving with sid "+str(sid)
+    sdata = s.map.to_json()
+    sdt = datetime.datetime.now()
+
+    conn = psycopg2.connect(SESSIONS_CONN_STRING)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM sessions WHERE id = %s LIMIT 1" % (sid))
+    if (cursor.rowcount > 0):
+        cursor.execute("UPDATE sessions SET data = '%s', updated = '%s' WHERE id = %s" % (sdata, sdt, sid))
+    else:
+        cursor.execute("INSERT INTO sessions (id, data, updated) VALUES (%s, '%s', '%s')" % (sid, sdata, sdt))
+
+    conn.commit()
+
 @app.route('/session_save')
 def route_session_save():
     h = int(request.args.get('i'), 16)
@@ -194,23 +213,9 @@ def route_session_save():
     if e:
         return e
 
-    conn = psycopg2.connect(SESSIONS_CONN_STRING)
-    cursor = conn.cursor()
-
     a = session_manager.auth_by_key(h)
     if a.editable:
-        sid = a.session.sid
-        print "saving with sid "+str(sid)
-        sdata = a.session.map.to_json().replace("'", "''")
-        sdt = datetime.datetime.now()
-
-        cursor.execute("SELECT id FROM sessions WHERE id = %s LIMIT 1" % (sid))
-        if (cursor.rowcount > 0):
-            cursor.execute("UPDATE sessions SET data = '%s', updated = '%s' WHERE id = %s" % (sdata, sdt, sid))
-        else:
-            cursor.execute("INSERT INTO sessions (id, data, updated) VALUES (%s, '%s', '%s')" % (sid, sdata, sdt))
-
-        conn.commit()
+        save_session(a.session)
 
         return json.dumps({"result": "OK"})
     else:

@@ -8,6 +8,7 @@ class StationMarker {
         this.popup = L.popup({'className': 'station-popup'});
         this.merge_pending = false;
         this.marker.bindPopup(this.popup);
+        this.radius = MARKER_RADIUS_DEFAULT;
         this.generate_popup();
     }
 
@@ -54,14 +55,19 @@ class StationMarker {
         return marker;
     }
     
+    set_radius(r) {
+        this.radius = r;
+        this.marker.setRadius(r);
+    }
+    
     show_merge() {
-        this.marker.setRadius(this.marker.getRadius() + MARKER_MERGE_DELTA);
+        this.marker.setRadius(this.radius + MARKER_MERGE_DELTA);
         this.merge_pending = true;
     }
     
     clear_merge() {
         if (this.merge_pending) {
-            this.marker.setRadius(this.marker.getRadius() - MARKER_MERGE_DELTA);
+            this.marker.setRadius(this.radius);
             this.merge_pending = false;
         }
     }

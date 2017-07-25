@@ -242,6 +242,7 @@ class StationPair {
                     async: true,
                     dataType: 'json',
                     success: function(data, status) {
+                        handle_server_error(data);
                         var ll = [];
                         for (var i = 0; i < data[0].length; i++) {
                             ll.push([data[0][i][1], data[0][i][0]]);

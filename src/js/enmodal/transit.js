@@ -448,6 +448,35 @@ class Line {
         }
         return null;
     }
+    
+    remove_self_edges() {
+        var edges_removed = [];
+        for (var l = 0; l < this.edges.length; l++) {
+            var edge = this.edges[l];
+            if (edge.stops[0].sid == edge.stops[1].sid) {
+                edges_removed.push(edge);
+                this.remove_edge(edge);
+            }
+        }
+        return edges_removed;
+    }
+    
+    remove_duplicate_edges() {
+        var edges_removed = [];
+        for (var i = 0; i < this.edges.length; i++) {
+            var edge = this.edges[i];
+            for (var j = 0; j < this.edges.length; j++) {
+                var edge_c = this.edges[j];
+                if (edge != edge_c && edge.compare_stops(edge_c.stops)) {
+                    if (edges_removed.indexOf(edge) == -1) edges_removed.push(edge);
+                }
+            }
+        }
+        for (var i = 0; i < edges_removed.length; i++) {
+            this.remove_edge(edges_removed[i]);
+        }
+        return edges_removed;
+    }
 
     toJSON() {
         var stops_json = [];
@@ -662,57 +691,90 @@ class Service {
         return lines;
     }
     
+    choose_drawmap(drawmaps, l, visited) {
+        for (var k = 0; k < drawmaps.length; k++) {
+            var drawmap = drawmaps[k];
+            // Only want drawmaps on a different line.
+            if (drawmap.line != l) {
+                // We only want to add one drawmap.
+                // They should be sorted such that the shortest drawmap for each line is available first.
+                
+                // Check to make sure the inside of this drawmap doesn't pass through any stations we've already visited.
+                // Don't count the first or last stop.
+                var station_repeat = false;
+                for (var m = 1; m < drawmap.stops.length-1; m++) {
+                    var station = drawmap.stops[m].station;
+                    if (visited[station.sid]) station_repeat = true;
+                }
+                if (!station_repeat) {
+                    return drawmap;
+                }
+            }
+        }
+        return null;
+    }
+    
     station_drawmap(line) {
         var outer_stops = line.outer_stops();
         var start_stop = outer_stops[0];
         
         var dfs_stops = [[]];
         var dfs_branch = [];
-        var visited = {};
 
         var max_depth = 10;
+        
+        function visited_in_branch(v, branch) {
+            for (var j = 0; j < branch.length; j++) {
+                var s = branch[j];
+                if (v.station.sid == s.sid) return true;
+            }
+            return false;
+        }
+        
+        var visited = {};
+        var visited_edge_sids = [];
 
         function dfs(v, sv, l, a) {
             
             //console.log(v.station.name);
-            
+            visited[v.station.sid] = 1;
             // Add new stop.
             dfs_stops[dfs_stops.length-1].push(v.station);
             a += 1;
 
-            visited[v.sid] = 1;
             var neighbors = line.neighbors(v);
             var new_neighbor_count = 0;
             
             dfs_branch = dfs_stops[dfs_stops.length-1];
+            var last_in_branch = dfs_branch[dfs_branch.length-2];
             var current_branch_length = dfs_branch.length;
             
             var branch_count = 0;
             for (var i = 0; i < neighbors.length; i++) {
                 
                 var w = neighbors[i];
-                if (!visited[w.sid]) {
+                var e = line.get_edge_by_stops([v,w]);
+                if (visited_edge_sids.indexOf(e.sid) == -1) {
+                //if (!visited_in_branch(w, dfs_branch)) {
+                //if (!visited[w.station.sid]) {
                     // Get the drawmaps for the current stop pair.
-                    var drawmaps = sv.drawmap(v, w, l);
-                    drawmaps.sort(function(x,y) { return x.stops.length < y.stops.length; });
-                    var drawmap_found = false;
-                    for (var k = 0; k < drawmaps.length; k++) {
-                        var drawmap = drawmaps[k];
-                        // Only want drawmaps on a different line.
-                        if (drawmap.line != l && !drawmap_found) {
-                            // We only want to add one drawmap.
-                            drawmap_found = true;
-                            for (var j = 1; j < drawmap.stops.length - 1; j++) {
-                                dfs_stops[dfs_stops.length-1].push(drawmap.stops[j].station);
-                                a += 1;
-                            }
+                    visited_edge_sids.push(e.sid);
+                    var drawmaps = sv.drawmaps(v, w, l);
+                    var target = dfs_stops[dfs_stops.length-1];
+                    var drawmap = sv.choose_drawmap(drawmaps, l, visited);
+                    if (drawmap != null) {
+                        for (var j = 1; j < drawmap.stops.length - 1; j++) {
+                            target.push(drawmap.stops[j].station);
+                            a += 1;
                         }
                     }
+                    
                     if (new_neighbor_count > 0) {
                         //console.log("second neighbor. branch_count="+branch_count.toString());
                         // Expand the DFS arrays to start a new path.
                         //console.log("current branch length: "+current_branch_length.toString());
                         dfs_stops.push(dfs_branch.slice(0, current_branch_length));
+                        
                         branch_count = 0;
                         var ret = dfs(w, sv, l, branch_count);
                         //console.log("ret: "+ret.toString());
@@ -726,6 +788,7 @@ class Service {
                         branch_count += ret;
                     }
                     new_neighbor_count += 1;
+                    
                 }
             }
             return a;
@@ -735,15 +798,38 @@ class Service {
             dfs(start_stop, this, line, 0);
         }
         
+        // Check for loops at the end of branches
+        for (var i = 0; i < dfs_stops.length; i++) {
+            var branch = dfs_stops[i];
+            var branch_stop_start = line.get_stops_by_station(branch[0])[0];
+            var branch_stop_end = line.get_stops_by_station(branch[branch.length-1])[0];
+            var edge = line.get_edge_by_stops([branch_stop_start, branch_stop_end]);
+            if (edge != null) {
+                var drawmaps = this.drawmaps(branch_stop_end, branch_stop_start, line);
+                var visited = {};
+                for (var j = 0; j < branch.length; j++) {
+                    visited[branch[j].sid] = 1;
+                }
+                var drawmap = this.choose_drawmap(drawmaps, line, visited);
+                if (drawmap != null) {
+                    for (var j = 1; j < drawmap.stops.length; j++) {
+                        branch.push(drawmap.stops[j].station);
+                    }
+                } else {
+                    branch.push(branch_stop_start.station);
+                }
+            }
+        }
+        
         return dfs_stops;
     }
 
-    drawmap(stop_1, stop_2, line) {
+    drawmaps(stop_1, stop_2, line) {
         // For stop 1 and 2 connected by line,
         // return an array of additional stops to draw the line through.
 
         var dfs_stops = [];
-        var dfs_path = [];
+        var dfs_paths = [];
         var dfs_path_found = false;
         var visited = {};
 
@@ -755,17 +841,19 @@ class Service {
 
             // Add new stop.
             dfs_stops.push(v);
+            visited[v.sid] = 1;
             if (v == target && dfs_stops.length <= max_depth) {
                 dfs_path_found = true;
-                dfs_path = dfs_stops;
-            }
-
-            visited[v.sid] = 1;
-            var neighbors = l.neighbors(v);
-            for (var i = 0; i < neighbors.length; i++) {
-                var w = neighbors[i];
-                if (!visited[w.sid] && !dfs_path_found) {
-                    dfs(w, target, l);
+                dfs_paths.push(dfs_stops);
+                var origin = dfs_stops[0]
+                dfs_stops = [origin];
+            } else if (v != target) {
+                var neighbors = l.neighbors(v);
+                for (var i = 0; i < neighbors.length; i++) {
+                    var w = neighbors[i];
+                    if (!visited[w.sid] || w == target) {
+                        dfs(w, target, l);
+                    }
                 }
             }
             if (!dfs_path_found) {
@@ -793,19 +881,35 @@ class Service {
                     }
                     // Initialize DFS variables.
                     dfs_stops = [];
-                    dfs_path = [];
+                    dfs_paths = [];
                     dfs_path_found = false;
-
                     dfs(stop_1_overlap, stop_2_overlap, line_to_check);
                     if (dfs_path_found) {
-                        drawmaps.push(new Drawmap(line_to_check, dfs_path));
+                        for (var j = 0; j < dfs_paths.length; j++) {
+                            drawmaps.push(new Drawmap(line_to_check, dfs_paths[j]));
+                        }
                     }
                 }
             }
         }
 
+        var line_sid_to_shortest_drawmap_length = {};
+        for (var i = 0; i < drawmaps.length; i++) {
+            var drawmap = drawmaps[i];
+            var sid = drawmap.line.sid;
+            if (!(sid in line_sid_to_shortest_drawmap_length)) {
+                line_sid_to_shortest_drawmap_length[sid] = drawmap.stops.length;
+            } else if (line_sid_to_shortest_drawmap_length[sid] > drawmap.stops.length) {
+                line_sid_to_shortest_drawmap_length[sid] = drawmap.stops.length;
+            }
+        }
+        // In-place sort by line
         drawmaps.sort(function(a,b) {
-            return a.line.sid > b.line.sid;
+            if (a.line.sid != b.line.sid) {
+                return (line_sid_to_shortest_drawmap_length[a.line.sid] > line_sid_to_shortest_drawmap_length[b.line.sid]);
+            } else {
+                return (a.stops.length > b.stops.length);
+            }
         });
 
         return drawmaps;
