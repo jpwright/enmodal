@@ -578,6 +578,7 @@ class TransitUI {
             }
             // If stop to remove exists but not stop to keep 
             // TODO FIX this!!
+            /*
             if (stop_to_remove != null && stop_to_keep == null) {
                 // Create a stop on the station to keep
                 var new_stop = new Stop(station_to_keep, false);
@@ -605,9 +606,10 @@ class TransitUI {
                     });
                 }
             }
+            */
             
             // If both stops exists on this line
-            else if (stop_to_remove != null && stop_to_keep != null) {
+            if (stop_to_remove != null && stop_to_keep != null) {
                 // Connect with an edge
                 var new_edge = new Edge([stop_to_remove, stop_to_keep]);
                 line.add_edge(new_edge);
