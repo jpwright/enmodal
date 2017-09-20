@@ -291,22 +291,29 @@ class TransitUI {
                         if (ALLOW_STATION_MERGING) {
                             var mergeable = false;
                             var m_px = enmodal.transit_interface.map.latLngToLayerPoint(L.latLng(center[0], center[1]));
-                            for (var i = 0; i < enmodal.transit_interface.active_service.stations.length; i++) {
-                                var station = enmodal.transit_interface.active_service.stations[i];
-                                var s_px = enmodal.transit_interface.map.latLngToLayerPoint(L.latLng(station.location[0], station.location[1]));
-                                var d = m_px.distanceTo(s_px);
-                                if (station.sid != station_marker.station.sid) {
-                                    if (d < STATION_MERGE_THRESHOLD) {
-                                        enmodal.transit_interface.get_station_marker_by_station(station).show_merge();
-                                        enmodal.transit_interface.get_station_marker_by_station(station).marker.bringToFront();
-                                        enmodal.transit_interface.station_to_merge = station;
-                                        mergeable = true;
-                                    } else {
-                                        enmodal.transit_interface.get_station_marker_by_station(station).clear_merge();
+                            if (enmodal.transit_interface.active_service.station_is_end_of_line(station_marker.station)) {
+                                for (var i = 0; i < enmodal.transit_interface.active_service.stations.length; i++) {
+                                    var station = enmodal.transit_interface.active_service.stations[i];
+                                    var s_px = enmodal.transit_interface.map.latLngToLayerPoint(L.latLng(station.location[0], station.location[1]));
+                                    var d = m_px.distanceTo(s_px);
+                                    if (station.sid != station_marker.station.sid) {
+                                        // Target is different from the moving station.
+                                        if (d < STATION_MERGE_THRESHOLD) {
+                                            // Target is within range.
+                                            if (enmodal.transit_interface.active_service.station_is_end_of_line(station)) {
+                                                // Target is end of a line.
+                                                enmodal.transit_interface.get_station_marker_by_station(station).show_merge();
+                                                enmodal.transit_interface.get_station_marker_by_station(station).marker.bringToFront();
+                                                enmodal.transit_interface.station_to_merge = station;
+                                                mergeable = true;
+                                            }
+                                        } else {
+                                            enmodal.transit_interface.get_station_marker_by_station(station).clear_merge();
+                                        }
                                     }
                                 }
+                                if (!mergeable) enmodal.transit_interface.station_to_merge = null;
                             }
-                            if (!mergeable) enmodal.transit_interface.station_to_merge = null;
                         }
                     }
                 });
@@ -532,6 +539,27 @@ class TransitUI {
         }
     }
     
+    add_edge(service, line, edge) {
+        line.add_edge(edge);
+        if (INC_UPDATES) {
+            var params = $.param({
+                i: enmodal.session_id,
+                service_id: service.sid,
+                line_id: line.sid,
+                stop_1_id: edge.stops[0].sid,
+                stop_2_id: edge.stops[1].sid,
+                edge_id: edge.sid
+            });
+            $.ajax({ url: "edge_add?"+params,
+                async: ASYNC_REQUIRED,
+                dataType: 'json',
+                success: function(data, status) {
+                    handle_server_error(data);
+                }
+            });
+        }
+    }
+    
     merge_stations(station_to_remove, station_to_keep) {
         // For all lines
         for (var i = 0; i < this.active_service.lines.length; i++) {
@@ -548,8 +576,38 @@ class TransitUI {
                     stop_to_keep = stop;
                 }
             }
+            // If stop to remove exists but not stop to keep 
+            // TODO FIX this!!
+            if (stop_to_remove != null && stop_to_keep == null) {
+                // Create a stop on the station to keep
+                var new_stop = new Stop(station_to_keep, false);
+                line.add_stop(new_stop);
+                if (INC_UPDATES) {
+                    var params = $.param({
+                        i: enmodal.session_id,
+                        service_id: this.active_service.sid,
+                        line_id: line.sid,
+                        station_id: station_to_keep.sid,
+                        stop_id: new_stop.sid
+                    });
+                    var line_to_use = line;
+                    var stop_1_to_use = stop_to_remove;
+                    var stop_2_to_use = new_stop;
+                    $.ajax({ url: "stop_add?"+params,
+                        async: ASYNC_REQUIRED,
+                        dataType: 'json',
+                        success: function(data, status) {
+                            // Connect with an edge
+                            var new_edge = new Edge([stop_1_to_use, stop_2_to_use]);
+                            enmodal.transit_interface.add_edge(enmodal.transit_interface.active_service, line_to_use, new_edge);
+                            enmodal.transit_interface.clean_edges(line_to_use);
+                        }
+                    });
+                }
+            }
+            
             // If both stops exists on this line
-            if (stop_to_remove != null && stop_to_keep != null) {
+            else if (stop_to_remove != null && stop_to_keep != null) {
                 // Connect with an edge
                 var new_edge = new Edge([stop_to_remove, stop_to_keep]);
                 line.add_edge(new_edge);
@@ -571,10 +629,11 @@ class TransitUI {
                     });
                 }
             }
-            // If stop to remove exists on this line but not stop to keep
+            
             this.clean_edges(line);
             
         }
+        
         // remove station with forced closure
         this.remove_station(station_to_remove.sid, true);
         

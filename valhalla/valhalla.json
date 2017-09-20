@@ -50,7 +50,9 @@
       "turn_penalty_factor",
       "gps_accuracy",
       "sigma_z",
-      "beta"
+      "beta",
+      "max_route_distance_factor",
+      "max_route_time_factor"
     ],
     "default": {
       "beta": 3,
@@ -59,6 +61,8 @@
       "gps_accuracy": 5.0,
       "interpolation_distance": 10,
       "max_route_distance_factor": 5,
+      "max_route_time_factor": 5,
+      "max_search_radius": 100,
       "route": true,
       "search_radius": 50,
       "sigma_z": 4.07,
@@ -87,16 +91,16 @@
     "verbose": false
   },
   "mjolnir": {
-    "admin": "/media/jason/e/projects/subway/valhalla/tiles/admins.sqlite",
+    "admin": "/media/jason/e/projects/subway/valhalla/valhalla_tiles/admins.sqlite",
     "logging": {
       "color": true,
       "file_name": "path_to_some_file.log",
       "type": "std_out"
     },
     "max_cache_size": 1000000000,
-    "tile_dir": "/media/jason/e/projects/subway/valhalla/tiles",
-    "tile_extract": "/media/jason/e/projects/subway/valhalla/tiles.tar",
-    "timezone": "/media/jason/e/projects/subway/valhalla/tiles/timezones.sqlite",
+    "tile_dir": "/media/jason/e/projects/subway/valhalla/valhalla_tiles",
+    "tile_extract": "/media/jason/e/projects/subway/valhalla/valhalla_tiles.tar",
+    "timezone": "/media/jason/e/projects/subway/valhalla/valhalla_tiles/timezones.sqlite",
     "transit_dir": "/data/valhalla/transit"
   },
   "odin": {
@@ -146,12 +150,6 @@
       "max_locations": 1,
       "max_time": 120
     },
-    "low_stress_bicycle": {
-      "max_distance": 500000.0,
-      "max_locations": 50,
-      "max_matrix_distance": 200000.0,
-      "max_matrix_locations": 50
-    },
     "max_avoid_locations": 50,
     "max_radius": 200,
     "max_reachability": 100,
@@ -174,9 +172,11 @@
       "min_resample": 10.0
     },
     "trace": {
+      "max_best_paths": 4,
+      "max_best_paths_shape": 100,
       "max_distance": 200000.0,
       "max_gps_accuracy": 100.0,
-      "max_search_radius": 100,
+      "max_search_radius": 100.0,
       "max_shape": 16000
     },
     "transit": {

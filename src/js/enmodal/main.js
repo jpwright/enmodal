@@ -14,6 +14,42 @@ function handle_map_click(e) {
     }
 }
 
+function save_image() {
+    var getOverlay = function(){
+      var svg = d3.select('.leaflet-overlay-pane>svg'),
+          img = new Image(),
+          serializer = new XMLSerializer();
+      console.log("svg ", svg.attr("width"), svg.attr("height"));
+      var svgStr = serializer.serializeToString(svg.node());
+      img.src = 'data:image/svg+xml;base64,'+window.btoa(svgStr);
+      return img;
+    };
+    leafletImage(enmodal.leaflet_map, function(err, canvas) {
+      var img_ = getOverlay();
+      var svg = d3.select('.leaflet-overlay-pane>svg');
+      var w =  svg.attr("width");
+      var h = svg.attr("height");
+      var pane = d3.select('.leaflet-map-pane');
+      var trans = pane.style("transform");
+      t = d3.select('.leaflet-map-pane').style('transform').split(", ");
+      var dx = 800; var dy = 800;
+      canvas.getContext("2d").drawImage(
+        img_,
+        dx,
+        dy,
+        w,
+        h
+      );
+      var img = document.createElement('img');
+      var dimensions = enmodal.leaflet_map.getSize();
+      img.width = dimensions.x;
+      img.height = dimensions.y;
+      img.src = canvas.toDataURL();
+      document.getElementById('options').innerHTML = '';
+      document.getElementById('options').appendChild(img);
+    });
+}
+
 function init_leaflet_map() {
     // Create leaflet map
     var map = L.map('map', {

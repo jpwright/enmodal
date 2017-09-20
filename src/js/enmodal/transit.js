@@ -691,6 +691,19 @@ class Service {
         return lines;
     }
     
+    station_is_end_of_line(station) {
+        var station_lines = this.station_lines(station);
+        for (var j = 0; j < station_lines.length; j++) {
+            var station_line = station_lines[j];
+            var outer_stops = station_line.outer_stops();
+            for (var k = 0; k < outer_stops.length; k++) {
+                var outer_stop = outer_stops[k];
+                if (outer_stop.station == station) return true;
+            }
+        }
+        return false;
+    }
+    
     choose_drawmap(drawmaps, l, visited) {
         for (var k = 0; k < drawmaps.length; k++) {
             var drawmap = drawmaps[k];
@@ -759,6 +772,14 @@ class Service {
                 //if (!visited[w.station.sid]) {
                     // Get the drawmaps for the current stop pair.
                     visited_edge_sids.push(e.sid);
+                    
+                    if (new_neighbor_count > 0) {
+                        //console.log("second neighbor. branch_count="+branch_count.toString());
+                        // Expand the DFS arrays to start a new path.
+                        //console.log("current branch length: "+current_branch_length.toString());
+                        dfs_stops.push(dfs_branch.slice(0, current_branch_length));
+                        branch_count = 0;
+                    }
                     var drawmaps = sv.drawmaps(v, w, l);
                     var target = dfs_stops[dfs_stops.length-1];
                     var drawmap = sv.choose_drawmap(drawmaps, l, visited);
@@ -768,25 +789,10 @@ class Service {
                             a += 1;
                         }
                     }
-                    
-                    if (new_neighbor_count > 0) {
-                        //console.log("second neighbor. branch_count="+branch_count.toString());
-                        // Expand the DFS arrays to start a new path.
-                        //console.log("current branch length: "+current_branch_length.toString());
-                        dfs_stops.push(dfs_branch.slice(0, current_branch_length));
-                        
-                        branch_count = 0;
-                        var ret = dfs(w, sv, l, branch_count);
-                        //console.log("ret: "+ret.toString());
-                        a += ret;
-                        branch_count += ret;
-                    } else {
-                        //console.log("first neighbor. branch_count="+branch_count.toString());
-                        var ret = dfs(w, sv, l, branch_count);
-                        //console.log("ret: "+ret.toString());
-                        a += ret;
-                        branch_count += ret;
-                    }
+                    var ret = dfs(w, sv, l, branch_count);
+                    //console.log("ret: "+ret.toString());
+                    a += ret;
+                    branch_count += ret;
                     new_neighbor_count += 1;
                     
                 }
@@ -804,7 +810,7 @@ class Service {
             var branch_stop_start = line.get_stops_by_station(branch[0])[0];
             var branch_stop_end = line.get_stops_by_station(branch[branch.length-1])[0];
             var edge = line.get_edge_by_stops([branch_stop_start, branch_stop_end]);
-            if (edge != null) {
+            if (edge != null && visited_edge_sids.indexOf(edge.sid) == -1) {
                 var drawmaps = this.drawmaps(branch_stop_end, branch_stop_start, line);
                 var visited = {};
                 for (var j = 0; j < branch.length; j++) {
@@ -828,38 +834,57 @@ class Service {
         // For stop 1 and 2 connected by line,
         // return an array of additional stops to draw the line through.
 
-        var dfs_stops = [];
-        var dfs_paths = [];
-        var dfs_path_found = false;
+        var dfs_stops = [[]];
+        var dfs_branch = [];
         var visited = {};
+        var visited_edge_sids = [];
 
         var max_depth = 10;
 
-        // recursive DFS to find all the paths
-        function dfs(v, target, l) {
-            //console.log("DFS: node "+v.station.name);
-
-            // Add new stop.
-            dfs_stops.push(v);
+        // TODO rewrite this
+        // add a target. Find all paths from start to finish
+        function dfs(v, sv, l, a) {
+            
+            //console.log(v.station.name);
             visited[v.sid] = 1;
-            if (v == target && dfs_stops.length <= max_depth) {
-                dfs_path_found = true;
-                dfs_paths.push(dfs_stops);
-                var origin = dfs_stops[0]
-                dfs_stops = [origin];
-            } else if (v != target) {
-                var neighbors = l.neighbors(v);
-                for (var i = 0; i < neighbors.length; i++) {
-                    var w = neighbors[i];
-                    if (!visited[w.sid] || w == target) {
-                        dfs(w, target, l);
+            // Add new stop.
+            dfs_stops[dfs_stops.length-1].push(v);
+            a += 1;
+
+            var neighbors = l.neighbors(v);
+            var new_neighbor_count = 0;
+            
+            dfs_branch = dfs_stops[dfs_stops.length-1];
+            var last_in_branch = dfs_branch[dfs_branch.length-2];
+            var current_branch_length = dfs_branch.length;
+            
+            var branch_count = 0;
+            for (var i = 0; i < neighbors.length; i++) {
+                
+                var w = neighbors[i];
+                var e = l.get_edge_by_stops([v,w]);
+                if (visited_edge_sids.indexOf(e.sid) == -1) {
+                //if (!visited_in_branch(w, dfs_branch)) {
+                //if (!visited[w.station.sid]) {
+                    // Get the drawmaps for the current stop pair.
+                    visited_edge_sids.push(e.sid);
+                    
+                    if (new_neighbor_count > 0) {
+                        //console.log("second neighbor. branch_count="+branch_count.toString());
+                        // Expand the DFS arrays to start a new path.
+                        //console.log("current branch length: "+current_branch_length.toString());
+                        dfs_stops.push(dfs_branch.slice(0, current_branch_length));
+                        branch_count = 0;
                     }
+                    var ret = dfs(w, sv, l, branch_count);
+                    //console.log("ret: "+ret.toString());
+                    a += ret;
+                    branch_count += ret;
+                    new_neighbor_count += 1;
+                    
                 }
             }
-            if (!dfs_path_found) {
-                var v_i = dfs_stops.indexOf(v);
-                dfs_stops.splice(v_i, 1);
-            }
+            return a;
         }
 
         var lines_to_check = this.station_lines(stop_1.station);
@@ -880,13 +905,17 @@ class Service {
                         visited[line_to_check.stops[j].sid] = 0;
                     }
                     // Initialize DFS variables.
-                    dfs_stops = [];
-                    dfs_paths = [];
-                    dfs_path_found = false;
-                    dfs(stop_1_overlap, stop_2_overlap, line_to_check);
-                    if (dfs_path_found) {
-                        for (var j = 0; j < dfs_paths.length; j++) {
-                            drawmaps.push(new Drawmap(line_to_check, dfs_paths[j]));
+                    var dfs_stops = [[]];
+                    var dfs_branch = [];
+                    var visited = {};
+                    var visited_edge_sids = [];
+                    dfs(stop_1_overlap, this, line_to_check, 0);
+                    for (var j = 0; j < dfs_stops.length; j++) {
+                        var branch = dfs_stops[j];
+                        var stop_2_index = branch.indexOf(stop_2_overlap);
+                        if (stop_2_index != -1) {
+                            branch.length = stop_2_index+1;
+                            drawmaps.push(new Drawmap(line_to_check, branch));
                         }
                     }
                 }
