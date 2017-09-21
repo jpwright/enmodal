@@ -935,7 +935,7 @@ class Service {
         // In-place sort by line
         drawmaps.sort(function(a,b) {
             if (a.line.sid != b.line.sid) {
-                return (line_sid_to_shortest_drawmap_length[a.line.sid] > line_sid_to_shortest_drawmap_length[b.line.sid]);
+                return (line_sid_to_shortest_drawmap_length[a.line.sid] < line_sid_to_shortest_drawmap_length[b.line.sid]);
             } else {
                 return (a.stops.length > b.stops.length);
             }

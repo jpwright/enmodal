@@ -15,39 +15,19 @@ function handle_map_click(e) {
 }
 
 function save_image() {
-    var getOverlay = function(){
-      var svg = d3.select('.leaflet-overlay-pane>svg'),
-          img = new Image(),
-          serializer = new XMLSerializer();
-      console.log("svg ", svg.attr("width"), svg.attr("height"));
-      var svgStr = serializer.serializeToString(svg.node());
-      img.src = 'data:image/svg+xml;base64,'+window.btoa(svgStr);
-      return img;
-    };
-    leafletImage(enmodal.leaflet_map, function(err, canvas) {
-      var img_ = getOverlay();
-      var svg = d3.select('.leaflet-overlay-pane>svg');
-      var w =  svg.attr("width");
-      var h = svg.attr("height");
-      var pane = d3.select('.leaflet-map-pane');
-      var trans = pane.style("transform");
-      t = d3.select('.leaflet-map-pane').style('transform').split(", ");
-      var dx = 800; var dy = 800;
-      canvas.getContext("2d").drawImage(
-        img_,
-        dx,
-        dy,
-        w,
-        h
-      );
-      var img = document.createElement('img');
-      var dimensions = enmodal.leaflet_map.getSize();
-      img.width = dimensions.x;
-      img.height = dimensions.y;
-      img.src = canvas.toDataURL();
-      document.getElementById('options').innerHTML = '';
-      document.getElementById('options').appendChild(img);
-    });
+    var draw = SVG('svg-drawing').size(2000,2000);
+    
+    enmodal.transit_interface.preview_clear();
+    
+    var svg_overlay = $("div.leaflet-overlay-pane svg").html();
+    var svg_markers = $("div.leaflet-stationMarker-pane svg").html();
+    
+    draw.svg(svg_overlay);
+    draw.svg(svg_markers);
+    
+    var b64 = btoa(draw.svg());
+    var link = $('<a href="data:image/svg+xml;base64,\n'+b64+'" download="enmodal-'+enmodal.session_id+'.svg" style="display:none;"></a>').appendTo('body');
+    link[0].click();
 }
 
 function init_leaflet_map() {
