@@ -15,6 +15,19 @@ This guide is written for Ubuntu (16.04.2). enmodal is not tested on other platf
 ### Create config file
 
 Copy `settings.cfg.example` to `settings.cfg` and edit fields to appropriate values.
+    
+### Set up Python
+
+    sudo apt-get install python-setuptools python-dev build-essential
+    sudo easy_install pip
+    sudo pip install --upgrade virtualenv
+    
+### Install virtualenv and set up Python requirements
+
+    pip install virtualenv
+    virtualenv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
 
 ### Install Postgres (9.6) and PostGIS (2.3)
 
@@ -49,24 +62,12 @@ Note: best to follow the [Valhalla setup guide](https://github.com/valhalla/valh
     cd valhalla
     valhalla_route_service valhalla.json 1 &
     
-### Install virtualenv and set up Python requirements
-
-    pip install virtualenv
-    virtualenv venv
-    source venv/bin/activate
-    pip install -r requirements.txt
-
-### Set up Flask
-
-    sudo apt-get install python-setuptools python-dev build-essential
-    sudo easy_install pip
-    sudo pip install --upgrade virtualenv
-    
 ### Install NPM and grunt
 
     sudo apt-get install nodejs-legacy npm
     npm install grunt grunt-contrib-jshint grunt-contrib-watch grunt-contrib-copy grunt-contrib-concat grunt-contrib-uglify --save-dev
     sudo npm install -g grunt-cli
+    sudo npm install
     grunt --force
 
 ## Populating dggrid database
