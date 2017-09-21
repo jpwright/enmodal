@@ -218,30 +218,12 @@ function init_document() {
 
     $("#tool-station").click(function(e) {
         if (enmodal.transit_interface.active_tool != "station") {
-            $(".tool-button").removeClass("game-button-active");
-            $("#tool-station").addClass("game-button-active");
-
-            $("#option-section-services").show();
-            $("#option-section-lines").show();
-            $("#option-section-route").show();
-            $("#option-section-visual").hide();
-            $("#option-section-data").hide();
-
             enmodal.transit_interface.layers.preview.clearLayers();
             enmodal.transit_interface.active_tool = "station";
         }
     });
     $("#tool-data").click(function(e) {
         if (enmodal.transit_interface.active_tool != "data") {
-            $(".tool-button").removeClass("game-button-active");
-            $("#tool-data").addClass("game-button-active");
-
-            $("#option-section-services").hide();
-            $("#option-section-lines").hide();
-            $("#option-section-route").hide();
-            $("#option-section-visual").hide();
-            $("#option-section-data").show();
-
             enmodal.transit_interface.layers.preview.clearLayers();
             enmodal.transit_interface.active_tool = "data";
         }
