@@ -843,7 +843,7 @@ class Service {
 
         // TODO rewrite this
         // add a target. Find all paths from start to finish
-        function dfs(v, sv, l, a) {
+        function dfs(v, o, t, sv, l, a) {
             
             //console.log(v.station.name);
             visited[v.sid] = 1;
@@ -869,14 +869,15 @@ class Service {
                     // Get the drawmaps for the current stop pair.
                     visited_edge_sids.push(e.sid);
                     
-                    if (new_neighbor_count > 0) {
+                    if (w.sid == t.sid) {
                         //console.log("second neighbor. branch_count="+branch_count.toString());
                         // Expand the DFS arrays to start a new path.
                         //console.log("current branch length: "+current_branch_length.toString());
                         dfs_stops.push(dfs_branch.slice(0, current_branch_length));
                         branch_count = 0;
+                        w = o;
                     }
-                    var ret = dfs(w, sv, l, branch_count);
+                    var ret = dfs(w, o, t, sv, l, branch_count);
                     //console.log("ret: "+ret.toString());
                     a += ret;
                     branch_count += ret;
@@ -909,7 +910,7 @@ class Service {
                     var dfs_branch = [];
                     var visited = {};
                     var visited_edge_sids = [];
-                    dfs(stop_1_overlap, this, line_to_check, 0);
+                    dfs(stop_1_overlap, stop_1_overlap, stop_2_overlap, this, line_to_check, 0);
                     for (var j = 0; j < dfs_stops.length; j++) {
                         var branch = dfs_stops[j];
                         var stop_2_index = branch.indexOf(stop_2_overlap);

@@ -16,6 +16,7 @@ data/*
 *.gz
 *.tar
 *.osm
+*.bin
 valhalla/*.bin
 valhalla/*.txt
 valhalla/demos
