@@ -16,7 +16,6 @@ html, body {
     top: 0;
     left: 0;
     text-align: center;
-    font-size: 1.5em;
 }
 
 #map {
@@ -837,4 +836,22 @@ ul.ui-autocomplete {
     cursor: grab;
     cursor: -moz-grab;
     cursor: -webkit-grab;
+}
+
+@media (min-width: 600px) {
+.alpha-warning-large {
+    font-size: 5vw;
+}
+.alpha-warning-small {
+    font-size: 2vw;
+}
+}
+
+@media (max-width: 599px) and (min-width: 50px) {
+.alpha-warning-large {
+    font-size: 8vw;
+}
+.alpha-warning-small {
+    font-size: 5vw;
+}
 }

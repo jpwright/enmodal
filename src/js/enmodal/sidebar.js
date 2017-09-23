@@ -113,7 +113,7 @@ class Sidebar {
     }
 
     update_line_editor() {
-        var line_name = $("#custom-line-name").val().substring(0, 20);
+        var line_name = $("#custom-line-name").val().substring(0, 40);
         $("#custom-line-marker-content").text(line_name);
 
         var line_color_bg = $("#color-picker-bg").val();
