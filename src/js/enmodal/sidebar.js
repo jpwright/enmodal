@@ -141,7 +141,7 @@ class Sidebar {
     line_editor_save() {
         var line = enmodal.transit_interface.active_line;
 
-        var custom_line_name = $("#custom-line-name").val().substring(0, 20);
+        var custom_line_name = $("#custom-line-name").val().substring(0, 40);
         var custom_line_color_bg = $("#custom-line-options #color-picker-bg").val();
         var custom_line_color_fg = $("#custom-line-options #color-picker-fg").val();
         var issue = false;

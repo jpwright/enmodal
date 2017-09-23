@@ -39,9 +39,9 @@ function session_load() {
         async: false,
         success: function(data, status) {
             
-            console.log(data);
+            //console.log(data);
             var j = JSON.parse(data);
-            console.log(j);
+            //console.log(j);
             if (j["error"] != undefined) {
                 session_new();
             } else {
