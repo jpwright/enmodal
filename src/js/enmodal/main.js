@@ -214,7 +214,6 @@ function init_document() {
     if (enmodal.transit_interface.active_line != null) enmodal.sidebar.refresh_line_editor();
 
     // Tool selector
-    $("#tool-station").addClass("game-button-active");
 
     $("#tool-station").click(function(e) {
         if (enmodal.transit_interface.active_tool != "station") {

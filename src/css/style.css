@@ -337,8 +337,6 @@ textarea.station-name-edit {
 #route-diagram {
     background: rgba(255, 255, 255, 0.10);
     top: 0px;
-    overflow-x: hidden;
-    overflow-y: scroll;
     height: 100%;
     width: 100%;
     box-sizing: content-box;
@@ -358,6 +356,19 @@ textarea.station-name-edit {
     background-color: rgba(255, 255, 255, 0.5);
 }
 
+.custom-scroll-dark::-webkit-scrollbar-track {
+    background-color: none;
+}
+
+.custom-scroll-dark::-webkit-scrollbar {
+    width: 6px;
+    background-color: none;
+}
+
+.custom-scroll-dark::-webkit-scrollbar-thumb {
+    border-radius: 6px;
+    background-color: rgba(0, 0, 0, 0.5);
+}
 
 #route-diagram-container-container {
     padding: 5px;
@@ -688,34 +699,55 @@ ul.ui-autocomplete {
     width: 25%;
     min-width: 250px;
     display: flex;
-    flex-flow: column;
-    height: 100%;
+    flex-direction: column;
+    height: 100vh;
 }
 
-#option-section-tools {
-    flex: 0 1 auto;
+.nav-tabs a {
+    font-size: 1em;
+    color: rgb(58, 80, 114);
+}
+
+.dropdown-menu {
+    max-height: 25vh;
     overflow-y: auto;
-    overflow-x: visible;
+}
+
+#options-container {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+#options-container .tab-content>.active {
+    display: flex;
+}
+
+#options-container .collapse.in {
+    display: flex;
+}
+
+.option-section {
+    overflow: hidden;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
 }
 
 #option-section-lines {
-    margin: 10px 0 10px 0;
-    overflow-y: auto;
-    overflow-x: visible;
-    flex: 0 1 auto;
+    display: flex;
+    flex-direction: column;
 }
 
-#option-section-services {
-    margin: 10px 0 10px 0;
-    overflow-x: visible;
-    flex: 0 1 auto;
+#option-section-tools {
+    flex: 0 0 auto;
+    margin-bottom: 10px;
 }
-
 
 #option-section-route {
-    display: block;
-    position: relative;
-    flex: 1 1 auto;
+    display: flex;
+    overflow-y: scroll;
 }
 
 #option-section-route:after {
@@ -724,9 +756,10 @@ ul.ui-autocomplete {
     clear: both;
 }
 
-#option-section-data {
-    flex: 1 1 auto;
+#option-section-status {
     padding-top: 10px;
+    flex: 0 0 auto;
+    display: block;
 }
 
 .data-layer-selector {
@@ -745,10 +778,23 @@ ul.ui-autocomplete {
     border: 1px solid white;
 }
 
-#option-section-status {
-    padding-top: 12px;
-    overflow-y: hide;
-    flex: 0 1 60px;
+div.option-accordion {
+    margin-bottom: 10px;
+}
+
+div.option-accordion a {
+    background-color: rgba(58, 80, 114, 0.20);
+    border: 1px solid white;
+    border-radius: 5px;
+    cursor: pointer;
+    display: inline-block;
+    color: #fff;
+    text-decoration: none;
+    padding: 5px;
+    text-align: center;
+    color: white;
+    width: 100%;
+    line-height: 1.42857143;
 }
 
 #game-outcome {
@@ -786,12 +832,20 @@ ul.ui-autocomplete {
     padding: 5px;
     width: 50px;
     text-align: center;
+    background-color: rgba(255, 255, 255, 0.10);
+}
+
+.game-button-large:hover {
+    background: rgba(255, 255, 255, 0.20);
+    color: #fff;
 }
 
 .game-button-active {
     background-color: rgba(255, 200, 200, 0.1);
     font-weight: bold;
 }
+
+
 
 #tool-save {
     display: inline-block;
