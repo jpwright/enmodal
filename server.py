@@ -756,6 +756,7 @@ def route_street_path():
 
 def check_for_session_errors(h):
     if session_manager.auth_by_key(h) is None:
+        print("session auth problem with key "+str(h))
         return json.dumps({"error": "Invalid session"})
 
     return 0
