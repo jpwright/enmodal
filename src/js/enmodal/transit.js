@@ -843,7 +843,7 @@ class Service {
 
         // TODO rewrite this
         // add a target. Find all paths from start to finish
-        function dfs(v, o, t, sv, l, a) {
+        /*function dfs(v, o, t, sv, l, a) {
             
             //console.log(v.station.name);
             visited[v.sid] = 1;
@@ -886,6 +886,49 @@ class Service {
                 }
             }
             return a;
+        }*/
+        function dfs(v, sv, l, a) {
+            
+            //console.log(v.station.name);
+            visited[v.sid] = 1;
+            // Add new stop.
+            dfs_stops[dfs_stops.length-1].push(v);
+            a += 1;
+
+            var neighbors = l.neighbors(v);
+            var new_neighbor_count = 0;
+            
+            dfs_branch = dfs_stops[dfs_stops.length-1];
+            var last_in_branch = dfs_branch[dfs_branch.length-2];
+            var current_branch_length = dfs_branch.length;
+            
+            var branch_count = 0;
+            for (var i = 0; i < neighbors.length; i++) {
+                
+                var w = neighbors[i];
+                var e = l.get_edge_by_stops([v,w]);
+                if (visited_edge_sids.indexOf(e.sid) == -1) {
+                //if (!visited_in_branch(w, dfs_branch)) {
+                //if (!visited[w.station.sid]) {
+                    // Get the drawmaps for the current stop pair.
+                    visited_edge_sids.push(e.sid);
+                    
+                    if (new_neighbor_count > 0) {
+                        //console.log("second neighbor. branch_count="+branch_count.toString());
+                        // Expand the DFS arrays to start a new path.
+                        //console.log("current branch length: "+current_branch_length.toString());
+                        dfs_stops.push(dfs_branch.slice(0, current_branch_length));
+                        branch_count = 0;
+                    }
+                    var ret = dfs(w, sv, l, branch_count);
+                    //console.log("ret: "+ret.toString());
+                    a += ret;
+                    branch_count += ret;
+                    new_neighbor_count += 1;
+                    
+                }
+            }
+            return a;
         }
 
         var lines_to_check = this.station_lines(stop_1.station);
@@ -910,7 +953,8 @@ class Service {
                     var dfs_branch = [];
                     var visited = {};
                     var visited_edge_sids = [];
-                    dfs(stop_1_overlap, stop_1_overlap, stop_2_overlap, this, line_to_check, 0);
+                    dfs(stop_1_overlap, this, line_to_check, 0);
+                    //dfs(stop_1_overlap, stop_1_overlap, stop_2_overlap, this, line_to_check, 0);
                     for (var j = 0; j < dfs_stops.length; j++) {
                         var branch = dfs_stops[j];
                         var stop_2_index = branch.indexOf(stop_2_overlap);
@@ -937,6 +981,7 @@ class Service {
         drawmaps.sort(function(a,b) {
             if (a.line.sid != b.line.sid) {
                 return (line_sid_to_shortest_drawmap_length[a.line.sid] < line_sid_to_shortest_drawmap_length[b.line.sid]);
+                //return (line_sid_to_shortest_drawmap_length[a.line.sid] > line_sid_to_shortest_drawmap_length[b.line.sid]);
             } else {
                 return (a.stops.length > b.stops.length);
             }
