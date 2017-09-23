@@ -97,6 +97,7 @@ function session_save() {
     var params = $.param({
         i: enmodal.session_id
     });
+    $("#tool-save").html('<i class="fa fa-spinner fa-spin fa-1x fa-fw"></i>');
     $.ajax({ url: "session_push?"+params,
         async: true,
         type: "POST",
@@ -110,6 +111,7 @@ function session_save() {
                 async: true,
                 dataType: 'json',
                 success: function(data, status) {
+                    $("#tool-save").html('Save');
                     $("#save-message").fadeIn().delay(2000).fadeOut();
                 }
             });
