@@ -153,6 +153,9 @@ class ReverseGeocodeResult(object):
         self.has_locality = True
 
 def hexagons_bb(bb):
+    
+    region = HexagonRegion()
+        
     conn = psycopg2.connect(DGGRID_CONN_STRING)
     cursor = conn.cursor()
      
@@ -161,24 +164,24 @@ def hexagons_bb(bb):
     cursor.execute(query)
     #cursor.execute("SELECT gid FROM dggrid WHERE ST_DWithin(geo, 'POINT("+lng+" "+lat+")', 0.01) LIMIT 1000;")
     #cursor.execute("SELECT * FROM dggrid ORDER BY geo <-> st_setsrid(st_makepoint("+lng+","+lat+"),4326) LIMIT 100;")
-
+    
     rows = cursor.fetchall()
     
-    query = "SELECT gid, ST_AsGeoJSON(geo), coalesce(population,0) as p, coalesce(employment,0) as e FROM dggrid WHERE gid="+str(rows[0][0])+" LIMIT 1;"
-    print query
-    cursor.execute(query)
-    hexagon_row = cursor.fetchone()
-    hexagon_template = Hexagon(int(hexagon_row[0]), json.loads(hexagon_row[1]), int(hexagon_row[2]), int(hexagon_row[3]))
-    
-    region = HexagonRegion()
-    for row in rows:
-        h = copy.deepcopy(hexagon_template)
-        c = json.loads(row[1])
-        h.shift_center(c['coordinates'][0], c['coordinates'][1])
-        h.gid = int(row[0])
-        h.population = int(row[2])
-        h.employment = int(row[3])
-        region.add_hexagon(h)
+    if (len(rows) > 0):
+        query = "SELECT gid, ST_AsGeoJSON(geo), coalesce(population,0) as p, coalesce(employment,0) as e FROM dggrid WHERE gid="+str(rows[0][0])+" LIMIT 1;"
+        print query
+        cursor.execute(query)
+        hexagon_row = cursor.fetchone()
+        hexagon_template = Hexagon(int(hexagon_row[0]), json.loads(hexagon_row[1]), int(hexagon_row[2]), int(hexagon_row[3]))
+        
+        for row in rows:
+            h = copy.deepcopy(hexagon_template)
+            c = json.loads(row[1])
+            h.shift_center(c['coordinates'][0], c['coordinates'][1])
+            h.gid = int(row[0])
+            h.population = int(row[2])
+            h.employment = int(row[3])
+            region.add_hexagon(h)
     cursor.close()
     conn.close()
     
