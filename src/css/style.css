@@ -778,11 +778,11 @@ ul.ui-autocomplete {
     border: 1px solid white;
 }
 
-div.option-accordion {
+.option-accordion {
     margin-bottom: 10px;
 }
 
-div.option-accordion a {
+.option-accordion a {
     background-color: rgba(58, 80, 114, 0.20);
     border: 1px solid white;
     border-radius: 5px;
