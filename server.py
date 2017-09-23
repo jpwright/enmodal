@@ -193,16 +193,16 @@ def route_session_links():
 def save_session(s):
     sid = s.sid
     print "saving with sid "+str(sid)
-    sdata = s.map.to_json()
+    sdata = str(s.map.to_json())
     sdt = datetime.datetime.now()
 
     conn = psycopg2.connect(SESSIONS_CONN_STRING)
     cursor = conn.cursor()
     cursor.execute("SELECT id FROM sessions WHERE id = %s LIMIT 1" % (sid))
     if (cursor.rowcount > 0):
-        cursor.execute("UPDATE sessions SET data = '%s', updated = '%s' WHERE id = %s" % (sdata, sdt, sid))
+        cursor.execute("UPDATE sessions SET data = %s, updated = %s WHERE id = %s", (sdata, sdt, sid))
     else:
-        cursor.execute("INSERT INTO sessions (id, data, updated) VALUES (%s, '%s', '%s')" % (sid, sdata, sdt))
+        cursor.execute("INSERT INTO sessions (id, data, updated) VALUES (%s, %s, %s)", (sid, sdata, sdt))
 
     conn.commit()
 
@@ -263,7 +263,7 @@ def route_session_load():
             s.map = m
     
     a = session_manager.auth_by_key(s.private_key())
-    return_obj = {"public_key": '{:16x}'.format(a.session.public_key()), "is_private": a.editable, "data": m.to_json().replace("'", "''")}
+    return_obj = {"public_key": '{:16x}'.format(a.session.public_key()), "is_private": a.editable, "data": m.to_json()}
     if a.editable:
         return_obj["private_key"] = '{:16x}'.format(a.session.private_key())
     return json.dumps(return_obj)
