@@ -623,7 +623,7 @@ ul.ui-autocomplete {
 }
 
 #starter-share {
-    height: 25em;
+    height: 21em;
 }
 
 .game-start-choice-large {
@@ -736,7 +736,6 @@ ul.ui-autocomplete {
     overflow: hidden;
     flex: 1 1 auto;
     display: flex;
-    display: -webkit-flex;
     flex-direction: column;
 }
 
@@ -785,11 +784,11 @@ ul.ui-autocomplete {
     border: 1px solid white;
 }
 
-.option-accordion {
+#options-container .option-accordion {
     margin-bottom: 10px;
 }
 
-.option-accordion a {
+#options-container .option-accordion a {
     background-color: rgba(58, 80, 114, 0.20);
     border: 1px solid white;
     border-radius: 5px;

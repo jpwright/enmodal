@@ -8,6 +8,9 @@ function handle_map_click(e) {
             sp.add_pin(pp[1].x, pp[1].y);
         }
     }
+    if (enmodal.transit_interface.active_line == null && enmodal.transit_interface.active_tool == "station") {
+        L.popup().setLatLng(e.latlng).setContent("Create a line to start building").openOn(enmodal.leaflet_map);
+    }
     if (enmodal.transit_interface.active_tool == "transfer") {
         enmodal.transit_interface.active_tool = "station";
         enmodal.transit_interface.preview_clear();

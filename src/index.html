@@ -151,11 +151,11 @@
                 <div id="accordion" class="option-section" role="tablist" aria-multiselectable="true">
                     <div class="card option-section" style="flex: 0 0 auto; margin-bottom: 10px;">
                         <div class="card-header option-accordion" role="tab" id="headingOne">
-                                <a data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                                <a data-toggle="collapse" data-parent="#accordion" href="#collapse-services" aria-expanded="true" aria-controls="collapse-services">
                                 Services
                                 </a>
                         </div>
-                        <div id="collapseOne" class="option-section collapse in" role="tabpanel" aria-labelledby="headingOne">
+                        <div id="collapse-services" class="option-section collapse in" role="tabpanel" aria-labelledby="headingOne">
                             <div class="card-block option-section">
                                 <div id="option-section-services" class="option-section">
                                     <div id="service-selector" class="dropdown dropdown-selector game-button">
@@ -191,43 +191,41 @@
                     </div>
                     <div class="card option-section">
                         <div class="card-header option-accordion" role="tab" id="headingTwo">
-                        <a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
+                        <a data-toggle="collapse" data-parent="#accordion" href="#collapse-lines" aria-expanded="true" aria-controls="collapse-lines">
                         Lines
                         </a>
                         </div>
-                        <div id="collapseTwo" class="option-section collapse in" role="tabpanel" aria-labelledby="headingTwo">
-                            <div class="card-block option-section">
-                                <div id="option-section-lines" class="option-section">
-                                    <div id="line-selector" class="dropdown dropdown-selector game-button">
-                                        <button class="btn btn-secondary dropdown-toggle dropdown-button" id="dropdown-line-button" type="button" data-toggle="dropdown">Select a line...
-                                            <span class="caret"></span></button>
-                                        <ul class="dropdown-menu custom-scroll-dark" id="dropdown-line-menu">
-                                            <div class="dropdown-divider"></div>
-                                            <li><a id="line-selector-new" href="#">New Line</a></li>
-                                        </ul>
-                                    </div>
+                        <div id="collapse-lines" class="option-section collapse in" role="tabpanel" aria-labelledby="headingTwo">
+                            <div id="option-section-lines" class="card-block option-section">
+                                <div id="line-selector" class="dropdown dropdown-selector game-button">
+                                    <button class="btn btn-secondary dropdown-toggle dropdown-button" id="dropdown-line-button" type="button" data-toggle="dropdown">Select a line...
+                                        <span class="caret"></span></button>
+                                    <ul class="dropdown-menu custom-scroll-dark" id="dropdown-line-menu">
+                                        <div class="dropdown-divider"></div>
+                                        <li><a id="line-selector-new" href="#">New Line</a></li>
+                                    </ul>
+                                </div>
 
-                                    <div id="custom-line-options" class="custom-options">
-                                        <div id="custom-line-options-color-pickers">
-                                            <input type="color" id="color-picker-bg" />
+                                <div id="custom-line-options" class="custom-options">
+                                    <div id="custom-line-options-color-pickers">
+                                        <input type="color" id="color-picker-bg" />
+                                        <br />
+                                        <input type="color" id="color-picker-fg" />
+                                    </div>
+                                    <div id="custom-line-options-column-inputs">
+
+                                        <div class="custom-options-label">Line name
                                             <br />
-                                            <input type="color" id="color-picker-fg" />
+                                            <input type="text" id="custom-line-name" name="custom-line-name" placeholder="?" />
                                         </div>
-                                        <div id="custom-line-options-column-inputs">
-
-                                            <div class="custom-options-label">Line name
-                                                <br />
-                                                <input type="text" id="custom-line-name" name="custom-line-name" placeholder="?" />
-                                            </div>
-                                            <div id="custom-line-error"></div>
-                                        </div>
-                                        <div style="clear:both;"></div>
+                                        <div id="custom-line-error"></div>
                                     </div>
-                                    <div id="option-section-route" class="custom-scroll">
-                                        <div id="route-diagram-container-container">
-                                            <div id="route-diagram-container">
-                                                <div id="route-diagram"></div>
-                                            </div>
+                                    <div style="clear:both;"></div>
+                                </div>
+                                <div id="option-section-route" class="custom-scroll">
+                                    <div id="route-diagram-container-container">
+                                        <div id="route-diagram-container">
+                                            <div id="route-diagram"></div>
                                         </div>
                                     </div>
                                 </div>
