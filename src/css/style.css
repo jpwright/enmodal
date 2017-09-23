@@ -699,6 +699,7 @@ ul.ui-autocomplete {
     width: 25%;
     min-width: 250px;
     display: flex;
+    display: -webkit-flex;
     flex-direction: column;
     height: 100vh;
 }
@@ -716,15 +717,18 @@ ul.ui-autocomplete {
 #options-container {
     overflow: hidden;
     display: flex;
+    display: -webkit-flex;
     flex-direction: column;
     flex: 1;
 }
 
 #options-container .tab-content>.active {
+    display: -webkit-flex;
     display: flex;
 }
 
 #options-container .collapse.in {
+    display: -webkit-flex;
     display: flex;
 }
 
@@ -732,11 +736,13 @@ ul.ui-autocomplete {
     overflow: hidden;
     flex: 1 1 auto;
     display: flex;
+    display: -webkit-flex;
     flex-direction: column;
 }
 
 #option-section-lines {
     display: flex;
+    display: -webkit-flex;
     flex-direction: column;
 }
 
@@ -747,6 +753,7 @@ ul.ui-autocomplete {
 
 #option-section-route {
     display: flex;
+    display: -webkit-flex;
     overflow-y: scroll;
 }
 
