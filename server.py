@@ -198,7 +198,7 @@ def save_session(s):
 
     conn = psycopg2.connect(SESSIONS_CONN_STRING)
     cursor = conn.cursor()
-    cursor.execute("SELECT id FROM sessions WHERE id = %s LIMIT 1" % (sid))
+    cursor.execute("SELECT id FROM sessions WHERE id = %s LIMIT 1", (sid))
     if (cursor.rowcount > 0):
         cursor.execute("UPDATE sessions SET data = %s, updated = %s WHERE id = %s", (sdata, sdt, sid))
     else:
@@ -231,11 +231,11 @@ def route_session_load():
     is_private = False
     sid = session_manager.get_sid_from_public_key(h)
     #print "public guess: "+str(sid)
-    cursor.execute("SELECT data FROM sessions WHERE id = %s LIMIT 1" % (sid))
+    cursor.execute("SELECT data FROM sessions WHERE id = %s LIMIT 1", (sid))
     if (cursor.rowcount == 0):
         sid = session_manager.get_sid_from_private_key(h)
         #print "private guess: "+str(sid)
-        cursor.execute("SELECT data FROM sessions WHERE id = %s LIMIT 1" % (sid))
+        cursor.execute("SELECT data FROM sessions WHERE id = %s LIMIT 1", (sid))
         is_private = True
     if (cursor.rowcount == 0):
         return json.dumps({"error": "Invalid ID"})
