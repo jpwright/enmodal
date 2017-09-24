@@ -14,6 +14,7 @@ import zlib
 from cStringIO import StringIO as IO
 import gzip
 import functools
+import gc
 
 import multiprocessing
 import time
@@ -104,6 +105,7 @@ class SessionManager(object):
             if session.is_expired():
                 save_session(session)
         self.sessions = [x for x in self.sessions if not x.is_expired()]
+        gc.collect()
         return num_sessions_start - len(self.sessions)
 
 class Session(object):
@@ -183,6 +185,7 @@ def route_session_status():
     return_obj = {"is_private": a.editable, "public_key": '{:16x}'.format(a.session.public_key())}
     if a.editable:
         return_obj["private_key"] = '{:16x}'.format(a.session.private_key())
+    del a
     return json.dumps(return_obj)
 
 @app.route('/session_links')
@@ -216,9 +219,10 @@ def route_session_save():
     a = session_manager.auth_by_key(h)
     if a.editable:
         save_session(a.session)
-
+        del a
         return json.dumps({"result": "OK"})
     else:
+        del a
         return json.dumps({"error": "Non-editable session"})
 
 @app.route('/session_load')
@@ -266,6 +270,7 @@ def route_session_load():
     return_obj = {"public_key": '{:16x}'.format(a.session.public_key()), "is_private": a.editable, "data": m.to_json()}
     if a.editable:
         return_obj["private_key"] = '{:16x}'.format(a.session.private_key())
+    del a
     return json.dumps(return_obj)
 
 @app.route('/session_push', methods=['GET', 'POST'])
@@ -762,4 +767,6 @@ def check_for_session_errors(h):
     return 0
 
 if __name__ == '__main__':
+    if 'WINGDB_ACTIVE' in os.environ:
+        app.debug = False
     app.run(host='0.0.0.0', port=PORT, threaded=True)
