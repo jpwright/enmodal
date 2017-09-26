@@ -17,6 +17,9 @@ data/*
 *.tar
 *.osm
 *.bin
+*.wpr
+*.dat
+.idea/
 valhalla/*.bin
 valhalla/*.txt
 valhalla/demos
