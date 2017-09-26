@@ -19,6 +19,9 @@ import gc
 import multiprocessing
 import time
 
+import cherrypy
+from paste.translogger import TransLogger
+
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'lib', 'transit')))
 import Transit
@@ -31,7 +34,6 @@ import ConfigParser
 config = ConfigParser.RawConfigParser()
 config.read(os.path.abspath(os.path.join(os.path.dirname(__file__), 'settings.cfg')))
 PORT = int(config.get('flask', 'port'))
-
 
 SESSIONS_HOST = config.get('sessions', 'host')
 SESSIONS_PORT = config.get('sessions', 'port')
@@ -766,7 +768,24 @@ def check_for_session_errors(h):
 
     return 0
 
-if __name__ == '__main__':
-    if 'WINGDB_ACTIVE' in os.environ:
-        app.debug = False
-    app.run(host='0.0.0.0', port=PORT, threaded=True)
+def run_server():
+    # Enable WSGI access logging via Paste
+    app_logged = TransLogger(app)
+
+    # Mount the WSGI callable object (app) on the root directory
+    cherrypy.tree.graft(app_logged, '/')
+
+    # Set the configuration of the web server
+    cherrypy.config.update({
+        'engine.autoreload_on': True,
+        'log.screen': True,
+        'server.socket_port': PORT,
+        'server.socket_host': '0.0.0.0'
+    })
+
+    # Start the CherryPy WSGI web server
+    cherrypy.engine.start()
+    cherrypy.engine.block()
+
+if __name__ == "__main__":
+    run_server()
