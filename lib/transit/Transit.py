@@ -1,4 +1,5 @@
 import TransitSettings
+import TransitModel
 import json
 
 from geopy.distance import great_circle
@@ -15,6 +16,7 @@ class Map(object):
         self.services = []
         self.sidf_state = 0
         self.settings = TransitSettings.Settings()
+        self.model = TransitModel.Model(None, None)
 
     def add_service(self, s):
         self.services.append(s)
@@ -143,6 +145,8 @@ class Station(object):
             self.region = j['region']
         if 'gids_in_range' in j:
             self.gids_in_range = j['gids_in_range']
+        if 'gids_known' in j:
+            self.gids_known = j['gids_known']
         if 'stop_walking_times' in j:
             self.stop_walking_times = j['stop_walking_times']
 

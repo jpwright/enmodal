@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>enmodal</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <link rel="stylesheet" href="static/css/style.css" />
+    <link rel="stylesheet" href="static/css/animate.css" />
+    <link rel="stylesheet" href="static/css/balloon.css" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.1.0/dist/leaflet.css" />
+    <link rel="stylesheet" href="static/css/bootstrap.min.css" />
+
+    <script src="https://unpkg.com/leaflet@1.1.0/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.vectorgrid@1.2.0"></script>
+    <script src="https://cdn.jsdelivr.net/leaflet.esri/2.0.0-beta.8/esri-leaflet.js"></script>
+    <script src="static/js/navbar-handlers.js"></script>
+</head>
+
+<body>
+
+    <script src='static/js/vue.js'></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/leaflet.esri.geocoder/2.0.2/esri-leaflet-geocoder.css">
+    <script src="https://cdn.jsdelivr.net/leaflet.esri.geocoder/2.0.2/esri-leaflet-geocoder.js"></script>
+
+    <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js'></script>
+    <link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css' rel='stylesheet' />
+
+    <script src="static/js/spectrum.min.js"></script>
+    <link rel="stylesheet" href="static/css/spectrum.css" />
+
+    <script src="static/js/leaflet.curve.min.js"></script>
+    <script src='static/js/leaflet.pip.min.js'></script>
+    <script src='static/js/leaflet.image.min.js'></script>
+    <script src='static/js/leaflet.polylineoffset.min.js'></script>
+    <script src='static/js/turf.min.js'></script>
+    <script src='static/js/spline.min.js'></script>
+    <script src='static/js/bezier.min.js'></script>
+    <script src="static/js/chroma.min.js"></script>
+    <script src="static/js/svg.min.js"></script>
+
+    <!--
+    <script src='static/js/enmodal/settings.js'></script>
+    <script src='static/js/enmodal/transit.js'></script>
+    <script src='static/js/enmodal/draw.js'></script>
+    <script src='static/js/enmodal/interface.js'></script>
+    <script src='static/js/enmodal/utils.js'></script>
+    <script src='static/js/TransitTest.js'></script>
+
+    <script src='static/js/enmodal/session.js'></script>
+    <script src='static/js/enmodal/sidebar.js'></script>
+    <script src='static/js/enmodal/sharing.js'></script>
+    <script src='static/js/enmodal/station-pair.js'></script>
+    <script src='static/js/enmodal/bezier.js'></script>
+    <script src='static/js/enmodal/markers.js'></script>
+    <script src='static/js/enmodal/data-layers.js'></script>
+    -->
+    <script src="static/js/enmodal.min.js"></script>
+
+    <script src="static/js/bootstrap.min.js"></script>
+    <script src='static/js/lz-string.min.js'></script>
+    <script src="static/js/clipboard.min.js"></script>
+
+    <div id="navbar">
+        <div id="nav-enmodal-logo">enmodal</div>
+        <div id="nav-user-logged-in" {% if not current_user.is_authenticated %}style="display:none;" {% endif %}>
+            <div><a href="user" id="logged-in-user-email">{{ current_user.email }}</a></div>
+            <div id="logout" class="tool-button game-button-small">Logout</div>
+        </div>
+        <div id="nav-user-logged-out" {% if current_user.is_authenticated %}style="display:none;" {% endif %}>
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle dropdown-button" data-toggle="dropdown">Register <span class="caret"></span></button>
+                    <ul id="dropdown-register" class="dropdown-menu dropdown-lr animated fadeIn" role="menu">
+                        <div class="col-lg-12">
+                            <div class="text-center">
+                                <h3><b>Register</b></h3></div>
+                            <div id="dropdown-register-fields">
+                                <form id="ajax-register-form" action="#" method="post" role="form" autocomplete="off">
+                                    <div class="form-group">
+                                        <div id="register-first-name" class="form-group">
+                                            <input type="text" name="first_name" id="first_name" tabindex="1" class="form-control" placeholder="First Name">
+                                        </div>
+                                        <div id="register-last-name" class="form-group">
+                                            <input type="text" name="last_name" id="last_name" tabindex="2" class="form-control" placeholder="Last Name">
+                                        </div>
+                                    </div>
+                                    <div id="register-email" class="form-group">
+                                        <input type="email" name="email" id="email" tabindex="3" class="form-control" placeholder="Email Address" value="">
+                                    </div>
+                                    <div id="register-password" class="form-group">
+                                        <input type="password" name="password" id="password" tabindex="4" class="form-control" placeholder="Password">
+                                    </div>
+                                    <div id="register-confirm-password" class="form-group">
+                                        <input type="password" name="confirm_password" id="confirm_password" tabindex="5" class="form-control" placeholder="Confirm Password">
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="row">
+                                            <div class="col-xs-6 col-xs-offset-3">
+                                                <button type="button" id="register-submit" tabindex="6" class="form-control btn btn-info">Register</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div id="dropdown-register-done" class="alert alert-success" role="alert" style="display: none;">
+                                Thanks! You'll receive an email with a link to activate your account.
+                            </div>
+                            <div id="dropdown-register-problem" class="alert alert-danger" role="alert" style="display: none;">
+                                
+                            </div>
+                        </div>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle dropdown-button" data-toggle="dropdown">Log In <span class="caret"></span></button>
+                    <ul class="dropdown-menu dropdown-lr animated fadeIn" role="menu">
+                        <div class="col-lg-12">
+                            <div class="text-center">
+                                <h3><b>Log In</b></h3>
+                            </div>
+                            <form id="ajax-login-form" action="#" method="post" role="form" autocomplete="off">
+                                <div class="form-group">
+                                    <label for="email">Email</label>
+                                    <input type="email" name="email" id="email" tabindex="1" class="form-control" placeholder="Email address" value="" autocomplete="off">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="password">Password</label>
+                                    <input type="password" name="password" id="password" tabindex="2" class="form-control" placeholder="Password" autocomplete="off">
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="row">
+                                        <div class="col-xs-7">
+                                            <input type="checkbox" tabindex="3" name="remember" id="remember">
+                                            <label for="remember"> Remember Me</label>
+                                        </div>
+                                        <div class="col-xs-5 pull-right">
+                                            <button type="button" id="login-submit" tabindex="4" class="form-control btn btn-success">Log In</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="row">
+                                        <div class="col-lg-12">
+                                            <div class="text-center">
+                                                <a href="#" tabindex="5" class="forgot-password">Forgot Password?</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <div id="login-problem" class="alert alert-danger" role="alert" style="display: none;">
+                                Please check email/password combination and try again.
+                            </div>
+                            <div id="login-resend-validation" class="alert alert-warning" role="alert" style="display: none;">
+                                You must confirm your email address before logging in.
+                                <button type="button" id="login-resend-validation-button" tabindex="6" class="form-control btn btn-link">Resend confirmation email</button>
+                            </div>
+                            <div id="login-reset-password" class="alert alert-success" role="alert" style="display: none;">
+                                If there is an account associated with the email address provided, the password will be reset and you will receive an email containing the new password shortly.
+                            </div>
+                            </form>
+                        </div>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    {% block body %}{% endblock %}
+
+    <script>
+        (function(i, s, o, g, r, a, m) {
+            i['GoogleAnalyticsObject'] = r;
+            i[r] = i[r] || function() {
+                (i[r].q = i[r].q || []).push(arguments)
+            }, i[r].l = 1 * new Date();
+            a = s.createElement(o),
+                m = s.getElementsByTagName(o)[0];
+            a.async = 1;
+            a.src = g;
+            m.parentNode.insertBefore(a, m)
+        })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
+
+        ga('create', 'UA-98633069-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+</body>
+
+</html>

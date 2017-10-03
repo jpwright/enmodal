@@ -36,9 +36,18 @@ print "Connecting to database\n	->%s" % (SESSIONS_CONN_STRING)
 conn = psycopg2.connect(SESSIONS_CONN_STRING)
 cursor = conn.cursor()
 
-query = "CREATE TABLE IF NOT EXISTS sessions (id BIGSERIAL PRIMARY KEY, data jsonb, updated timestamp without time zone);"
+query = "CREATE TABLE IF NOT EXISTS sessions (id BIGSERIAL PRIMARY KEY, data jsonb, updated timestamp without time zone, owner_id int, title text);"
+#print query
+cursor.execute(query)
+
+query = "CREATE TABLE IF NOT EXISTS users (id BIGSERIAL PRIMARY KEY, first_name text, last_name text, email text, password_hash text, created timestamp without time zone, last_login timestamp without time zone, group_id int, password_reset bool);"
 print query
 cursor.execute(query)
+
+query = "CREATE TABLE IF NOT EXISTS pending_registrations (id BIGSERIAL PRIMARY KEY, first_name text, last_name text, email text, password_hash text, created timestamp without time zone, email_sent bool);"
+print query
+cursor.execute(query)
+
 
 conn.commit()
 

@@ -113,7 +113,8 @@ class Sidebar {
     }
 
     update_line_editor() {
-        var line_name = $("#custom-line-name").val().substring(0, 40);
+        var line_name = $("#custom-line-name").val();
+        if (line_name != undefined) line_name = line_name.substring(0, 40);
         $("#custom-line-marker-content").text(line_name);
 
         var line_color_bg = $("#color-picker-bg").val();
@@ -141,7 +142,8 @@ class Sidebar {
     line_editor_save() {
         var line = enmodal.transit_interface.active_line;
 
-        var custom_line_name = $("#custom-line-name").val().substring(0, 40);
+        var custom_line_name = $("#custom-line-name").val();
+        if (custom_line_name != undefined) custom_line_name = custom_line_name.substring(0, 40);
         var custom_line_color_bg = $("#custom-line-options #color-picker-bg").val();
         var custom_line_color_fg = $("#custom-line-options #color-picker-fg").val();
         var issue = false;

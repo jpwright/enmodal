@@ -1,6 +1,10 @@
 [flask]
 port: 5050
+domain: YOUR_DOMAIN_HERE
 secret_key: F12Yr58j4zX T~Y%C!efJ]Gxe/,?KT
+
+[email]
+sendgrid_api_key: SENDGRID_API_KEY_HERE
 
 [geocode]
 reverse_geocode_provider: mapzen

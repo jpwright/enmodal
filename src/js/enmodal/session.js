@@ -111,8 +111,31 @@ function session_save() {
                 async: true,
                 dataType: 'json',
                 success: function(data, status) {
-                    $("#tool-save").html('Save');
-                    $("#save-message").fadeIn().delay(2000).fadeOut();
+                    if (data["result"] == "OK") {
+                        $("#tool-save").html('Save');
+                        $("#tool-save").attr('data-balloon', 'Saved!');
+                        $("#tool-save").attr('data-balloon-visible','');
+                        setTimeout(function() {
+                            $("#tool-save").removeAttr('data-balloon');
+                            $("#tool-save").removeAttr('data-balloon-visible');
+                        }, 3000);
+                    } else if (data["message"] == "Anonymous user") {
+                        $("#tool-save").html('Save');
+                        $("#tool-save").attr('data-balloon', 'You must be logged in to save.');
+                        $("#tool-save").attr('data-balloon-visible','');
+                        setTimeout(function() {
+                            $("#tool-save").removeAttr('data-balloon');
+                            $("#tool-save").removeAttr('data-balloon-visible');
+                        }, 3000);
+                    } else {
+                        $("#tool-save").html('Save');
+                        $("#tool-save").attr('data-balloon', 'Error saving. Please try again later.');
+                        $("#tool-save").attr('data-balloon-visible','');
+                        setTimeout(function() {
+                            $("#tool-save").removeAttr('data-balloon');
+                            $("#tool-save").removeAttr('data-balloon-visible');
+                        }, 3000);
+                    }
                 }
             });
         }

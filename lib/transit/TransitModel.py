@@ -7,7 +7,7 @@ from geopy.distance import great_circle
 
 CATCHMENT_DISTANCE = 0.5
 
-class TransitModel(object):
+class Model(object):
 
     def __init__(self, ridership, region):
         self.ridership = ridership
@@ -20,6 +20,8 @@ class TransitModel(object):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True)
 
 def map_analysis(m):
+    
+    model = m.model
 
     bb = TransitGIS.BoundingBox()
     bb.set_from_map(m)
@@ -130,7 +132,7 @@ def map_analysis(m):
 
     end = time.time()
     print "Calculating ridership took "+str(end-start)
-    return TransitModel(ridership, condensed_region)
+    return Model(ridership, condensed_region)
 
 def dfs(service, visited, station):
     visited[station] = True

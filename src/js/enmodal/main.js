@@ -46,7 +46,9 @@ function init_leaflet_map() {
         minZoom: MIN_ZOOM
     }).addTo(map);
     
-    map.on('click', handle_map_click);
+    if (!HEADLESS_MODE) {
+        map.on('click', handle_map_click);
+    }
 
     return map;
 }
@@ -54,44 +56,46 @@ function init_leaflet_map() {
 function init_document() {
     
     // Event handlers
-    $(document).on('click', '.station-delete', delete_station_event);
-    $(document).on('click', '.station-transfer', transfer_station_event);
-    $(document).on('click', '.station-build', build_to_station_event);
-    $(document).on('click', '.subway-deletable', function() {
-        var line_id = parseInt($(this).attr('transit-line-id'));
-        var station_id = parseInt($(this).attr('transit-station-id'));
-        enmodal.transit_interface.remove_line_from_station(station_id, line_id);
-    });
-    $(document).on('click', '.station-name', function() {
-        var text = $(this).text();
-        var sn = $(this);
-        $(this).text('');
-        $('<textarea class="station-name-edit"></textarea>').appendTo($(this)).val(text).select().blur(
-
-        function() {
-            var newText = $(this).val();
-            $(this).parent().text(newText).find('textarea').remove();
-            var station_id = sn.attr('id').replace('station-', '');
-            var station = enmodal.transit_interface.active_service.get_station_by_id(station_id);
-            station.name = newText;
-            enmodal.sidebar.update_line_diagram();
-            enmodal.transit_interface.sync_station_info(station);
-            enmodal.transit_interface.get_station_marker_by_station(station).update_tooltip();
+    if (!HEADLESS_MODE) {
+        $(document).on('click', '.station-delete', delete_station_event);
+        $(document).on('click', '.station-transfer', transfer_station_event);
+        $(document).on('click', '.station-build', build_to_station_event);
+        $(document).on('click', '.subway-deletable', function() {
+            var line_id = parseInt($(this).attr('transit-line-id'));
+            var station_id = parseInt($(this).attr('transit-station-id'));
+            enmodal.transit_interface.remove_line_from_station(station_id, line_id);
         });
-    });
-    $(document).on('click', '.subway-clickable', function() {
-        line_select_click_handler($(this));
-        return false;
-    });
-    $(document).on('click', '.route-diagram-stop-info', function() {
-        var sn = $(this);
-        var station_id = sn.attr('id').replace('station-', '');
-        var station = enmodal.transit_map.get_station_by_id(station_id);
-        var station_marker = enmodal.transit_interface.get_station_marker_by_station(station);
-        station_marker.generate_popup();
-        station_marker.marker.openPopup();
-        enmodal.leaflet_map.panTo(station_marker.marker.getLatLng());
-    });
+        $(document).on('click', '.station-name', function() {
+            var text = $(this).text();
+            var sn = $(this);
+            $(this).text('');
+            $('<textarea class="station-name-edit"></textarea>').appendTo($(this)).val(text).select().blur(
+
+            function() {
+                var newText = $(this).val();
+                $(this).parent().text(newText).find('textarea').remove();
+                var station_id = sn.attr('id').replace('station-', '');
+                var station = enmodal.transit_interface.active_service.get_station_by_id(station_id);
+                station.name = newText;
+                enmodal.sidebar.update_line_diagram();
+                enmodal.transit_interface.sync_station_info(station);
+                enmodal.transit_interface.get_station_marker_by_station(station).update_tooltip();
+            });
+        });
+        $(document).on('click', '.subway-clickable', function() {
+            line_select_click_handler($(this));
+            return false;
+        });
+        $(document).on('click', '.route-diagram-stop-info', function() {
+            var sn = $(this);
+            var station_id = sn.attr('id').replace('station-', '');
+            var station = enmodal.transit_map.get_station_by_id(station_id);
+            var station_marker = enmodal.transit_interface.get_station_marker_by_station(station);
+            station_marker.generate_popup();
+            station_marker.marker.openPopup();
+            enmodal.leaflet_map.panTo(station_marker.marker.getLatLng());
+        });
+    }
 
     /*setInterval(function(){
         // Initialize service

@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+{% block body %}
+
+    <script type="text/javascript">
+    $(function() {
+        $("#nav-user-logged-in").hide();
+        $("#nav-user-logged-out").hide();
+    });
+    </script>
+    
+    <div id="content">
+        <div>sadly this registration link is expired or otherwise invalid.</div>
+        <div>to generate a new registration link, log in using this email address, then click "Resend confirmation email".</div>
+    </div>
+
+{% endblock %}

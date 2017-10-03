@@ -1,7 +1,10 @@
 from flask import Flask, render_template, request, after_this_request, escape
+from flask_login import LoginManager, UserMixin, current_user, login_required, login_user, logout_user
 
 import psycopg2
 import psycopg2.extras
+import bcrypt
+from email_validator import validate_email, EmailNotValidError
 
 import requests
 import json
@@ -15,6 +18,7 @@ from cStringIO import StringIO as IO
 import gzip
 import functools
 import gc
+import base64
 
 import multiprocessing
 import time
@@ -45,8 +49,31 @@ SESSIONS_SECRET_KEY_PUBLIC = int(config.get('sessions', 'secret_key_public'), 16
 SESSIONS_SECRET_KEY_PRIVATE = int(config.get('sessions', 'secret_key_private'), 16)
 SESSION_EXPIRATION_TIME = int(config.get('sessions', 'expiration_time'))
 
-app = Flask(__name__, static_folder='dist', static_url_path='/static')
+app = Flask(__name__, static_folder='dist', template_folder='dist', static_url_path='/static')
 app.secret_key = config.get('flask', 'secret_key')
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+class User(UserMixin):
+    def __init__(self, id):
+        self.id = id
+        self.email = None
+        self.first_name = None
+        self.last_name = None
+        conn = psycopg2.connect(SESSIONS_CONN_STRING)
+        cursor = conn.cursor()
+        cursor.execute("SELECT email, first_name, last_name FROM users WHERE id = %s LIMIT 1", [id])
+        if (cursor.rowcount > 0):
+            row = cursor.fetchone()
+            self.email = str(row[0])
+            self.first_name = str(row[1])
+            self.last_name = str(row[2])
+            
+            sdt = datetime.datetime.now()
+            cursor.execute("UPDATE users SET last_login = %s WHERE id = %s", (sdt, id))
+            conn.commit()
+        
+            
 
 class SessionManager(object):
     def __init__(self):
@@ -176,7 +203,242 @@ def gzipped(f):
 
 @app.route('/')
 def route_main():
-    return app.send_static_file('index.html')
+    return render_template('app.html')
+
+@app.route('/view')
+def view():
+    return render_template('view.html')
+
+@app.route('/user')
+@login_required
+def user():
+    return render_template('user.html')
+
+@app.route('/user-maps')
+@login_required
+def user_maps():
+    conn = psycopg2.connect(SESSIONS_CONN_STRING)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, title FROM sessions WHERE owner_id = %s", [current_user.id])
+    rows = cursor.fetchall()
+    maps = []
+    for row in rows:
+        mid = row[0]
+        print mid
+        title = row[1]
+        if title == None:
+            title = "Map"
+        url = "/?id="+'{:16x}'.format(mid^SESSIONS_SECRET_KEY_PRIVATE)
+        maps.append({"id":str(mid), "url":url, "title":title})
+    
+    return json.dumps({"maps": maps})
+
+
+@login_manager.unauthorized_handler
+def unauthorized():
+    # do stuff
+    return render_template('unauthorized.html')
+
+@app.route('/login', methods=['POST'])
+def login():
+    email = request.form['email']
+    password = str(request.form['password']).encode('utf-8')
+    
+    remember = False
+    if 'remember' in request.form:
+        remember = True
+
+    conn = psycopg2.connect(SESSIONS_CONN_STRING)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, password_hash FROM users WHERE email = %s LIMIT 1", [email])
+    if (cursor.rowcount > 0):
+        row = cursor.fetchone()
+        id = int(row[0])
+        password_hash = str(row[1]).encode('utf-8')
+        if bcrypt.checkpw(password, password_hash):
+            user = User(id)
+            login_user(user, remember=remember)
+            return json.dumps({"result": "OK", "email": email})
+        
+    else:
+        # Do not validate on password_hash.
+        # User might not remember password. Better to allow people to resend validation emails then send password reset links to unverified emails.
+        cursor.execute("SELECT id FROM pending_registrations WHERE email = %s LIMIT 1", [email])
+        if (cursor.rowcount > 0):
+            return json.dumps({"result": "FAIL", "message": "pending registration"})
+        
+    return json.dumps({"result": "FAIL", "message": "not registered"})
+
+@app.route('/change-password', methods=['POST'])
+@login_required
+def change_password():
+    old_password = str(request.form['old_password']).encode('utf-8')
+    password = str(request.form['password']).encode('utf-8')
+    confirm_password = str(request.form['confirm_password']).encode('utf-8')
+
+    if len(password) < 8:
+        return json.dumps({"result": "FAIL", "message": "Password must be at least 8 characters long.", "fields": ["change-password-password"]})
+
+    if password != confirm_password:
+        return json.dumps({"result": "FAIL", "message": "Please check that you entered the same password twice.", "fields": ["change-password-password", "change-password-confirm-password"]})
+
+    conn = psycopg2.connect(SESSIONS_CONN_STRING)
+    cursor = conn.cursor()
+    cursor.execute("SELECT password_hash FROM users WHERE id = %s LIMIT 1", [current_user.id])
+    if (cursor.rowcount > 0):
+        row = cursor.fetchone()
+        password_hash = str(row[0]).encode('utf-8')
+        if bcrypt.checkpw(old_password, password_hash):
+            new_password_hash = bcrypt.hashpw(password, bcrypt.gensalt())
+            if (password_hash == new_password_hash):
+                return json.dumps({"result": "FAIL", "message": "New password can't be the same as your old password.", "fields": ["change-password-password"]})
+            else:
+                cursor.execute("UPDATE users SET password_hash = %s WHERE id = %s", (new_password_hash, current_user.id))
+                conn.commit()
+                return json.dumps({"result": "OK"})
+        else:
+            return json.dumps({"result": "FAIL", "message": "Your old password is incorrect. Please try again.", "fields": ["change-password-old-password"]})
+        
+    return json.dumps({"result": "FAIL", "message": "There was a problem processing your password change request. Please try again later.", "fields": []})
+
+@app.route('/reset-password', methods=['POST'])
+def reset_password():
+    email = request.form['email']
+
+    try:
+        v = validate_email(email)
+        email = v["email"] #replace with normalized form
+    except EmailNotValidError as e:
+        return json.dumps({"result": "FAIL", "message": "Please enter a valid email address.", "fields": ["login-email"]})
+
+    conn = psycopg2.connect(SESSIONS_CONN_STRING)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM users WHERE email = %s LIMIT 1", [email])
+    if (cursor.rowcount > 0):
+        row = cursor.fetchone()
+        id = int(row[0])
+        cursor.execute("UPDATE users SET password_reset = %s WHERE id = %s", (True, id))
+        conn.commit()
+        
+    return json.dumps({"result": "OK", "email": email})
+
+@app.route('/confirm-registration')
+def confirm_registration():
+    e = request.args.get('e')
+    d = base64.b64decode(e)
+    
+    r = json.loads(d)
+    try:
+        id = r['i']
+        password_hash = r['p']
+        dt_s = r['t']
+        
+        print "id: "+str(id)
+        print "password_hash: "+str(password_hash)
+        
+        dt = datetime.datetime.strptime(dt_s, '%Y-%m-%d %H:%M:%S')
+        
+        print "datetime: "+str(dt)
+        
+        sdt = datetime.datetime.now()
+        
+        delta = (sdt - dt).total_seconds()
+        if delta > 60*60*24:
+            return render_template('registration_fail.html')
+        
+        conn = psycopg2.connect(SESSIONS_CONN_STRING)
+        cursor = conn.cursor()
+        cursor.execute("SELECT email, password_hash, first_name, last_name FROM pending_registrations WHERE id = %s LIMIT 1", [id])
+        if (cursor.rowcount > 0):
+            row = cursor.fetchone()
+            if password_hash == row[1]:
+                # Password matches! Create this user.
+                # But first check if the user already exists
+                cursor.execute("SELECT * FROM users WHERE email = %s LIMIT 1", [row[0]])
+                if (cursor.rowcount > 0):
+                    # Just display the confirmation message so they don't freak out.
+                    return render_template('registration_confirm.html')
+                else:
+                    sdt = datetime.datetime.now()
+                    cursor.execute("INSERT INTO users (email, password_hash, first_name, last_name, created) VALUES (%s, %s, %s, %s, %s)", (row[0], row[1], row[2], row[3], sdt))
+                    cursor.execute("DELETE FROM pending_registrations WHERE id = %s", [id])
+                    conn.commit()
+                    # Go ahead and log them in.
+                    cursor.execute("SELECT id FROM users WHERE email = %s LIMIT 1", [email])
+                    row = cursor.fetchone()
+                    user = User(row[0])
+                    login_user(use)
+            else:
+                return render_template('registration_fail.html')
+            
+        else:
+            return render_template('registration_fail.html')
+        
+        return render_template('registration_confirm.html')
+    except:
+        return render_template('registration_fail.html')
+    
+
+@app.route('/resend-registration', methods=['POST'])
+def resend_registration():
+    email = request.form['email']
+
+    conn = psycopg2.connect(SESSIONS_CONN_STRING)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE pending_registrations SET email_sent = %s WHERE email = %s", (False, email))
+    conn.commit()
+    
+    return json.dumps({"result": "OK", "email": email})
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return json.dumps({"result": "OK"})
+
+@app.route('/register', methods=['POST'])
+def register():
+    email = request.form['email']
+    first_name = request.form['first_name']
+    last_name = request.form['last_name']
+    password = str(request.form['password']).encode('utf-8')
+    confirm_password = str(request.form['confirm_password']).encode('utf-8')
+    
+    if len(first_name) < 1 or len(last_name) < 1:
+        return json.dumps({"result": "FAIL", "message": "Please enter a first and last name.", "fields": ["register-first-name", "register-last-name"]})
+
+    try:
+        v = validate_email(email)
+        email = v["email"] #replace with normalized form
+    except EmailNotValidError as e:
+        return json.dumps({"result": "FAIL", "message": "Please enter a valid email address.", "fields": ["register-email"]})
+
+    if len(password) < 8:
+        return json.dumps({"result": "FAIL", "message": "Password must be at least 8 characters long.", "fields": ["register-password"]})
+
+    if password != confirm_password:
+        return json.dumps({"result": "FAIL", "message": "Please check that you entered the same password twice.", "fields": ["register-password", "register-confirm-password"]})
+    
+    conn = psycopg2.connect(SESSIONS_CONN_STRING)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, password_hash FROM users WHERE email = %s LIMIT 1", [email])
+    if (cursor.rowcount > 0):
+        return json.dumps({"result": "FAIL", "message": "That email address is already in use.", "fields": ["register-email"]})
+    else:
+        password_hash = bcrypt.hashpw(password, bcrypt.gensalt())
+        sdt = datetime.datetime.now()
+        cursor.execute("INSERT INTO pending_registrations (email, password_hash, first_name, last_name, created, email_sent) VALUES (%s, %s, %s, %s, %s, %s)", (email, password_hash, first_name, last_name, sdt, False))
+        conn.commit()
+        cursor.execute("SELECT id FROM pending_registrations WHERE email = %s LIMIT 1", [email])
+        if (cursor.rowcount > 0):
+            row = cursor.fetchone()
+            #id = int(row[0])
+            #user = User(id)
+            #login_user(user)
+        else:
+            return json.dumps({"result": "FAIL", "message": "There was a problem processing your registration. Please try again later.", "fields": []})
+        
+    return json.dumps({"result": "OK", "email": email})
 
 @app.route('/session')
 def route_session_status():
@@ -203,29 +465,43 @@ def save_session(s):
 
     conn = psycopg2.connect(SESSIONS_CONN_STRING)
     cursor = conn.cursor()
-    cursor.execute("SELECT id FROM sessions WHERE id = %s LIMIT 1" % (sid))
+    cursor.execute("SELECT id FROM sessions WHERE id = '%s' LIMIT 1", [sid])
     if (cursor.rowcount > 0):
-        cursor.execute("UPDATE sessions SET data = %s, updated = %s WHERE id = %s", (sdata, sdt, sid))
+        cursor.execute("UPDATE sessions SET data = %s, updated = %s, owner_id = %s WHERE id = %s", (sdata, sdt, current_user.id, sid))
     else:
-        cursor.execute("INSERT INTO sessions (id, data, updated) VALUES (%s, %s, %s)", (sid, sdata, sdt))
-
+        cursor.execute("INSERT INTO sessions (id, data, updated, owner_id) VALUES (%s, %s, %s, %s)", (sid, sdata, sdt, current_user.id))
     conn.commit()
+    
+    session_token = '{:16x}'.format(s.private_key())
+    os.system('node tools/screenshot.js --url "http://localhost:'+str(PORT)+"/view?id="+session_token+'" --output dist/img/map-screenshots/'+str(sid)+'.png &')
 
 @app.route('/session_save')
 def route_session_save():
+    if current_user.is_anonymous:
+        return json.dumps({"result": "FAIL", "message": "Anonymous user"})
+    
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
     if e:
         return e
 
     a = session_manager.auth_by_key(h)
+    
+    conn = psycopg2.connect(SESSIONS_CONN_STRING)
+    cursor = conn.cursor()
+    cursor.execute("SELECT owner_id FROM sessions WHERE id = '%s' LIMIT 1", [a.session.sid])
+    if (cursor.rowcount > 0):
+        row = cursor.fetchone()
+        if (int(row[0]) != int(current_user.id)):
+            return json.dumps({"result": "FAIL", "message": "Wrong user"})
+
     if a.editable:
         save_session(a.session)
         del a
         return json.dumps({"result": "OK"})
     else:
         del a
-        return json.dumps({"error": "Non-editable session"})
+        return json.dumps({"result": "FAIL", "message": "Non-editable session"})
 
 @app.route('/session_load')
 def route_session_load():
@@ -237,11 +513,11 @@ def route_session_load():
     is_private = False
     sid = session_manager.get_sid_from_public_key(h)
     #print "public guess: "+str(sid)
-    cursor.execute("SELECT data FROM sessions WHERE id = %s LIMIT 1" % (sid))
+    cursor.execute("SELECT data FROM sessions WHERE id = '%s' LIMIT 1", [sid])
     if (cursor.rowcount == 0):
         sid = session_manager.get_sid_from_private_key(h)
         #print "private guess: "+str(sid)
-        cursor.execute("SELECT data FROM sessions WHERE id = %s LIMIT 1" % (sid))
+        cursor.execute("SELECT data FROM sessions WHERE id = '%s' LIMIT 1", [sid])
         is_private = True
     if (cursor.rowcount == 0):
         return json.dumps({"error": "Invalid ID"})
@@ -294,7 +570,21 @@ def route_session_push():
     m = Transit.Map(0)
     m.from_json(d)
     m.sidf_state = 0
+    
+    # Copy old map
+    om = session_manager.auth_by_key(h).session.map
+    
+    # Save new map
     session_manager.auth_by_key(h).session.map = m
+    
+    # Save gids
+    for service in om.services:
+        for station in service.stations:
+            if station.gids_known:
+                for service_n in m.services:
+                    for station_n in service_n.stations:
+                        if station.location == station_n.location:
+                            station_n.set_gids(station.gids_in_range)
     
     # Copy user settings
     # TODO clean this up!
@@ -767,6 +1057,10 @@ def check_for_session_errors(h):
         return json.dumps({"error": "Invalid session"})
 
     return 0
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User(user_id)
 
 def run_server():
     # Enable WSGI access logging via Paste

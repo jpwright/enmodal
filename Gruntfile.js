@@ -16,6 +16,7 @@ module.exports = function(grunt) {
     copy: {
         main: {
             files: [
+                {expand: true, flatten: true, src: ['src/js/enmodal/*.js'], dest: 'dist/js/', filter: 'isFile'},
                 {expand: true, flatten: true, src: ['src/js/lib/*.min.js'], dest: 'dist/js/', filter: 'isFile'},
                 {expand: true, flatten: true, src: ['src/css/*.css'], dest: 'dist/css/', filter: 'isFile'},
                 {expand: true, flatten: true, src: ['src/img/*'], dest: 'dist/img/', filter: 'isFile'},
@@ -65,7 +66,7 @@ module.exports = function(grunt) {
       }
     },
     watch: {
-      files: ['<%= jshint.files %>', 'src/index.html'],
+      files: ['<%= jshint.files %>', 'src/*.html', 'src/css/*.css'],
       tasks: ['copy', 'concat', 'uglify']
     },
   });
