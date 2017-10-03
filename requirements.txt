@@ -12,7 +12,6 @@ functools32==3.2.3.post2
 future==0.16.0
 geobuf==1.1.0
 geopy==1.11.0
-Ghost.py==0.2.3
 graphviz==0.8
 idna==2.6
 itsdangerous==0.24
@@ -31,7 +30,6 @@ psutil==5.3.1
 psycopg2==2.6.2
 pycparser==2.18
 pyparsing==2.2.0
-PySide==1.2.4
 python-dateutil==2.6.1
 python-http-client==3.0.0
 pytz==2017.2
