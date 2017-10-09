@@ -530,8 +530,9 @@ def route_session_save():
     cursor.execute("SELECT owner_id FROM sessions WHERE id = '%s' LIMIT 1", [a.session.sid])
     if (cursor.rowcount > 0):
         row = cursor.fetchone()
-        if (int(row[0]) != int(current_user.id)):
-            return json.dumps({"result": "FAIL", "message": "Wrong user"})
+        if row[0] is not None:
+            if (int(row[0]) != int(current_user.id)):
+                return json.dumps({"result": "FAIL", "message": "Wrong user"})
 
     if a.editable:
         save_session(a.session, current_user.id, True)
