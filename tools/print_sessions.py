@@ -21,13 +21,13 @@ print "Connecting to database\n	->%s" % (SESSIONS_CONN_STRING)
 conn = psycopg2.connect(SESSIONS_CONN_STRING)
 cursor = conn.cursor()
 
-query = "SELECT id, updated from sessions ORDER BY updated ASC;"
+query = "SELECT id, updated, title, owner_id from sessions ORDER BY updated ASC;"
 print query
 cursor.execute(query)
 
 rows = cursor.fetchall()
 for row in rows:
-    print "id: %d, updated: %s, public: %s, private: %s" % (row[0], row[1], str("%x" % (row[0] ^ SESSIONS_SECRET_KEY_PUBLIC)), str("%x" % (row[0] ^ SESSIONS_SECRET_KEY_PRIVATE)))
+    print "id: %d, updated: %s, public: %s, private: %s, title: %s, owner_id: %s" % (row[0], row[1], str("%x" % (row[0] ^ SESSIONS_SECRET_KEY_PUBLIC)), str("%x" % (row[0] ^ SESSIONS_SECRET_KEY_PRIVATE)), row[2], row[3])
 
 conn.commit()
 
