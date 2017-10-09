@@ -27,7 +27,7 @@ cursor.execute(query)
 
 rows = cursor.fetchall()
 for row in rows:
-    print "id: %d, first_name: %s, last_name: %s, email: %s, created: %s, email_sent" % (row[0], row[1], row[2], row[3], row[4], row[5])
+    print "id: %d, first_name: %s, last_name: %s, email: %s, created: %s, email_sent: %s" % (row[0], row[1], row[2], row[3], row[4], row[5])
 
 conn.commit()
 
