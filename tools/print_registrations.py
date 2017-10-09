@@ -21,13 +21,13 @@ print "Connecting to database\n	->%s" % (SESSIONS_CONN_STRING)
 conn = psycopg2.connect(SESSIONS_CONN_STRING)
 cursor = conn.cursor()
 
-query = "SELECT id, first_name, last_name, email, created from pending_registrations ORDER BY created ASC;"
+query = "SELECT id, first_name, last_name, email, created, email_sent from pending_registrations ORDER BY created ASC;"
 print query
 cursor.execute(query)
 
 rows = cursor.fetchall()
 for row in rows:
-    print "id: %d, first_name: %s, last_name: %s, email: %s, created: %s" % (row[0], row[1], row[2], row[3], row[4])
+    print "id: %d, first_name: %s, last_name: %s, email: %s, created: %s, email_sent" % (row[0], row[1], row[2], row[3], row[4], row[5])
 
 conn.commit()
 
