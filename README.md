@@ -70,6 +70,15 @@ Note: best to follow the [Valhalla setup guide](https://github.com/valhalla/valh
     sudo npm install
     grunt --force
 
+### Map screenshots
+
+    mkdir dist/img/map-screenshots
+    sudo apt-get install chromium-browser libgconf-2-4
+
+### To run on different port e.g. GCE port 8080
+
+    sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to 8080
+    
 ## Populating dggrid database
 
 I generated the dggrid database (which contains the hexagonal bins of population and employment data), but the process to do this is extremely cumbersome, not yet documented, and took like weeks of CPU time.

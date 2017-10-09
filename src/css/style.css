@@ -1,10 +1,7 @@
 html, body {
     padding: 0;
     margin: 0;
-    height: 100%;
-    width: 100%;
     font-family: sans-serif;
-    overflow: hidden;
     background-color: #232227 !important;
 }
 
@@ -108,7 +105,7 @@ button.dropdown-button:hover, button.dropdown-button:focus {
     border-top: 5px solid white;
 }
 
-textarea.station-name-edit {
+input.station-name-edit {
     background-color: black;
     color: white;
     font-weight: bold;
@@ -310,6 +307,10 @@ textarea.station-name-edit {
 
 .custom-options-label input.issue {
     background-color: rgba(50, 0, 0, 0.5);
+}
+
+#custom-service-options {
+    overflow: hidden;
 }
 
 #custom-service-options .service-mode-button {
@@ -706,10 +707,35 @@ ul.ui-autocomplete {
     background: rgba(20, 20, 20, 1.0);
     color: white;
     line-height: 34px;
+      -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome and Opera */
+}
+
+#navbar .nav {
+    float: right!important;
+    margin: 0 -15px;
+}
+
+#navbar .nav .open .dropdown-menu {
+    position: static;
+    float: none;
+    width: auto;
+    margin-top: 0;
+    background-color: white;
+    border: 0;
+    -webkit-box-shadow: none;
+    box-shadow: none;
 }
 
 #navbar .dropdown {
+    max-width: 250px;
     line-height: 1.42857143;
+    float: left;
 }
 
 #options {
@@ -774,6 +800,14 @@ ul.dropdown-lr {
     display: flex;
     display: -webkit-flex;
     flex-direction: column;
+    overflow-y: auto;
+}
+
+#option-section-services {
+    display: flex;
+    display: -webkit-flex;
+    flex-direction: column;
+    overflow-y: auto;
 }
 
 #option-section-user {
@@ -983,7 +1017,7 @@ ul.dropdown-lr {
     cursor: -webkit-grab;
 }
 
-@media (min-width: 600px) {
+@media (min-width: 767px) {
 .alpha-warning-large {
     font-size: 5vw;
 }
@@ -992,11 +1026,36 @@ ul.dropdown-lr {
 }
 }
 
-@media (max-width: 599px) and (min-width: 50px) {
-.alpha-warning-large {
-    font-size: 8vw;
+@media (max-width: 767px) {
+    .alpha-warning-large {
+        font-size: 8vw;
+    }
+    .alpha-warning-small {
+        font-size: 5vw;
+    }
+    #options {
+        display: none;
+    }
+    #starter {
+        width: 90%;
+        margin: 5%;
+    }
+    #starter-city-picker {
+        height: 16em;
+    }
+    #game-start-city-picker {
+        display: block;
+        float: none;
+        width: 100%;
+        height: auto;
+    }
+    #game-start-scratch {
+        display: block;
+        float: none;
+        width: 50%;
+        height: auto;
+        margin: auto;
+    }
 }
-.alpha-warning-small {
-    font-size: 5vw;
-}
-}
+
+

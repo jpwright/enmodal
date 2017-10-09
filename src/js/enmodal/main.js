@@ -66,21 +66,27 @@ function init_document() {
             enmodal.transit_interface.remove_line_from_station(station_id, line_id);
         });
         $(document).on('click', '.station-name', function() {
-            var text = $(this).text();
-            var sn = $(this);
-            $(this).text('');
-            $('<textarea class="station-name-edit"></textarea>').appendTo($(this)).val(text).select().blur(
+            if (!$(this).has("input").length > 0) {
+                var text = $(this).text();
+                var sn = $(this);
+                $(this).text('');
+                $('<input type="text" class="station-name-edit enm-editable"></textarea>').appendTo($(this)).val(text).select().blur(
 
-            function() {
-                var newText = $(this).val();
-                $(this).parent().text(newText).find('textarea').remove();
-                var station_id = sn.attr('id').replace('station-', '');
-                var station = enmodal.transit_interface.active_service.get_station_by_id(station_id);
-                station.name = newText;
-                enmodal.sidebar.update_line_diagram();
-                enmodal.transit_interface.sync_station_info(station);
-                enmodal.transit_interface.get_station_marker_by_station(station).update_tooltip();
-            });
+                function() {
+                    var newText = $(this).val();
+                    $(this).parent().html(newText+'  <i class="fa fa-pencil" style="margin-left: 5px;" aria-hidden="true"></i>').find('input').remove();
+                    var station_id = sn.attr('id').replace('station-', '');
+                    var station = enmodal.transit_interface.active_service.get_station_by_id(station_id);
+                    station.name = newText;
+                    enmodal.sidebar.update_line_diagram();
+                    enmodal.transit_interface.sync_station_info(station);
+                    enmodal.transit_interface.get_station_marker_by_station(station).update_tooltip();
+                }).keyup(function(e) {
+                    if (e.keyCode == 13) {
+                        this.blur();
+                    }
+                });
+            }
         });
         $(document).on('click', '.subway-clickable', function() {
             line_select_click_handler($(this));
@@ -149,6 +155,7 @@ function init_document() {
     $("#game-start-scratch").click(function() {
         $("#starter-city-picker").hide();
         $("#starter").hide();
+        $("#options").show();
     });
 
     /*var input = document.getElementById('pac-input');
@@ -273,6 +280,34 @@ function init_document() {
         $("#starter").hide();
     });
     
+    // Map name editor
+    $(document).on('click', '#map-title-inner', function() {
+        if (!$(this).has("input").length > 0) {
+            var text = $(this).text().trim();
+            var sn = $(this);
+            $(this).text('');
+            $('<input type="text" class="map-title-edit enm-editable"></input>').appendTo($(this)).val(text).select().blur(
+            function() {
+                var newText = $(this).val();
+                $(this).parent().html(newText + '  <i class="fa fa-pencil" style="margin-left: 5px;" aria-hidden="true"></i>').find('input').remove();
+                var params = $.param({
+                    i: enmodal.session_id,
+                    name: newText
+                });
+                $.ajax({ url: "map_name?"+params,
+                    async: false,
+                    dataType: 'json',
+                    success: function(data, status) {
+                    }
+                });
+            }).keyup(function(e) {
+                if (e.keyCode == 13) {
+                    this.blur();
+                }
+            });
+        }
+    });
+    
     new Clipboard('.share-link-copy-button');
 }
 
@@ -298,7 +333,7 @@ $(function() {
     init_document();
     if (enmodal.session_id != null) {
         session_load();
-    } else {
+    } else if (window.location.pathname != "/view") {
         session_new();
     }
 });

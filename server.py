@@ -19,7 +19,7 @@ import gzip
 import functools
 import gc
 import base64
-
+import threading
 import multiprocessing
 import time
 
@@ -32,6 +32,7 @@ import Transit
 import TransitGIS
 import TransitModel
 import TransitSettings
+from user_manager import *
 
 import ConfigParser
 
@@ -132,7 +133,7 @@ class SessionManager(object):
         num_sessions_start = len(self.sessions)
         for session in self.sessions:
             if session.is_expired():
-                save_session(session)
+                save_session(session, None, False)
         self.sessions = [x for x in self.sessions if not x.is_expired()]
         gc.collect()
         return num_sessions_start - len(self.sessions)
@@ -219,12 +220,11 @@ def user():
 def user_maps():
     conn = psycopg2.connect(SESSIONS_CONN_STRING)
     cursor = conn.cursor()
-    cursor.execute("SELECT id, title FROM sessions WHERE owner_id = %s", [current_user.id])
+    cursor.execute("SELECT id, title FROM sessions WHERE owner_id = %s ORDER BY id", [current_user.id])
     rows = cursor.fetchall()
     maps = []
     for row in rows:
         mid = row[0]
-        print mid
         title = row[1]
         if title == None:
             title = "Map"
@@ -319,6 +319,8 @@ def reset_password():
         id = int(row[0])
         cursor.execute("UPDATE users SET password_reset = %s WHERE id = %s", (True, id))
         conn.commit()
+        t = threading.Thread(target=reset_passwords)
+        t.start()
         
     return json.dumps({"result": "OK", "email": email})
 
@@ -328,6 +330,7 @@ def confirm_registration():
     d = base64.b64decode(e)
     
     r = json.loads(d)
+    print r
     try:
         id = r['i']
         password_hash = r['p']
@@ -344,6 +347,7 @@ def confirm_registration():
         
         delta = (sdt - dt).total_seconds()
         if delta > 60*60*24:
+            print "time mismatch"
             return render_template('registration_fail.html')
         
         conn = psycopg2.connect(SESSIONS_CONN_STRING)
@@ -364,17 +368,17 @@ def confirm_registration():
                     cursor.execute("DELETE FROM pending_registrations WHERE id = %s", [id])
                     conn.commit()
                     # Go ahead and log them in.
-                    cursor.execute("SELECT id FROM users WHERE email = %s LIMIT 1", [email])
+                    cursor.execute("SELECT id FROM users WHERE email = %s LIMIT 1", [row[0]])
                     row = cursor.fetchone()
                     user = User(row[0])
-                    login_user(use)
+                    login_user(user)
+                    return render_template('registration_confirm.html')
             else:
+                print "password hash mismatch"
                 return render_template('registration_fail.html')
-            
         else:
+            print "id not in pending_registrations"
             return render_template('registration_fail.html')
-        
-        return render_template('registration_confirm.html')
     except:
         return render_template('registration_fail.html')
     
@@ -387,6 +391,8 @@ def resend_registration():
     cursor = conn.cursor()
     cursor.execute("UPDATE pending_registrations SET email_sent = %s WHERE email = %s", (False, email))
     conn.commit()
+    t = threading.Thread(target=send_registration_emails)
+    t.start()
     
     return json.dumps({"result": "OK", "email": email})
 
@@ -429,6 +435,8 @@ def register():
         sdt = datetime.datetime.now()
         cursor.execute("INSERT INTO pending_registrations (email, password_hash, first_name, last_name, created, email_sent) VALUES (%s, %s, %s, %s, %s, %s)", (email, password_hash, first_name, last_name, sdt, False))
         conn.commit()
+        t = threading.Thread(target=send_registration_emails)
+        t.start()
         cursor.execute("SELECT id FROM pending_registrations WHERE email = %s LIMIT 1", [email])
         if (cursor.rowcount > 0):
             row = cursor.fetchone()
@@ -439,6 +447,32 @@ def register():
             return json.dumps({"result": "FAIL", "message": "There was a problem processing your registration. Please try again later.", "fields": []})
         
     return json.dumps({"result": "OK", "email": email})
+
+@app.route('/map_name')
+@login_required
+def map_name():
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
+    if e:
+        return e
+
+    name = str(request.args.get('name'))
+    
+    a = session_manager.auth_by_key(h)
+    
+    conn = psycopg2.connect(SESSIONS_CONN_STRING)
+    cursor = conn.cursor()
+    cursor.execute("SELECT owner_id FROM sessions WHERE id = '%s' LIMIT 1", [a.session.sid])
+    if (cursor.rowcount > 0):
+        row = cursor.fetchone()
+        if (int(row[0]) != int(current_user.id)):
+            return json.dumps({"result": "FAIL", "message": "Wrong user"})
+        
+    cursor.execute("UPDATE sessions SET title = %s WHERE id = %s", (name, a.session.sid))
+    conn.commit()
+    
+    return json.dumps({"result": "OK"})
+    
 
 @app.route('/session')
 def route_session_status():
@@ -457,7 +491,7 @@ def route_session_links():
 
     return json.dumps({})
 
-def save_session(s):
+def save_session(s, user_id, take_snapshot):
     sid = s.sid
     print "saving with sid "+str(sid)
     sdata = str(s.map.to_json())
@@ -467,13 +501,17 @@ def save_session(s):
     cursor = conn.cursor()
     cursor.execute("SELECT id FROM sessions WHERE id = '%s' LIMIT 1", [sid])
     if (cursor.rowcount > 0):
-        cursor.execute("UPDATE sessions SET data = %s, updated = %s, owner_id = %s WHERE id = %s", (sdata, sdt, current_user.id, sid))
+        cursor.execute("UPDATE sessions SET data = %s, updated = %s WHERE id = %s", (sdata, sdt, sid))
     else:
-        cursor.execute("INSERT INTO sessions (id, data, updated, owner_id) VALUES (%s, %s, %s, %s)", (sid, sdata, sdt, current_user.id))
+        cursor.execute("INSERT INTO sessions (id, data, updated) VALUES (%s, %s, %s)", (sid, sdata, sdt))
+    if user_id != None:
+        cursor.execute("UPDATE sessions SET owner_id = %s WHERE id = %s", (user_id, sid))
+        
     conn.commit()
     
-    session_token = '{:16x}'.format(s.private_key())
-    os.system('node tools/screenshot.js --url "http://localhost:'+str(PORT)+"/view?id="+session_token+'" --output dist/img/map-screenshots/'+str(sid)+'.png &')
+    if take_snapshot:
+        session_token = '{:16x}'.format(s.private_key())
+        os.system('node tools/screenshot.js --url "http://localhost:'+str(PORT)+"/view?id="+session_token+'" --output dist/img/map-screenshots/'+str(sid)+'.png &')
 
 @app.route('/session_save')
 def route_session_save():
@@ -496,7 +534,7 @@ def route_session_save():
             return json.dumps({"result": "FAIL", "message": "Wrong user"})
 
     if a.editable:
-        save_session(a.session)
+        save_session(a.session, current_user.id, True)
         del a
         return json.dumps({"result": "OK"})
     else:
@@ -513,11 +551,11 @@ def route_session_load():
     is_private = False
     sid = session_manager.get_sid_from_public_key(h)
     #print "public guess: "+str(sid)
-    cursor.execute("SELECT data FROM sessions WHERE id = '%s' LIMIT 1", [sid])
+    cursor.execute("SELECT data, title FROM sessions WHERE id = '%s' LIMIT 1", [sid])
     if (cursor.rowcount == 0):
         sid = session_manager.get_sid_from_private_key(h)
         #print "private guess: "+str(sid)
-        cursor.execute("SELECT data FROM sessions WHERE id = '%s' LIMIT 1", [sid])
+        cursor.execute("SELECT data, title FROM sessions WHERE id = '%s' LIMIT 1", [sid])
         is_private = True
     if (cursor.rowcount == 0):
         return json.dumps({"error": "Invalid ID"})
@@ -525,6 +563,7 @@ def route_session_load():
     print sid
     row = cursor.fetchone()
     sdata = row[0]
+    title = row[1]
     m = Transit.Map(0)
     m.from_json(sdata)
     m.sidf_state = 0
@@ -545,7 +584,7 @@ def route_session_load():
             s.map = m
     
     a = session_manager.auth_by_key(s.private_key())
-    return_obj = {"public_key": '{:16x}'.format(a.session.public_key()), "is_private": a.editable, "data": m.to_json()}
+    return_obj = {"public_key": '{:16x}'.format(a.session.public_key()), "is_private": a.editable, "title": title, "data": m.to_json()}
     if a.editable:
         return_obj["private_key"] = '{:16x}'.format(a.session.private_key())
     del a

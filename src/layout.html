@@ -61,14 +61,14 @@
     <script src='static/js/enmodal/markers.js'></script>
     <script src='static/js/enmodal/data-layers.js'></script>
     -->
-    <script src="static/js/enmodal.min.js"></script>
+    <script src="static/js/enmodal.js"></script>
 
     <script src="static/js/bootstrap.min.js"></script>
     <script src='static/js/lz-string.min.js'></script>
     <script src="static/js/clipboard.min.js"></script>
 
     <div id="navbar">
-        <div id="nav-enmodal-logo">enmodal</div>
+        <div id="nav-enmodal-logo"><img src="static/img/logo.png" /></div>
         <div id="nav-user-logged-in" {% if not current_user.is_authenticated %}style="display:none;" {% endif %}>
             <div><a href="user" id="logged-in-user-email">{{ current_user.email }}</a></div>
             <div id="logout" class="tool-button game-button-small">Logout</div>
@@ -165,7 +165,7 @@
                                 <button type="button" id="login-resend-validation-button" tabindex="6" class="form-control btn btn-link">Resend confirmation email</button>
                             </div>
                             <div id="login-reset-password" class="alert alert-success" role="alert" style="display: none;">
-                                If there is an account associated with the email address provided, the password will be reset and you will receive an email containing the new password shortly.
+                                If there is an account associated with the email address provided, the password has been reset and you will receive an email containing the new password shortly.
                             </div>
                             </form>
                         </div>

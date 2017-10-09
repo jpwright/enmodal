@@ -7,7 +7,8 @@ $(function() {
             $("#user-maps").html("");
             for (var i = 0; i < data["maps"].length; i++) {
                 var map = data["maps"][i];
-                $("#user-maps").append('<a href="'+map["url"]+'" target="_blank"><div class="user-map"><img src="static/img/map-screenshots/'+map["id"]+'.png" onerror="if (this.src != \'static/img/map.png\') this.src = \'static/img/map.png\';" /><br />'+map["title"]+'</div></a>');
+                var cache_string = (Math.random()+1).toString(36).slice(2, 5);
+                $("#user-maps").append('<a href="'+map["url"]+'" target="_blank"><div class="user-map"><img src="static/img/map-screenshots/'+map["id"]+'.png?d='+cache_string+'" onerror="if (this.src != \'static/img/map.png\') this.src = \'static/img/map.png\';" /><br />'+map["title"]+'</div></a>');
             }
         }
     });

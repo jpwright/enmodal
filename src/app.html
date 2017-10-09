@@ -1,15 +1,21 @@
 {% extends "layout.html" %}
 {% block body %}
+    <link rel="stylesheet" href="static/css/app.css" />
     <script type="text/javascript">
     HEADLESS_MODE = false;
     </script>
-    <div id="alpha-warning" style="display:none;">
+    <div id="alpha-warning">
         <span class="alpha-warning-large">warning! you are viewing an <em>alpha release</em> of enmodal.</span>
         <br />
         <br />
         <span class="alpha-warning-small">maps you create will not be permanently saved. the ridership engine is not to be trusted. there will be bugs.<br /><a href="#" id="alpha-acknowledge" onclick="$('#alpha-warning').hide();">i'm ok with this</a></span>
     </div>
     <div id="map"></div>
+    <div id="map-title">
+        <div id="map-title-inner">
+        Map  <i class="fa fa-pencil" style="margin-left: 5px;" aria-hidden="true"></i>
+        </div>
+    </div>
     <div id="starter">
         <div id="starter-middle">
             <div class="starter-inner" id="starter-city-picker">
@@ -95,7 +101,7 @@
                             </div>
                             <div id="collapse-services" class="option-section collapse in" role="tabpanel" aria-labelledby="headingOne">
                                 <div class="card-block option-section">
-                                    <div id="option-section-services" class="option-section">
+                                    <div id="option-section-services" class="option-section custom-scroll">
                                         <div id="service-selector" class="dropdown dropdown-selector game-button">
                                             <button class="btn btn-secondary dropdown-toggle dropdown-button" id="dropdown-service-button" type="button" data-toggle="dropdown">Select a service...
                                                 <span class="caret"></span></button>
@@ -123,6 +129,7 @@
                                                 </label>
                                             </div>
                                         </div>
+                                        <div style="clear:both;"></div>
                                     </div>
                                 </div>
                             </div>
@@ -134,7 +141,7 @@
                         </a>
                             </div>
                             <div id="collapse-lines" class="option-section collapse in" role="tabpanel" aria-labelledby="headingTwo">
-                                <div id="option-section-lines" class="card-block option-section">
+                                <div id="option-section-lines" class="card-block option-section custom-scroll">
                                     <div id="line-selector" class="dropdown dropdown-selector game-button">
                                         <button class="btn btn-secondary dropdown-toggle dropdown-button" id="dropdown-line-button" type="button" data-toggle="dropdown">Select a line...
                                             <span class="caret"></span></button>

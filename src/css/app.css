@@ -1,0 +1,47 @@
+body {
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+}
+
+input,
+textarea {
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+input:focus,
+textarea:focus {
+    outline: none;
+    outline-width: 0;
+}
+
+#map-title {
+    z-index: 4999;
+    color: white;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 75%;
+    height: 44px;
+    text-align: center;
+}
+
+#map-title-inner {
+    background-color: rgba(20, 20, 20, 1.0);
+    margin-top: 0px;
+    display: inline-block;
+    padding: 40px 40px 10px 40px;
+    text-align: center;
+    border-radius: 40px;
+    line-height: 11px;
+}
+
+input.enm-editable {
+    background-color: rgba(20, 20, 20, 1.0);
+    color: white;
+    font-size: 1em;
+    height: 2em;
+    width: 200px;
+    margin: 0px;
+    padding: 5px;
+}
