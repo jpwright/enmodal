@@ -511,7 +511,9 @@ def save_session(s, user_id, take_snapshot):
     
     if take_snapshot:
         session_token = '{:16x}'.format(s.private_key())
-        os.system('node '+os.path.abspath(os.path.join(os.path.dirname(__file__), 'tools/screenshot.js'))+' --url "http://localhost:'+str(PORT)+"/view?id="+session_token+'" --output dist/img/map-screenshots/'+str(sid)+'.png &')
+        screenshot_cmd = 'node '+os.path.abspath(os.path.join(os.path.dirname(__file__), 'tools', 'screenshot.js'))+' --url "http://localhost:'+str(PORT)+"/view?id="+session_token+'" --output dist/img/map-screenshots/'+str(sid)+'.png &'
+        print screenshot_cmd
+        os.system(screenshot_cmd)
 
 @app.route('/session_save')
 def route_session_save():
