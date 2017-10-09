@@ -55,3 +55,7 @@
 .user-map img {
     width: 200px;
 }
+
+.user-map:hover {
+    background: rgba(255, 255, 255, 0.20);
+}

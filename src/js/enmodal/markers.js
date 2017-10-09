@@ -73,7 +73,7 @@ class StationMarker {
     }
 
     generate_popup() {
-        var content = '<div class="station-name" id="station-'+this.station.sid.toString()+'">'+this.station.name;
+        var content = '<div class="station-name" id="station-'+this.station.sid.toString()+'" data-balloon="Click to rename" data-balloon-pos="left">'+this.station.name;
         if (!HEADLESS_MODE) content += '   <i class="fa fa-pencil" style="margin-left: 5px;" aria-hidden="true"></i>';
         content += '</div>';
         content += '<div class="station-content"><div class="station-info">'+this.station.neighborhood+'<br />';
