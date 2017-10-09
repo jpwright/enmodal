@@ -66,8 +66,7 @@ class DataLayers {
                         $("#stationriders-"+station.sid.toString()).text(Math.round(station.ridership).toString());
                     }
                 }
-            },
-            timeout: 3000
+            }
         });
     }
     
