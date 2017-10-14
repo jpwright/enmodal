@@ -1,0 +1,33 @@
+[flask]
+port: 5050
+domain: http://localhost
+secret_key: F12Yr58j4zX T~Y%C!efJ]Dxe/,?KD
+use_logins = False
+redis_url = "redis://localhost:6379/0"
+
+[email]
+sendgrid_api_key: SENGRID_API_KEY
+
+[geocode]
+reverse_geocode_provider: mapbox
+mapzen_key: MAPZEN_KEY
+mapbox_key: MAPBOX_KEY
+
+[dggrid]
+host: localhost
+port: 5432
+dbname: dggrid
+user: postgres
+password: DB_PASSWORD
+
+[sessions]
+host: localhost
+port: 5432
+dbname: sessions
+user: postgres
+password: DB_PASSWORD
+secret_key_public: aaaaaaaaaaaaaaaa
+secret_key_private: bbbbbbbbbbbbbbbb
+
+# Session expiration time, in seconds.
+expiration_time: 1800
