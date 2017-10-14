@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, after_this_request, escape, Blueprint
-from flask_redis import FlaskRedis
 
 import psycopg2
 import psycopg2.extras
@@ -10,7 +9,6 @@ import requests
 import json
 import re
 import os
-import uuid
 import datetime
 from lzstring import LZString
 import zlib
@@ -34,14 +32,13 @@ import TransitModel
 import TransitSettings
 from user_manager import *
 from EnmodalMap import enmodal_map
+from EnmodalSessions import *
 
 import ConfigParser
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.abspath(os.path.join(os.path.dirname(__file__), 'settings.cfg')))
 PORT = int(config.get('flask', 'port'))
-
-REDIS_URL = config.get('flask', 'redis_url')
 
 SESSIONS_HOST = config.get('sessions', 'host')
 SESSIONS_PORT = config.get('sessions', 'port')
@@ -54,7 +51,6 @@ SESSIONS_SECRET_KEY_PRIVATE = int(config.get('sessions', 'secret_key_private'), 
 SESSION_EXPIRATION_TIME = int(config.get('sessions', 'expiration_time'))
 
 enmodal = Blueprint('enmodal', __name__)
-enmodal.secret_key = config.get('flask', 'secret_key')
 
 USE_LOGINS = config.get('flask', 'use_logins')
 if not USE_LOGINS:
@@ -100,23 +96,6 @@ def route_main():
 @enmodal.route('/view')
 def view():
     return render_template('view.html')
-
-@enmodal.route('/session')
-def route_session_status():
-    s = Session()
-    session_manager.add(s)
-    a = session_manager.auth_by_key(s.private_key())
-
-    return_obj = {"is_private": a.editable, "public_key": '{:16x}'.format(a.session.public_key())}
-    if a.editable:
-        return_obj["private_key"] = '{:16x}'.format(a.session.private_key())
-    del a
-    return json.dumps(return_obj)
-
-@enmodal.route('/session_links')
-def route_session_links():
-
-    return json.dumps({})
 
 @enmodal.route('/station_add')
 def route_station_add():
@@ -573,14 +552,6 @@ def route_street_path():
     station_2_lng = float(request.args.get('station_2_lng'))
     
     return json.dumps(TransitGIS.valhalla_route(station_1_lat, station_1_lng, station_2_lat, station_2_lng))
-
-
-def check_for_session_errors(h):
-    if session_manager.auth_by_key(h) is None:
-        print("session auth problem with key "+str(h))
-        return json.dumps({"error": "Invalid session"})
-
-    return 0
 
 def run_server():
     # Enable WSGI access logging via Paste
