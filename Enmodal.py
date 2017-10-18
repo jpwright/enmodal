@@ -12,6 +12,7 @@ import os
 import datetime
 from lzstring import LZString
 import gzip
+from cStringIO import StringIO as IO
 import functools
 import gc
 import base64
