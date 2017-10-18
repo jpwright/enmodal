@@ -3,7 +3,6 @@ from flask import Flask, render_template, request, after_this_request, escape, B
 import psycopg2
 import psycopg2.extras
 import bcrypt
-from email_validator import validate_email, EmailNotValidError
 
 import requests
 import json

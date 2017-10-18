@@ -77,9 +77,9 @@ class EnmodalSessionManager(object):
     
     def purge(self):
         num_sessions_start = len(self.sessions)
-        for session in self.sessions:
-            if session.is_expired():
-                save_session(session, None, False)
+        #for session in self.sessions:
+            #if session.is_expired():
+                #save_session(session, None, False)
         self.sessions = [x for x in self.sessions if not x.is_expired()]
         return num_sessions_start - len(self.sessions)
 
