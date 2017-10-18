@@ -207,18 +207,14 @@ def hexagons_gids(gids):
     cursor = conn.cursor()
      
     query = "SELECT gid, ST_AsGeoJSON(center), coalesce(population,0) as p, coalesce(employment,0) as e FROM dggrid WHERE gid IN %s LIMIT 20000;"
-    print query
+    #print query
     cursor.execute(query, [tuple(gids)])
     #cursor.execute("SELECT gid FROM dggrid WHERE ST_DWithin(geo, 'POINT("+lng+" "+lat+")', 0.01) LIMIT 1000;")
     #cursor.execute("SELECT * FROM dggrid ORDER BY geo <-> st_setsrid(st_makepoint("+lng+","+lat+"),4326) LIMIT 100;")
     
     rows = cursor.fetchall()
     
-    if (len(rows) > 0):
-        query = "SELECT gid, ST_AsGeoJSON(geo), coalesce(population,0) as p, coalesce(employment,0) as e FROM dggrid WHERE gid="+str(rows[0][0])+" LIMIT 1;"
-        print query
-        cursor.execute(query)
-        hexagon_row = cursor.fetchone()
+    for hexagon_row in rows:
         hexagon_template = Hexagon(int(hexagon_row[0]), json.loads(hexagon_row[1]), int(hexagon_row[2]), int(hexagon_row[3]))
         
         for row in rows:

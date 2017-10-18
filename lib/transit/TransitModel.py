@@ -48,7 +48,7 @@ def map_analysis(m):
             station_bb = TransitGIS.BoundingBox()
             station_bb.set_from_station(station)
             station_region = TransitGIS.hexagons_bb(station_bb)
-            print "Region has "+str(len(station_region.hexagons))+" hexagons"
+            #print "Region has "+str(len(station_region.hexagons))+" hexagons"
             for hexagon in station_region.hexagons:
                 if not condensed_region.has_hexagon(hexagon):
                     condensed_region.add_hexagon(hexagon)
@@ -68,7 +68,7 @@ def map_analysis(m):
                         station_to_hexagon[station] = [hexagon]
                     station_hexagons.append(hexagon)
             station.set_hexagons(station_hexagons)
-            print "Number used is "+str(len(station_hexagons))
+            #print "Number used is "+str(len(station_hexagons))
         else:
             for hexagon in station.hexagons:
                 if not condensed_region.has_hexagon(hexagon):
