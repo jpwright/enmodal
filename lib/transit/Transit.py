@@ -1,4 +1,5 @@
 import TransitSettings
+import TransitGIS
 import TransitModel
 import json
 
@@ -116,17 +117,17 @@ class Station(object):
         self.neighborhood = ""
         self.locality = ""
         self.region = ""
-        self.gids_in_range = []
-        self.gids_known = False
+        self.hexagons = []
+        self.hexagons_known = False
         self.stop_walking_times = []
         
-    def set_gids(self, gids):
-        self.gids_in_range = gids
-        self.gids_known = True
+    def set_hexagons(self, hexagons):
+        self.hexagons = hexagons
+        self.hexagons_known = True
         
-    def clear_gids(self):
-        self.gids_in_range = []
-        self.gids_known = False
+    def clear_hexagons(self):
+        self.hexagons_in_range = []
+        self.hexagons_known = False
 
     def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
@@ -143,10 +144,14 @@ class Station(object):
             self.locality = j['locality']
         if 'region' in j:
             self.region = j['region']
-        if 'gids_in_range' in j:
-            self.gids_in_range = j['gids_in_range']
-        if 'gids_known' in j:
-            self.gids_known = j['gids_known']
+        if 'hexagons_known' in j:
+            self.hexagons_known = j['hexagons_known']
+            if self.hexagons_known and 'hexagons' in j:
+                hexagons = []
+                for h in j['hexagons']:
+                    hexagon = TransitGIS.Hexagon(int(h['gid']), h['geo_hex'], int(h['population']), int(h['employment']))
+                    hexagons.append(hexagon)
+                self.set_hexagons(hexagons)
         if 'stop_walking_times' in j:
             self.stop_walking_times = j['stop_walking_times']
 

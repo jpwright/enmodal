@@ -30,11 +30,11 @@ def map_analysis(m):
     bb.min_lng -= 0.01;
     bb.max_lng += 0.01;
 
-    start = time.time()
-    region = TransitGIS.hexagons_bb(bb)
+    #start = time.time()
+    #region = TransitGIS.hexagons_bb(bb)
     condensed_region = TransitGIS.HexagonRegion()
-    end = time.time()
-    print "Getting hexagons took "+str(end-start)
+    #end = time.time()
+    #print "Getting hexagons took "+str(end-start)
 
     start = time.time()
     # For now just use the first service
@@ -42,14 +42,18 @@ def map_analysis(m):
     hexagon_to_station = {}
     station_to_hexagon = {}
 
-    for hexagon in region.hexagons:
-        condensed_region.add_hexagon(hexagon)
-        hexagon_to_station[hexagon] = []
-
     for station in service.stations:
-        if not station.gids_known:
-            station_gids = []
-            for hexagon in region.hexagons:
+        if not station.hexagons_known:
+            station_hexagons = []
+            station_bb = TransitGIS.BoundingBox()
+            station_bb.set_from_station(station)
+            station_region = TransitGIS.hexagons_bb(station_bb)
+            print "Region has "+str(len(station_region.hexagons))+" hexagons"
+            for hexagon in station_region.hexagons:
+                if not condensed_region.has_hexagon(hexagon):
+                    condensed_region.add_hexagon(hexagon)
+                if hexagon not in hexagon_to_station:
+                    hexagon_to_station[hexagon] = []
                 center = hexagon.center()
                 # Look for stations within catchment.
                 distance = great_circle(center, (station.location[1], station.location[0])).miles
@@ -62,18 +66,20 @@ def map_analysis(m):
                         station_to_hexagon[station].append(hexagon)
                     else:
                         station_to_hexagon[station] = [hexagon]
-                    station_gids.append(hexagon.gid)
-            station.set_gids(station_gids)
+                    station_hexagons.append(hexagon)
+            station.set_hexagons(station_hexagons)
+            print "Number used is "+str(len(station_hexagons))
         else:
-            hexagons = []
-            for gid in station.gids_in_range:
-                hexagon = region.get_hexagon_by_gid(gid)
-                hexagons.append(hexagon)
+            for hexagon in station.hexagons:
+                if not condensed_region.has_hexagon(hexagon):
+                    condensed_region.add_hexagon(hexagon)
+                if hexagon not in hexagon_to_station:
+                    hexagon_to_station[hexagon] = []
                 if hexagon in hexagon_to_station:
                     hexagon_to_station[hexagon].append(station)
                 else:
                     hexagon_to_station[hexagon] = [station]
-            station_to_hexagon[station] = hexagons
+            station_to_hexagon[station] = station.hexagons
 
     end = time.time()
     print "Analyzing hexagons took "+str(end-start)

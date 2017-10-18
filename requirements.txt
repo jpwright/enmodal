@@ -19,11 +19,9 @@ itsdangerous==0.24
 Jinja2==2.8
 lzstring==1.0.3
 MarkupSafe==0.23
-matplotlib==2.0.2
 memory-profiler==0.47
 numpy==1.13.1
 objgraph==3.1.0
-osmapi==0.8.1
 Paste==2.0.3
 portend==2.1.2
 protobuf==3.2.0

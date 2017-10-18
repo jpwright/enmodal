@@ -92,6 +92,12 @@ class Hexagon(object):
     def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True)
     
+    def from_json(self, j):
+        self.gid = int(j['gid'])
+        self.geo_hex = j['geo_hex']
+        self.population = int(j['population'])
+        self.employment = int(j['employment'])
+    
 class BoundingBox(object):
     
     def __init__(self):
@@ -127,6 +133,12 @@ class BoundingBox(object):
                 if not max_lng_set or station.location[1] > self.max_lng:
                     self.max_lng = station.location[1]
                     max_lng_set = True
+                    
+    def set_from_station(self, s):
+        self.min_lat = s.location[0] - 0.01;
+        self.max_lat = s.location[0] + 0.01;
+        self.min_lng = s.location[1] - 0.01;
+        self.max_lng = s.location[1] + 0.01;
 
 class ReverseGeocodeResult(object):
     
@@ -162,6 +174,41 @@ def hexagons_bb(bb):
     query = "SELECT gid, ST_AsGeoJSON(center), coalesce(population,0) as p, coalesce(employment,0) as e FROM dggrid WHERE ST_Within(center, ST_MakeEnvelope("+str(bb.min_lng)+", "+str(bb.min_lat)+", "+str(bb.max_lng)+", "+str(bb.max_lat)+")) LIMIT 20000;"
     print query
     cursor.execute(query)
+    #cursor.execute("SELECT gid FROM dggrid WHERE ST_DWithin(geo, 'POINT("+lng+" "+lat+")', 0.01) LIMIT 1000;")
+    #cursor.execute("SELECT * FROM dggrid ORDER BY geo <-> st_setsrid(st_makepoint("+lng+","+lat+"),4326) LIMIT 100;")
+    
+    rows = cursor.fetchall()
+    
+    if (len(rows) > 0):
+        query = "SELECT gid, ST_AsGeoJSON(geo), coalesce(population,0) as p, coalesce(employment,0) as e FROM dggrid WHERE gid="+str(rows[0][0])+" LIMIT 1;"
+        print query
+        cursor.execute(query)
+        hexagon_row = cursor.fetchone()
+        hexagon_template = Hexagon(int(hexagon_row[0]), json.loads(hexagon_row[1]), int(hexagon_row[2]), int(hexagon_row[3]))
+        
+        for row in rows:
+            h = copy.deepcopy(hexagon_template)
+            c = json.loads(row[1])
+            h.shift_center(c['coordinates'][0], c['coordinates'][1])
+            h.gid = int(row[0])
+            h.population = int(row[2])
+            h.employment = int(row[3])
+            region.add_hexagon(h)
+    cursor.close()
+    conn.close()
+    
+    return region
+
+def hexagons_gids(gids):
+    
+    region = HexagonRegion()
+        
+    conn = psycopg2.connect(DGGRID_CONN_STRING)
+    cursor = conn.cursor()
+     
+    query = "SELECT gid, ST_AsGeoJSON(center), coalesce(population,0) as p, coalesce(employment,0) as e FROM dggrid WHERE gid IN %s LIMIT 20000;"
+    print query
+    cursor.execute(query, [tuple(gids)])
     #cursor.execute("SELECT gid FROM dggrid WHERE ST_DWithin(geo, 'POINT("+lng+" "+lat+")', 0.01) LIMIT 1000;")
     #cursor.execute("SELECT * FROM dggrid ORDER BY geo <-> st_setsrid(st_makepoint("+lng+","+lat+"),4326) LIMIT 100;")
     

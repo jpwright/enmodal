@@ -152,11 +152,11 @@ def route_session_push():
     # Save gids
     for service in om.services:
         for station in service.stations:
-            if station.gids_known:
+            if station.hexagons_known:
                 for service_n in m.services:
                     for station_n in service_n.stations:
                         if station.location == station_n.location:
-                            station_n.set_gids(station.gids_in_range)
+                            station_n.set_hexagons(station.hexagons)
     
     # Copy user settings
     # TODO clean this up!

@@ -11,8 +11,6 @@ import re
 import os
 import datetime
 from lzstring import LZString
-import zlib
-from cStringIO import StringIO as IO
 import gzip
 import functools
 import gc
@@ -182,7 +180,7 @@ def route_station_update():
                     if location != None:
                         location_comps = location.split(',')
                         station.location = [float(location_comps[0]), float(location_comps[1])]
-                        station.clear_gids()
+                        station.clear_hexagons()
                     if streets != None:
                         street_comps = streets.split(',')
                         station.streets = street_comps

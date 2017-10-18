@@ -79,6 +79,6 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-uglify');
 
   // Default task.
-  grunt.registerTask('default', ['copy', 'concat', 'uglify', 'jshint', 'watch']);
+  grunt.registerTask('default', ['copy', 'concat', 'uglify', 'jshint']);
 
 };
