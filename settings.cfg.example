@@ -5,9 +5,6 @@ secret_key: F12Yr58j4zX T~Y%C!efJ]Dxe/,?KD
 use_logins = False
 redis_url = "redis://localhost:6379/0"
 
-[email]
-sendgrid_api_key: SENGRID_API_KEY
-
 [geocode]
 reverse_geocode_provider: mapbox
 mapzen_key: MAPZEN_KEY
