@@ -28,7 +28,6 @@ import Transit
 import TransitGIS
 import TransitModel
 import TransitSettings
-from user_manager import *
 from EnmodalMap import enmodal_map
 from EnmodalSessions import *
 
@@ -553,7 +552,7 @@ def route_street_path():
 
 def run_server():
     # Enable WSGI access logging via Paste
-    app_logged = TransLogger(app)
+    app_logged = TransLogger(enmodal)
 
     # Mount the WSGI callable object (app) on the root directory
     cherrypy.tree.graft(app_logged, '/')

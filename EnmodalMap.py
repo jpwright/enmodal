@@ -2,6 +2,12 @@ from flask import Flask, Blueprint, request
 import sys
 import os
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__))))
+from EnmodalSessions import *
+
+from lzstring import LZString
+import json
+
 import psycopg2
 import psycopg2.extras
 
@@ -38,36 +44,18 @@ def save_session(s, user_id, take_snapshot):
         cursor.execute("UPDATE sessions SET owner_id = %s WHERE id = %s", (user_id, sid))
         
     conn.commit()
-    
-    if take_snapshot:
-        session_token = '{:16x}'.format(s.private_key())
-        screenshot_cmd = 'node '+os.path.abspath(os.path.join(os.path.dirname(__file__), 'tools', 'screenshot.js'))+' --url "http://localhost:'+str(PORT)+"/view?id="+session_token+'" --output '+os.path.abspath(os.path.join(os.path.dirname(__file__), 'dist', 'img', 'map-screenshots/'+str(sid)+'.png'))+' &'
-        print screenshot_cmd
-        os.system(screenshot_cmd)
 
 @enmodal_map.route('/session_save')
 def route_session_save():
-    if current_user.is_anonymous:
-        return json.dumps({"result": "FAIL", "message": "Anonymous user"})
-    
     h = int(request.args.get('i'), 16)
     e = check_for_session_errors(h)
     if e:
         return e
 
     a = session_manager.auth_by_key(h)
-    
-    conn = psycopg2.connect(SESSIONS_CONN_STRING)
-    cursor = conn.cursor()
-    cursor.execute("SELECT owner_id FROM sessions WHERE id = '%s' LIMIT 1", [a.session.sid])
-    if (cursor.rowcount > 0):
-        row = cursor.fetchone()
-        if row[0] is not None:
-            if (int(row[0]) != int(current_user.id)):
-                return json.dumps({"result": "FAIL", "message": "Wrong user"})
 
     if a.editable:
-        save_session(a.session, current_user.id, True)
+        save_session(a.session, 0, True)
         del a
         return json.dumps({"result": "OK"})
     else:

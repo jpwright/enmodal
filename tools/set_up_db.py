@@ -40,14 +40,6 @@ query = "CREATE TABLE IF NOT EXISTS sessions (id BIGSERIAL PRIMARY KEY, data jso
 #print query
 cursor.execute(query)
 
-query = "CREATE TABLE IF NOT EXISTS users (id BIGSERIAL PRIMARY KEY, first_name text, last_name text, email text, password_hash text, created timestamp without time zone, last_login timestamp without time zone, group_id int, password_reset bool);"
-print query
-cursor.execute(query)
-
-query = "CREATE TABLE IF NOT EXISTS pending_registrations (id BIGSERIAL PRIMARY KEY, first_name text, last_name text, email text, password_hash text, created timestamp without time zone, email_sent bool);"
-print query
-cursor.execute(query)
-
 
 conn.commit()
 

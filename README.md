@@ -69,15 +69,6 @@ Note: best to follow the [Valhalla setup guide](https://github.com/valhalla/valh
     sudo npm install -g grunt-cli
     sudo npm install
     grunt --force
-
-### Map screenshots
-
-    mkdir dist/img/map-screenshots
-    sudo apt-get install chromium-browser libgconf-2-4
-
-### To run on different port e.g. GCE port 8080
-
-    sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to 8080
     
 ## Populating dggrid database
 
