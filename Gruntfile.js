@@ -33,6 +33,7 @@ module.exports = function(grunt) {
         src: ['src/js/enmodal/main.js',
               'src/js/enmodal/bezier.js',
               'src/js/enmodal/data-layers.js',
+              'src/js/enmodal/components.js',
               'src/js/enmodal/draw.js',
               'src/js/enmodal/interface.js',
               'src/js/enmodal/markers.js',

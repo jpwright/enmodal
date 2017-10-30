@@ -1,0 +1,53 @@
+/* buttons */
+.enm a.button, .enm label.button {
+    cursor: pointer;
+    color: #fff;
+    border: 1px solid white;
+    border-radius: 5px;
+    text-decoration: none;
+    background-color: rgba(255, 255, 255, 0.10);
+    padding: 5px;
+    text-align: center;
+    display: inline-block;
+    font-weight: normal;
+}
+
+.enm a.button:hover, .enm label.button:hover {
+    background: rgba(255, 255, 255, 0.20);
+    color: #fff;
+}
+
+.game-button-active {
+    background-color: rgba(255, 200, 200, 0.1);
+    font-weight: bold;
+}
+
+/* form inputs */
+
+.enm .dropbox {
+    outline: 1px dashed #aaa; /* the dash box */
+    outline-offset: -10px;
+    background-color: rgba(255, 255, 255, 0.10);
+    padding: 10px 10px;
+    min-height: 200px; /* minimum height */
+    position: relative;
+    cursor: pointer;
+}
+
+.enm .input-file {
+    opacity: 0; /* invisible but it's there! */
+    width: 100%;
+    height: 200px;
+    position: absolute;
+    cursor: pointer;
+}
+
+.enm .dropbox:hover {
+    background-color: rgba(255, 255, 255, 0.20);
+}
+
+.enm .dropbox p {
+    font-size: 1.2em;
+    text-align: center;
+    padding: 50px 0;
+}

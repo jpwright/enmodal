@@ -49,10 +49,6 @@ SESSION_EXPIRATION_TIME = int(config.get('sessions', 'expiration_time'))
 
 enmodal = Blueprint('enmodal', __name__)
 
-USE_LOGINS = config.get('flask', 'use_logins')
-if not USE_LOGINS:
-    enmodal.register_blueprint(enmodal_map)
-
 def gzipped(f):
     @functools.wraps(f)
     def view_func(*args, **kwargs):
@@ -226,7 +222,7 @@ def route_stop_add():
 
             if (line_exists):
                 if service.has_station(int(station_id)):
-                    station = service.find_station(int(station_id))
+                    station = service.get_station_by_id(int(station_id))
                     stop = Transit.Stop(int(stop_id), station.sid)
                     line_to_use.add_stop(stop)
                     return stop.to_json()
@@ -278,7 +274,7 @@ def route_stop_update_station():
             for line in s.lines:
                 if int(line_id) == line.sid:
                     if s.has_station(int(station_id)):
-                        station = s.find_station(int(station_id))
+                        station = s.get_station_by_id(int(station_id))
                     for stop in line.stops:
                         if int(stop_id) == stop.sid:
                             stop.station_id = int(station_id)
@@ -484,7 +480,7 @@ def route_map_info():
 
 @enmodal.route('/graphviz')
 def route_graphviz():
-    return app.send_static_file('graphviz.html')
+    return render_template('graphviz.html')
 
 @enmodal.route('/get_hexagons')
 @gzipped

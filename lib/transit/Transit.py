@@ -22,6 +22,18 @@ class Map(object):
     def add_service(self, s):
         self.services.append(s)
         
+    def get_service_by_name(self, name):
+        for service in self.services:
+            if service.name == name:
+                return service
+        return None
+        
+    def get_service_by_id(self, sid):
+        for service in self.services:
+            if service.sid == sid:
+                return service
+        return None
+        
     def create_sid(self):
         self.sidf_state += 1
         return self.sidf_state
@@ -323,6 +335,12 @@ class Service(object):
 
     def add_line(self, l):
         self.lines.append(l)
+        
+    def get_line_by_full_name(self, name):
+        for line in self.lines:
+            if line.full_name == name:
+                return line
+        return None
 
     def add_station(self, s):
         self.stations.append(s)
@@ -342,11 +360,17 @@ class Service(object):
                 return True
         return False
 
-    def find_station(self, i):
+    def get_station_by_id(self, sid):
         for station in self.stations:
-            if station.sid == i:
+            if station.sid == sid:
                 return station
-        raise ValueError("station not found with id %s" % (i))
+        return None
+
+    def get_station_by_location(self, location):
+        for station in self.stations:
+            if station.location == location:
+                return station
+        return None
 
     def add_transfer(self, t):
         self.transfers.append(t)

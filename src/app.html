@@ -4,6 +4,40 @@
     <script type="text/javascript">
     HEADLESS_MODE = false;
     </script>
+    
+    <!-- vue.js templates -->
+    <template id="template-city-picker">
+        <div class="enm modal-inner">
+            <div class="enm modal-row">
+                <input id="city-picker-input" class="large picker" type="text" placeholder="New York City" autocomplete="off" />
+                <a class="button large picker" @click="$emit('close')">Start</a>
+            </div>
+        </div>
+    </template>
+    
+    <template id="template-gtfs-import">
+        <div class="enm modal-inner">
+            <div class="enm modal-col">
+                <div class="header">GTFS Import</div>
+                <div class="body">
+                    Choose a .zip file containing valid GTFS data.
+                    <form enctype="multipart/form-data" novalidate v-if="isInitial || isSaving">
+                    <div class="dropbox">
+                        <input type="file" :name="uploadFieldName" :disabled="isSaving" @change="filesChange($event.target.name, $event.target.files); fileCount = $event.target.files.length" accept="image/*" class="input-file">
+                        <p v-if="isInitial">
+                            Drag a .zip file containing GTFS data here to begin, or click to browse.
+                        </p>
+                        <p v-if="isSaving">
+                            Uploading...
+                        </p>
+                    </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </template>
+    <!-- -->
+    
     <div id="alpha-warning">
         <span class="alpha-warning-large">warning! you are viewing an <em>alpha release</em> of enmodal.</span>
         <br />
@@ -13,19 +47,17 @@
     <div id="map"></div>
     <div id="map-title">
         <div id="map-title-inner" data-balloon="Click to rename" data-balloon-pos="down">
-        Map  <i class="fa fa-pencil" style="margin-left: 5px;" aria-hidden="true"></i>
+        Map <i class="fa fa-pencil" style="margin-left: 5px;" aria-hidden="true"></i>
         </div>
     </div>
-    <div id="starter">
-        <div id="starter-middle">
-            <div class="starter-inner" id="starter-city-picker">
-                <div id="game-start-city-picker">
-                    <input id="city-picker-input" type="text" placeholder="New York City" autocomplete="off" />
-                </div>
-                <div id="game-start-scratch">
-                    <div id="game-start-scratch-button">Start</div>
-                </div>
-            </div>
+    
+    <div class="enm modal">
+        <div class="enm modal-middle">
+            <city-picker id="modal-city-picker" v-if="visible" @close="visible = false"></city-picker>
+            <gtfs-import id="modal-gtfs-import" v-if="visible" @close="visible = false"></gtfs-import>
+        </div>
+    </div>
+    <!--
             <div class="starter-inner" id="starter-share" style="display: none;">
                 <div class="share-header">Sharing</div>
                 <div class="share-body">
@@ -64,9 +96,8 @@
                     <p>Just refresh the page (or wait 5 seconds).</p>
                 </div>
             </div>
-        </div>
-
-    </div>
+    -->
+    
     <div id="scale">
         <div id="scale-boxes"></div>
         <div id="scale-bounds">
@@ -88,6 +119,9 @@
                     <li class="nav-item">
                         <a class="nav-link" id="tool-data" data-toggle="tab" href="#tab-visualize" role="tab"><i class="fa fa-th"></i>  Visualize</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="tool-settings" data-toggle="tab" href="#tab-settings" role="tab"><i class="fa fa-gear"></i>  Settings</a>
+                    </li>
                 </ul>
             </div>
             <div class="option-section tab-content">
@@ -102,7 +136,7 @@
                             <div id="collapse-services" class="option-section collapse in" role="tabpanel" aria-labelledby="headingOne">
                                 <div class="card-block option-section">
                                     <div id="option-section-services" class="option-section custom-scroll">
-                                        <div id="service-selector" class="dropdown dropdown-selector game-button">
+                                        <div id="service-selector" class="dropdown dropdown-selector button">
                                             <button class="btn btn-secondary dropdown-toggle dropdown-button" id="dropdown-service-button" type="button" data-toggle="dropdown">Select a service...
                                                 <span class="caret"></span></button>
                                             <ul class="dropdown-menu custom-scroll-dark" id="dropdown-service-menu">
@@ -142,7 +176,7 @@
                             </div>
                             <div id="collapse-lines" class="option-section collapse in" role="tabpanel" aria-labelledby="headingTwo">
                                 <div id="option-section-lines" class="card-block option-section custom-scroll">
-                                    <div id="line-selector" class="dropdown dropdown-selector game-button">
+                                    <div id="line-selector" class="dropdown dropdown-selector button">
                                         <button class="btn btn-secondary dropdown-toggle dropdown-button" id="dropdown-line-button" type="button" data-toggle="dropdown">Select a line...
                                             <span class="caret"></span></button>
                                         <ul class="dropdown-menu custom-scroll-dark" id="dropdown-line-menu">
@@ -189,15 +223,21 @@
                         <div class="data-layer-selector" id="data-layer-ridership">Ridership</div>
                     </div>
                 </div>
+                
+                <div class="tab-pane" id="tab-settings" role="tabpanel">
+                    <div id="option-section-data" class="option-section">
+                        <a class="button">Import GTFS</a>
+                    </div>
+                </div>
 
             </div>
 
             <div id="option-section-status" class="option-section">
-                <div id="tool-save" class="tool-button game-button-large" data-balloon-pos="up">Save</div>
+                <a id="tool-save" class="tool-button button" data-balloon-pos="up">Save</a>
                 <div id="save-message" style="display: none;">Saved!</div>
-                <div id="tool-share" class="tool-button game-button-large">Share</div>
-                <a href="http://twitter.com/enmodal" target="_blank" class="tool-button game-button-large"><i class="fa fa-lg fa-twitter" aria-hidden="true"></i></a>
-                <a href="https://gratipay.com/enmodal/" target="_blank" class="tool-button game-button-large"><i class="fa fa-lg fa-gratipay" aria-hidden="true"></i></a>
+                <a id="tool-share" class="tool-button button">Share</a>
+                <a href="http://twitter.com/enmodal" target="_blank" class="tool-button button"><i class="fa fa-lg fa-twitter" aria-hidden="true"></i></a>
+                <a href="https://gratipay.com/enmodal/" target="_blank" class="tool-button button"><i class="fa fa-lg fa-gratipay" aria-hidden="true"></i></a>
                 <div class="attribution"><a href="http://leafletjs.com/">Leaflet</a> | Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ</div>
             </div>
         </div>

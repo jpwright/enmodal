@@ -91,13 +91,13 @@ def route_session_load():
     m.regenerate_all_ids()
     
     if not is_private:
-        s = Session()
+        s = EnmodalSession()
         session_manager.add(s)
         s.map = m
     else:
         s = session_manager.get_by_sid(sid)
         if s is None:
-            s = Session()
+            s = EnmodalSession()
             s.sid = sid
             s.map = m
             session_manager.add(s)

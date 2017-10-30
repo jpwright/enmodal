@@ -581,14 +581,7 @@ input.station-name-edit {
     display: table;
     z-index: 900;
     position: absolute;
-}
-
-#city-picker-input {
-    color: #222;
-    font-size: 3em;
-    height: 2em;
-    padding-left: 0.4em;
-    width: 100%;
+    top: 0;
 }
 
 .share-link-content input {
@@ -631,11 +624,6 @@ ul.ui-autocomplete {
     border: 1px solid #777;
 }
 
-#starter-city-picker {
-    height: 9em;
-    padding: 10px;
-}
-
 #starter-share {
     height: 21em;
 }
@@ -649,41 +637,6 @@ ul.ui-autocomplete {
     height: 100px;
     display: table-cell;
     vertical-align: middle;
-}
-
-#game-start-city-picker {
-    height: 2em;
-    text-align: center;
-    display: table-cell;
-    width: 75%;
-    float: left;
-    padding: 10px;
-}
-
-#game-start-scratch {
-    width: 25%;
-    float: right;
-    display: table-cell;
-    padding: 10px;
-}
-
-#game-start-scratch-button {
-    border: 1px solid white;
-    display: block;
-    cursor: pointer;
-    text-align: center;
-    font-size: 2em;
-    height: 100px;
-    line-height: 3em;
-    width: 100%;
-    height: 3em;
-}
-
-.share-header {
-    font-size: 1.5em;
-    line-height: 2em;
-    padding-left: 10px;
-    background: rgba(0, 0, 0, 0.2);
 }
 
 .share-link {
@@ -924,54 +877,6 @@ ul.dropdown-lr {
     margin-top: 5px;
     margin-bottom: 5px;
     padding-left: 60px;
-}
-
-.game-button {
-    border: 1px solid white;
-    border-radius: 5px;
-    cursor: pointer;
-    display: inline-block;
-    color: #fff;
-    text-decoration: none;
-}
-
-.game-button-large {
-    border: 1px solid white;
-    border-radius: 5px;
-    cursor: pointer;
-    display: inline-block;
-    color: #fff;
-    text-decoration: none;
-    padding: 5px;
-    min-width: 50px;
-    text-align: center;
-    background-color: rgba(255, 255, 255, 0.10);
-}
-
-.game-button-large:hover {
-    background: rgba(255, 255, 255, 0.20);
-    color: #fff;
-}
-
-.game-button-active {
-    background-color: rgba(255, 200, 200, 0.1);
-    font-weight: bold;
-}
-
-.game-button-small {
-    border: 1px solid white;
-    border-radius: 5px;
-    cursor: pointer;
-    display: inline-block;
-    color: #fff;
-    text-decoration: none;
-    padding: 0px 5px 0px 5px;
-    min-width: 50px;
-    text-align: center;
-    background-color: rgba(255, 255, 255, 0.10);
-    height: 24px;
-    line-height: 24px;
-    margin-top: 5px;
 }
 
 #tool-save {

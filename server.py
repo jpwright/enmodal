@@ -10,6 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__))))
 from Enmodal import enmodal
 from EnmodalMap import enmodal_map
 from EnmodalSessions import *
+from EnmodalGTFS import enmodal_gtfs
 
 # cherrypy WSGI
 import cherrypy
@@ -50,6 +51,7 @@ login_manager.init_app(app)
 redis_store = FlaskRedis(app)
 
 app.register_blueprint(enmodal_map)
+app.register_blueprint(enmodal_gtfs)
 
 @app.route('/session')
 def route_session_status():

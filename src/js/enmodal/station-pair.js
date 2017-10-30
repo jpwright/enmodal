@@ -426,7 +426,12 @@ class StationPair {
     }
     
     draw() {
-        this.draw_paths();
+        try {
+            this.draw_paths();
+        } catch(err) {
+            console.log("Error drawing paths!");
+            console.log(this.sss);
+        }
         // Pin drawing is separate: let main application decide if it's needed
         //this.draw_pins();
     }
