@@ -7,31 +7,39 @@
     
     <!-- vue.js templates -->
     <template id="template-city-picker">
-        <div class="enm modal-inner">
-            <div class="enm modal-row">
-                <input id="city-picker-input" class="large picker" type="text" placeholder="New York City" autocomplete="off" />
-                <a class="button large picker" @click="$emit('close')">Start</a>
+        <div class="enm modal">
+            <div class="enm modal-middle">
+                <div class="enm modal-inner">
+                    <div class="enm modal-row">
+                        <input id="city-picker-input" class="large picker" type="text" placeholder="New York City" autocomplete="off" />
+                        <a class="button large picker" @click="$emit('close')">Start</a>
+                    </div>
+                </div>
             </div>
         </div>
     </template>
     
     <template id="template-gtfs-import">
-        <div class="enm modal-inner">
-            <div class="enm modal-col">
-                <div class="header">GTFS Import</div>
-                <div class="body">
-                    Choose a .zip file containing valid GTFS data.
-                    <form enctype="multipart/form-data" novalidate v-if="isInitial || isSaving">
-                    <div class="dropbox">
-                        <input type="file" :name="uploadFieldName" :disabled="isSaving" @change="filesChange($event.target.name, $event.target.files); fileCount = $event.target.files.length" accept="image/*" class="input-file">
-                        <p v-if="isInitial">
-                            Drag a .zip file containing GTFS data here to begin, or click to browse.
-                        </p>
-                        <p v-if="isSaving">
-                            Uploading...
-                        </p>
+        <div class="enm modal">
+            <div class="enm modal-middle">
+                <div class="enm modal-inner">
+                    <div class="enm modal-col">
+                        <div class="header">GTFS Import</div>
+                        <div class="body">
+                            Choose a .zip file containing valid GTFS data.
+                            <form enctype="multipart/form-data" novalidate v-if="isInitial || isSaving">
+                            <div class="dropbox">
+                                <input type="file" :name="uploadFieldName" :disabled="isSaving" @change="filesChange($event.target.name, $event.target.files); fileCount = $event.target.files.length" accept="image/*" class="input-file">
+                                <p v-if="isInitial">
+                                    Drag a .zip file containing GTFS data here to begin, or click to browse.
+                                </p>
+                                <p v-if="isSaving">
+                                    Uploading...
+                                </p>
+                            </div>
+                            </form>
+                        </div>
                     </div>
-                    </form>
                 </div>
             </div>
         </div>
@@ -51,12 +59,10 @@
         </div>
     </div>
     
-    <div class="enm modal">
-        <div class="enm modal-middle">
-            <city-picker id="modal-city-picker" v-if="visible" @close="visible = false"></city-picker>
-            <gtfs-import id="modal-gtfs-import" v-if="visible" @close="visible = false"></gtfs-import>
-        </div>
-    </div>
+    
+    <city-picker id="modal-city-picker" v-if="visible" @close="visible = false"></city-picker>
+    <gtfs-import id="modal-gtfs-import" v-if="visible" @close="visible = false"></gtfs-import>
+
     <!--
             <div class="starter-inner" id="starter-share" style="display: none;">
                 <div class="share-header">Sharing</div>

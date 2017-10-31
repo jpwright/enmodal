@@ -75,7 +75,7 @@ Vue.component('gtfs-import', {
 new Vue({
     el: '#modal-gtfs-import',
     data: {
-        visible: true,
+        visible: false,
         isInitial: false,
         isSaving: false
     }

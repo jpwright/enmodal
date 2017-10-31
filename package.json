@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "command-line-args": "^4.0.7",
+    "grunt-cli": "^1.2.0",
     "puppeteer": "^0.11.0"
   }
 }
