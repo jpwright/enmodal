@@ -24,6 +24,7 @@ DGGRID_CONN_STRING = "host='"+DGGRID_HOST+"' port='"+DGGRID_PORT+"' dbname='"+DG
 REVERSE_GEOCODE_PROVIDER = config.get('geocode', 'reverse_geocode_provider')
 MAPZEN_KEY = config.get('geocode', 'mapzen_key')
 MAPBOX_KEY = config.get('geocode', 'mapbox_key')
+GOOGLE_KEY = config.get('geocode', 'google_key')
 
 class HexagonRegion(object):
     
@@ -273,7 +274,27 @@ def reverse_geocode(provider, lat, lng):
                     result.set_neighborhood(feature["text"])
                 if place_type == "locality":
                     result.set_locality(feature["text"])
-            
+    
+    if provider == "google":
+        google_uri = "https://maps.googleapis.com/maps/api/geocode/json?latlng="+str(lat)+","+str(lng)+"&key="+GOOGLE_KEY
+        geocode = requests.get(google_uri)
+        geocode_content = json.loads(geocode.content)
+        if (len(geocode_content["results"]) < 1):
+            # Flag an error?
+            print "Error in reverse geocoding"
+        else:
+            address = geocode_content["results"][0]
+            streets = []
+            for component in address["address_components"]:
+                place_types = component["types"]
+                if "neighborhood" in place_types:
+                    result.set_neighborhood(component["long_name"])
+                if "route" in place_types:
+                    streets.append(component["short_name"])
+                if "locality" in place_types:
+                    result.set_locality(component["long_name"])
+            result.set_streets(streets)
+
     return result
         
 

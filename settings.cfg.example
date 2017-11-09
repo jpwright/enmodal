@@ -9,6 +9,7 @@ redis_url = "redis://localhost:6379/0"
 reverse_geocode_provider: mapbox
 mapzen_key: MAPZEN_KEY
 mapbox_key: MAPBOX_KEY
+google_key: GOOGLE_KEY
 
 [dggrid]
 host: localhost

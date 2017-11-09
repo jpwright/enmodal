@@ -67,115 +67,190 @@
     <script src='static/js/lz-string.min.js'></script>
     <script src="static/js/clipboard.min.js"></script>
 
-    <div id="navbar">
-        <div id="nav-enmodal-logo"><img src="static/img/logo.png" /></div>
-        <div id="nav-user-logged-in" {% if not current_user.is_authenticated %}style="display:none;" {% endif %}>
-            <div><a href="user" id="logged-in-user-email">{{ current_user.email }}</a></div>
-            <div id="logout" class="tool-button game-button-small">Logout</div>
+
+    <!-- vue.js templates -->
+    <template id="template-modal-city-picker">
+        <div class="enm modal">
+            <div class="enm modal-middle">
+                <div class="enm modal-inner">
+                    <div class="enm modal-row">
+                        <input id="city-picker-input" class="large picker" type="text" placeholder="New York City" autocomplete="off" />
+                        <a class="button large picker" @click="$emit('close')">Start</a>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div id="nav-user-logged-out" {% if current_user.is_authenticated %}style="display:none;" {% endif %}>
-            <ul class="nav navbar-nav navbar-right">
-                <li class="dropdown">
-                    <button class="btn btn-secondary dropdown-toggle dropdown-button" data-toggle="dropdown">Register <span class="caret"></span></button>
-                    <ul id="dropdown-register" class="dropdown-menu dropdown-lr animated fadeIn" role="menu">
-                        <div class="col-lg-12">
-                            <div class="text-center">
-                                <h3><b>Register</b></h3></div>
-                            <div id="dropdown-register-fields">
-                                <form id="ajax-register-form" action="#" method="post" role="form" autocomplete="off">
-                                    <div class="form-group">
-                                        <div id="register-first-name" class="form-group">
-                                            <input type="text" name="first_name" id="first_name" tabindex="1" class="form-control" placeholder="First Name">
-                                        </div>
-                                        <div id="register-last-name" class="form-group">
-                                            <input type="text" name="last_name" id="last_name" tabindex="2" class="form-control" placeholder="Last Name">
-                                        </div>
-                                    </div>
-                                    <div id="register-email" class="form-group">
-                                        <input type="email" name="email" id="email" tabindex="3" class="form-control" placeholder="Email Address" value="">
-                                    </div>
-                                    <div id="register-password" class="form-group">
-                                        <input type="password" name="password" id="password" tabindex="4" class="form-control" placeholder="Password">
-                                    </div>
-                                    <div id="register-confirm-password" class="form-group">
-                                        <input type="password" name="confirm_password" id="confirm_password" tabindex="5" class="form-control" placeholder="Confirm Password">
-                                    </div>
-                                    <div class="form-group">
-                                        <div class="row">
-                                            <div class="col-xs-6 col-xs-offset-3">
-                                                <button type="button" id="register-submit" tabindex="6" class="form-control btn btn-info">Register</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                            <div id="dropdown-register-done" class="alert alert-success" role="alert" style="display: none;">
-                                Thanks! You'll receive an email with a link to activate your account.
-                            </div>
-                            <div id="dropdown-register-problem" class="alert alert-danger" role="alert" style="display: none;">
-                                
-                            </div>
-                        </div>
-                    </ul>
-                </li>
-                <li class="dropdown">
-                    <button class="btn btn-secondary dropdown-toggle dropdown-button" data-toggle="dropdown">Log In <span class="caret"></span></button>
-                    <ul class="dropdown-menu dropdown-lr animated fadeIn" role="menu">
-                        <div class="col-lg-12">
-                            <div class="text-center">
-                                <h3><b>Log In</b></h3>
-                            </div>
-                            <form id="ajax-login-form" action="#" method="post" role="form" autocomplete="off">
-                                <div class="form-group">
-                                    <label for="email">Email</label>
-                                    <input type="email" name="email" id="email" tabindex="1" class="form-control" placeholder="Email address" value="" autocomplete="off">
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="password">Password</label>
-                                    <input type="password" name="password" id="password" tabindex="2" class="form-control" placeholder="Password" autocomplete="off">
-                                </div>
-
-                                <div class="form-group">
-                                    <div class="row">
-                                        <div class="col-xs-7">
-                                            <input type="checkbox" tabindex="3" name="remember" id="remember">
-                                            <label for="remember"> Remember Me</label>
-                                        </div>
-                                        <div class="col-xs-5 pull-right">
-                                            <button type="button" id="login-submit" tabindex="4" class="form-control btn btn-success">Log In</button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <div class="row">
-                                        <div class="col-lg-12">
-                                            <div class="text-center">
-                                                <a href="#" tabindex="5" class="forgot-password">Forgot Password?</a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            <div id="login-problem" class="alert alert-danger" role="alert" style="display: none;">
-                                Please check email/password combination and try again.
-                            </div>
-                            <div id="login-resend-validation" class="alert alert-warning" role="alert" style="display: none;">
-                                You must confirm your email address before logging in.
-                                <button type="button" id="login-resend-validation-button" tabindex="6" class="form-control btn btn-link">Resend confirmation email</button>
-                            </div>
-                            <div id="login-reset-password" class="alert alert-success" role="alert" style="display: none;">
-                                If there is an account associated with the email address provided, the password has been reset and you will receive an email containing the new password shortly.
+    </template>
+    
+    <template id="template-modal-gtfs-import">
+        <div class="enm modal">
+            <div class="enm modal-middle">
+                <div class="enm modal-inner">
+                    <div class="enm modal-col">
+                        <div class="header">GTFS Import<a class="button" @click="$emit('close')">close</a></div>
+                        <div class="body">
+                            <form enctype="multipart/form-data" novalidate v-if="isInitial || isSaving || isAnalyzing">
+                            Choose a .zip file containing valid GTFS data.
+                            <div class="dropbox">
+                                <input type="file" :name="uploadFieldName" :disabled="isSaving || isAnalyzing" @change="filesChange($event.target.name, $event.target.files);" accept="image/*" class="input-file">
+                                <p v-if="isInitial">
+                                    Drag a .zip file containing GTFS data here to begin, or click to browse.
+                                </p>
+                                <p v-if="isSaving">
+                                    Uploading...
+                                </p>
+                                <p v-if="isAnalyzing">
+                                    Analyzing...
+                                </p>
                             </div>
                             </form>
+                            <div id="gtfs-upload-contents" v-if="isSuccess">
+                                Choose agencies and routes to import.
+                                {% raw %}
+                                <div id="gtfs-agency-list">
+                                    <div class="gtfs-agency" v-for="agency in gtfsData">
+                                        <input type="checkbox" :id="agency.agency_id" :name="agency.agency_id" :value="agency.agency_id">
+                                        <label :for="agency.agency_id">{{ agency.agency_name }}</label>
+                                        <div class="gtfs-route" v-for="route in agency.routes">
+                                            <input type="checkbox" :id="route.route_id" :name="route.route_id" :value="route.route_id">
+                                            <label :for="route.route_id">
+                                            <div class="subway-line-long" v-bind:style="{ 'color': route.color_fg, 'background-color': route.color_bg }">
+                                                <div class="content">
+                                                    {{ route.route_long_name }}
+                                                </div>
+                                            </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endraw %}
+                            </div>
+                            <div v-if="isFailed">
+                                Failed
+                            </div>
                         </div>
-                    </ul>
-                </li>
-            </ul>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
+    </template>
+    <template id="template-button-import-gtfs">
+        <a class="button" @click="$emit('click')">Import GTFS</a>
+    </template>
+    <!-- -->
+
+    <div id="app">
+        <div id="navbar">
+            <div id="nav-enmodal-logo"><img src="static/img/logo.png" /></div>
+            <div id="nav-user-logged-in" {% if not current_user.is_authenticated %}style="display:none;" {% endif %}>
+                <div><a href="user" id="logged-in-user-email">{{ current_user.email }}</a></div>
+                <div><a id="logout" class="button">Logout</a></div>
+            </div>
+            <div id="nav-user-logged-out" {% if current_user.is_authenticated %}style="display:none;" {% endif %}>
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle dropdown-button" data-toggle="dropdown">Register <span class="caret"></span></button>
+                        <ul id="dropdown-register" class="dropdown-menu dropdown-lr animated fadeIn" role="menu">
+                            <div class="col-lg-12">
+                                <div class="text-center">
+                                    <h3><b>Register</b></h3></div>
+                                <div id="dropdown-register-fields">
+                                    <form id="ajax-register-form" action="#" method="post" role="form" autocomplete="off">
+                                        <div class="form-group">
+                                            <div id="register-first-name" class="form-group">
+                                                <input type="text" name="first_name" id="first_name" tabindex="1" class="form-control" placeholder="First Name">
+                                            </div>
+                                            <div id="register-last-name" class="form-group">
+                                                <input type="text" name="last_name" id="last_name" tabindex="2" class="form-control" placeholder="Last Name">
+                                            </div>
+                                        </div>
+                                        <div id="register-email" class="form-group">
+                                            <input type="email" name="email" id="email" tabindex="3" class="form-control" placeholder="Email Address" value="">
+                                        </div>
+                                        <div id="register-password" class="form-group">
+                                            <input type="password" name="password" id="password" tabindex="4" class="form-control" placeholder="Password">
+                                        </div>
+                                        <div id="register-confirm-password" class="form-group">
+                                            <input type="password" name="confirm_password" id="confirm_password" tabindex="5" class="form-control" placeholder="Confirm Password">
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="row">
+                                                <div class="col-xs-6 col-xs-offset-3">
+                                                    <button type="button" id="register-submit" tabindex="6" class="form-control btn btn-info">Register</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div id="dropdown-register-done" class="alert alert-success" role="alert" style="display: none;">
+                                    Thanks! You'll receive an email with a link to activate your account.
+                                </div>
+                                <div id="dropdown-register-problem" class="alert alert-danger" role="alert" style="display: none;">
+                                    
+                                </div>
+                            </div>
+                        </ul>
+                    </li>
+                    <li class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle dropdown-button" data-toggle="dropdown">Log In <span class="caret"></span></button>
+                        <ul class="dropdown-menu dropdown-lr animated fadeIn" role="menu">
+                            <div class="col-lg-12">
+                                <div class="text-center">
+                                    <h3><b>Log In</b></h3>
+                                </div>
+                                <form id="ajax-login-form" action="#" method="post" role="form" autocomplete="off">
+                                    <div class="form-group">
+                                        <label for="email">Email</label>
+                                        <input type="email" name="email" id="email" tabindex="1" class="form-control" placeholder="Email address" value="" autocomplete="off">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="password">Password</label>
+                                        <input type="password" name="password" id="password" tabindex="2" class="form-control" placeholder="Password" autocomplete="off">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <div class="row">
+                                            <div class="col-xs-7">
+                                                <input type="checkbox" tabindex="3" name="remember" id="remember">
+                                                <label for="remember"> Remember Me</label>
+                                            </div>
+                                            <div class="col-xs-5 pull-right">
+                                                <button type="button" id="login-submit" tabindex="4" class="form-control btn btn-success">Log In</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <div class="row">
+                                            <div class="col-lg-12">
+                                                <div class="text-center">
+                                                    <a href="#" tabindex="5" class="forgot-password">Forgot Password?</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <div id="login-problem" class="alert alert-danger" role="alert" style="display: none;">
+                                    Please check email/password combination and try again.
+                                </div>
+                                <div id="login-resend-validation" class="alert alert-warning" role="alert" style="display: none;">
+                                    You must confirm your email address before logging in.
+                                    <button type="button" id="login-resend-validation-button" tabindex="6" class="form-control btn btn-link">Resend confirmation email</button>
+                                </div>
+                                <div id="login-reset-password" class="alert alert-success" role="alert" style="display: none;">
+                                    If there is an account associated with the email address provided, the password has been reset and you will receive an email containing the new password shortly.
+                                </div>
+                                </form>
+                            </div>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        {% block body %}{% endblock %}
     
-    {% block body %}{% endblock %}
+    </div>
     
     <script src="static/js/vue.min.js"></script>
     <script src="static/js/enmodal.min.js"></script>

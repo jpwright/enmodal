@@ -1,7 +1,6 @@
 .enm.modal {
-    width: 66%;
+    width: 75%;
     height: 100%;
-    margin-left: 5%;
     color: white;
     display: table;
     z-index: 900;
@@ -15,11 +14,11 @@
 }
 
 .enm.modal-inner {
-    width: 100%;
+    width: 80%;
     background: rgba(0, 0, 0, 0.65);
     border: 1px solid #777;
     display: flex;
-    margin-bottom: 1em;
+    margin: auto;
 }
 
 .enm.modal-row {
@@ -40,6 +39,11 @@
     width: 100%;
     background: rgba(255, 255, 255, 0.1);
     padding: 10px;
+}
+
+.enm.modal .header a.button {
+    float: right;
+    font-size: 14px;
 }
 
 .enm.modal .body {

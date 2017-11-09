@@ -17,8 +17,8 @@ class StationMarker {
         var opacity = 1.0;
         if (!this.active) opacity = INACTIVE_OPACITY;
         var marker = L.circleMarker(latlng, {draggable: true, color: "black", opacity: opacity, fillColor: "white", fillOpacity: opacity, zIndexOffset: 100, pane: "stationMarkerPane"}).setRadius(MARKER_RADIUS_DEFAULT).bindTooltip(this.station.name, this.tooltip_options);
-        if (this.active && !HEADLESS_MODE) {
-                marker.on('click', function(event) {
+        if (this.active) {
+            marker.on('click', function(event) {
                 if (enmodal.transit_interface.active_tool == "transfer") {
                     marker.unbindPopup();
                     var station = enmodal.transit_interface.get_station_marker_by_marker(marker).station;
@@ -74,7 +74,7 @@ class StationMarker {
 
     generate_popup() {
         var content = '<div class="station-name" id="station-'+this.station.sid.toString()+'" data-balloon="Click to rename" data-balloon-pos="left">'+this.station.name;
-        if (!HEADLESS_MODE) content += '   <i class="fa fa-pencil" style="margin-left: 5px;" aria-hidden="true"></i>';
+        content += '   <i class="fa fa-pencil" style="margin-left: 5px;" aria-hidden="true"></i>';
         content += '</div>';
         content += '<div class="station-content"><div class="station-info">'+this.station.neighborhood+'<br />';
         content += '<i class="fa fa-user" aria-hidden="true"></i> <span id="stationriders-'+this.station.sid.toString()+'">';
@@ -98,16 +98,12 @@ class StationMarker {
         if (enmodal.transit_interface.active_line == null) active_line_is_different = false;
         content += ' </div>';
 
-
-
         if (active_line_is_different) {
             content += '<div class="station-content-button station-build line-'+enmodal.transit_interface.active_line.sid.toString()+'" id="'+this.station.sid.toString()+'">Build <div class="subway-line-long subway-line-mini" style="background-color: '+enmodal.transit_interface.active_line.color_bg+'; color: '+enmodal.transit_interface.active_line.color_fg+';"><div class="content">'+enmodal.transit_interface.active_line.name+'</div></div></div>';
         }
 
-        if (!HEADLESS_MODE) {
-            content += '<div class="station-content-button station-delete" transit-station-id="'+this.station.sid.toString()+'">Delete</div>';
-            content += '<div class="station-buttons"><div class="station-content-button station-transfer" id="transfer-'+this.station.sid.toString()+'">Transfer</div>';
-        }
+        content += '<div class="station-content-button station-delete" transit-station-id="'+this.station.sid.toString()+'">Delete</div>';
+        content += '<div class="station-buttons"><div class="station-content-button station-transfer" id="transfer-'+this.station.sid.toString()+'">Transfer</div>';
         content += '</div><div style="clear: both;"></div>';
         content += '</div>';
 

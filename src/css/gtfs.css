@@ -1,0 +1,12 @@
+.enm #gtfs-upload-contents {
+	max-height: 50vh;
+	overflow-y: scroll;
+}
+
+.enm .gtfs-agency {
+	margin: 10px;
+}
+
+.enm .gtfs-route {
+	margin-left: 15px;
+}

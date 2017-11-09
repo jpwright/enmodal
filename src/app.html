@@ -1,50 +1,7 @@
 {% extends "layout.html" %}
 {% block body %}
     <link rel="stylesheet" href="static/css/app.css" />
-    <script type="text/javascript">
-    HEADLESS_MODE = false;
-    </script>
-    
-    <!-- vue.js templates -->
-    <template id="template-city-picker">
-        <div class="enm modal">
-            <div class="enm modal-middle">
-                <div class="enm modal-inner">
-                    <div class="enm modal-row">
-                        <input id="city-picker-input" class="large picker" type="text" placeholder="New York City" autocomplete="off" />
-                        <a class="button large picker" @click="$emit('close')">Start</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </template>
-    
-    <template id="template-gtfs-import">
-        <div class="enm modal">
-            <div class="enm modal-middle">
-                <div class="enm modal-inner">
-                    <div class="enm modal-col">
-                        <div class="header">GTFS Import</div>
-                        <div class="body">
-                            Choose a .zip file containing valid GTFS data.
-                            <form enctype="multipart/form-data" novalidate v-if="isInitial || isSaving">
-                            <div class="dropbox">
-                                <input type="file" :name="uploadFieldName" :disabled="isSaving" @change="filesChange($event.target.name, $event.target.files); fileCount = $event.target.files.length" accept="image/*" class="input-file">
-                                <p v-if="isInitial">
-                                    Drag a .zip file containing GTFS data here to begin, or click to browse.
-                                </p>
-                                <p v-if="isSaving">
-                                    Uploading...
-                                </p>
-                            </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </template>
-    <!-- -->
+    <link rel="stylesheet" href="static/css/gtfs.css" />
     
     <div id="alpha-warning">
         <span class="alpha-warning-large">warning! you are viewing an <em>alpha release</em> of enmodal.</span>
@@ -59,9 +16,8 @@
         </div>
     </div>
     
-    
-    <city-picker id="modal-city-picker" v-if="visible" @close="visible = false"></city-picker>
-    <gtfs-import id="modal-gtfs-import" v-if="visible" @close="visible = false"></gtfs-import>
+    <modal-city-picker id="modal-city-picker" v-if="modal === 'city-picker'" @close="modal = 'none'"></modal-city-picker>
+    <modal-gtfs-import id="modal-gtfs-import" v-if="modal === 'gtfs-import'" @close="modal = 'none'"></modal-gtfs-import>
 
     <!--
             <div class="starter-inner" id="starter-share" style="display: none;">
@@ -232,7 +188,7 @@
                 
                 <div class="tab-pane" id="tab-settings" role="tabpanel">
                     <div id="option-section-data" class="option-section">
-                        <a class="button">Import GTFS</a>
+                        <button-import-gtfs @click="modal = 'gtfs-import'"></button-import-gtfs>
                     </div>
                 </div>
 

@@ -65,67 +65,65 @@ class TransitUI {
         this.map.addLayer(this.layers.inactive.station_markers);
         this.map.addLayer(this.layers.preview);
 
-        if (!HEADLESS_MODE) {
-            this.map.on('mouseup', () => {
-                this.map.dragging.enable();
-                this.map.removeEventListener('mousemove');
-                this.preview_paths_enabled = true;
-                this.map.on('mousemove', function(e) {
-                    enmodal.transit_interface.preview_handler(e);
-                });
-                if (this.moving_station_marker != null) {
-                    if (this.station_to_merge != null) {
-                        this.merge_stations(this.moving_station_marker.station, this.station_to_merge);
-                        //this.get_station_marker_by_station(this.station_to_merge).clear_merge();
-                        this.station_to_merge = null;
-                    } else {
-                        this.update_station_info(this.moving_station_marker.station);
-                        this.moving_station_marker.update_tooltip();
-                        this.moving_station_marker.generate_popup();
-                        this.moving_station_marker.marker.openPopup();
-                    }
-                    if (this.active_service.mode == "bus") {
-                        // draw lines
-                        var lines = this.active_service.station_lines(this.moving_station_marker.station);
-                        for (var i = 0; i < lines.length; i++) {
-                            // force an update
-                            var station_pairs = enmodal.transit_interface.get_station_pairs_for_line(lines[i]);
-                            for (var j = 0; j < station_pairs.length; j++) {
-                                station_pairs[j].undraw_paths();
-                                station_pairs[j].paths = [];
-                                station_pairs[j].street_path_is_valid = false;
-                            }
-                            this.draw_line(lines[i], false, true, this.layers.active.line_paths, true, this.active_service);
-                        }
-                    }
-                    this.moving_station_marker = null;
-                    this.purge_bad_transfers();
-                    enmodal.sidebar.update_line_diagram();
-                }
-            });
-
+        this.map.on('mouseup', () => {
+            this.map.dragging.enable();
+            this.map.removeEventListener('mousemove');
+            this.preview_paths_enabled = true;
             this.map.on('mousemove', function(e) {
                 enmodal.transit_interface.preview_handler(e);
             });
-
-            this.map.on('moveend', function(e) {
-                enmodal.data.draw_active_layer(false);
-                /*
-                if (enmodal.transit_interface.hexagon_layer != "none") {
-                    if (enmodal.transit_interface.map.getZoom() >= MIN_ZOOM_FOR_HEXAGONS) {
-                        enmodal.transit_interface.get_hexagons(false);
-                    } else {
-                        $("#scale-boxes").empty();
-                        $("#scale-low").text("");
-                        $("#scale-mid").text("Zoom in to see data");
-                        $("#scale-high").text("");
-                        $("#scale-units").text("");
-                        $("#scale").show();
+            if (this.moving_station_marker != null) {
+                if (this.station_to_merge != null) {
+                    this.merge_stations(this.moving_station_marker.station, this.station_to_merge);
+                    //this.get_station_marker_by_station(this.station_to_merge).clear_merge();
+                    this.station_to_merge = null;
+                } else {
+                    this.update_station_info(this.moving_station_marker.station);
+                    this.moving_station_marker.update_tooltip();
+                    this.moving_station_marker.generate_popup();
+                    this.moving_station_marker.marker.openPopup();
+                }
+                if (this.active_service.mode == "bus") {
+                    // draw lines
+                    var lines = this.active_service.station_lines(this.moving_station_marker.station);
+                    for (var i = 0; i < lines.length; i++) {
+                        // force an update
+                        var station_pairs = enmodal.transit_interface.get_station_pairs_for_line(lines[i]);
+                        for (var j = 0; j < station_pairs.length; j++) {
+                            station_pairs[j].undraw_paths();
+                            station_pairs[j].paths = [];
+                            station_pairs[j].street_path_is_valid = false;
+                        }
+                        this.draw_line(lines[i], false, true, this.layers.active.line_paths, true, this.active_service);
                     }
                 }
-                */
-            });
-        }
+                this.moving_station_marker = null;
+                this.purge_bad_transfers();
+                enmodal.sidebar.update_line_diagram();
+            }
+        });
+
+        this.map.on('mousemove', function(e) {
+            enmodal.transit_interface.preview_handler(e);
+        });
+
+        this.map.on('moveend', function(e) {
+            enmodal.data.draw_active_layer(false);
+            /*
+            if (enmodal.transit_interface.hexagon_layer != "none") {
+                if (enmodal.transit_interface.map.getZoom() >= MIN_ZOOM_FOR_HEXAGONS) {
+                    enmodal.transit_interface.get_hexagons(false);
+                } else {
+                    $("#scale-boxes").empty();
+                    $("#scale-low").text("");
+                    $("#scale-mid").text("Zoom in to see data");
+                    $("#scale-high").text("");
+                    $("#scale-units").text("");
+                    $("#scale").show();
+                }
+            }
+            */
+        });
     }
     
     // Draw all stations and lines of a service onto a particular layer
@@ -234,7 +232,7 @@ class TransitUI {
     create_station_marker(station, layer, active, open_popup) {
         var station_marker = new StationMarker(station, active);
 
-        if (active && !HEADLESS_MODE) {
+        if (active) {
             station_marker.marker.on('click', function(e) {
                 station_marker.marker.closeTooltip();
                 // Disable new station creation.

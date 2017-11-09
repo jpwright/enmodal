@@ -1,8 +1,9 @@
-from flask import Flask, Blueprint, request
+from flask import Flask, Blueprint, request, url_for, send_from_directory
 from werkzeug.utils import secure_filename
 import sys
 import os
 import csv
+import zipfile
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__))))
 from EnmodalSessions import *
@@ -28,28 +29,114 @@ SESSIONS_SECRET_KEY_PUBLIC = int(config.get('sessions', 'secret_key_public'), 16
 SESSIONS_SECRET_KEY_PRIVATE = int(config.get('sessions', 'secret_key_private'), 16)
 SESSION_EXPIRATION_TIME = int(config.get('sessions', 'expiration_time'))
 
+UPLOAD_FOLDER = config.get('flask', 'upload_folder')
+
 enmodal_gtfs = Blueprint('enmodal_gtfs', __name__)
 
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ['.zip']
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ['zip']
+
+@enmodal_gtfs.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename)
 
 @enmodal_gtfs.route('/gtfs_upload', methods=['POST'])
-def upload_file():
+def route_gtfs_upload():
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
+    if e:
+        return e
+
     # check if the post request has the file part
-    if 'file' not in request.files:
+    if 'gtfs' not in request.files:
         return json.dumps({"result": "error", "message": "No file."})
     
-    file = request.files['file']
+    file = request.files['gtfs']
     # if user does not select file, browser also
     # submit a empty part without filename
     if file.filename == '':
         return json.dumps({"result": "error", "message": "No file."})
     
     if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        return redirect(url_for('uploaded_file',
-                                filename=filename))
+        filename = secure_filename(request.args.get('i') + ".zip")
+        file.save(os.path.join(UPLOAD_FOLDER, filename))
+        return json.dumps({"result": "OK", "message": url_for('enmodal_gtfs.uploaded_file', filename=filename)})
+    else:
+        return json.dumps({"result": "error", "message": "Bad file."})
+
+AGENCY_PROPERTIES = ['agency_id', 'agency_name']
+ROUTE_PROPERTIES = ['route_id', 'route_short_name', 'route_long_name', 'route_color', 'route_text_color']
+
+@enmodal_gtfs.route('/gtfs_analyze')
+def route_gtfs_analyze():
+    h = int(request.args.get('i'), 16)
+    e = check_for_session_errors(h)
+    if e:
+        return e
+
+    zip_file_location = os.path.join(UPLOAD_FOLDER, request.args.get('i') + ".zip")
+    zip_folder_location = os.path.join(UPLOAD_FOLDER, request.args.get('i'))
+
+    zip_ref = zipfile.ZipFile(zip_file_location)
+    zip_ref.extractall(zip_folder_location)
+    zip_ref.close()
+
+    agency_file = open(os.path.join(zip_folder_location, 'agency.txt'), 'rb')
+    agency_reader = csv.DictReader(agency_file)
+    stops_file = open(os.path.join(zip_folder_location, 'stops.txt'), 'rb')
+    stops_reader = csv.DictReader(stops_file)
+    routes_file = open(os.path.join(zip_folder_location, 'routes.txt'), 'rb')
+    routes_reader = csv.DictReader(routes_file)
+    trips_file = open(os.path.join(zip_folder_location, 'trips.txt'), 'rb')
+    trips_reader = csv.DictReader(trips_file)
+    stop_times_file = open(os.path.join(zip_folder_location, 'stop_times.txt'), 'rb')
+    stop_times_reader = csv.DictReader(stop_times_file)
+
+    agencies = []
+    for agency in agency_reader:
+        a = {}
+        for agency_property in AGENCY_PROPERTIES:
+            if agency_property in agency:
+                a[agency_property] = agency[agency_property]
+        a['routes'] = []
+        if 'agency_id' not in a:
+            a['agency_id'] = a['agency_name']
+        agencies.append(a)
+
+    for route in routes_reader:
+        agency = agencies[0]
+        if 'agency_id' in route:
+            agency_id = route['agency_id']
+            results = filter(lambda a: a['agency_id'] == agency_id, agencies)
+            if len(results) > 0:
+                agency = results[0]
+
+        r = {}
+        for route_property in ROUTE_PROPERTIES:
+            if route_property in route:
+                r[route_property] = route[route_property]
+
+        color_bg = "AAAAAA"
+        if 'route_color' in r:
+            if len(r['route_color']) > 0:
+                color_bg = r['route_color']
+        r['color_bg'] = "#"+color_bg
+        
+        color_fg = "FFFFFF"
+        if 'route_text_color' in r:
+            if len(r['route_text_color']) > 0:
+                color_fg = r['route_text_color']
+        r['color_fg'] = "#"+color_fg
+
+        agency['routes'].append(r)
+
+    for agency in agencies:
+        agency['routes'] = sorted(agency['routes'], key=lambda k: k['route_long_name'])
+
+    agencies = sorted(agencies, key=lambda k: k['agency_name'])
+
+    return json.dumps(agencies)
+
         
 @enmodal_gtfs.route('/gtfs_import')
 def route_session_load():

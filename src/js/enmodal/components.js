@@ -1,53 +1,94 @@
 // Vue components
 
-Vue.component('city-picker', {
-    template: '#template-city-picker',
+Vue.component('modal-city-picker', {
+    template: '#template-modal-city-picker',
     props: {
         visible: {type: Boolean, default: true}
     },
 });
 
-new Vue({
-    el: '#modal-city-picker',
-    data: {
-        visible: true
-    }
+Vue.component('button-import-gtfs', {
+  template: '#template-button-import-gtfs',
+    props: {
+        visible: {type: Boolean, default: true}
+    },
 });
 
-const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED = 3;
+const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_ANALYZING = 2, STATUS_SUCCESS = 3, STATUS_FAILED = 4;
 
-function upload(formData) {
-    console.log("uploading GTFS data");
-    return 0;
-}
-
-Vue.component('gtfs-import', {
-    template: '#template-gtfs-import',
+Vue.component('modal-gtfs-import', {
+    template: '#template-modal-gtfs-import',
     props: {
         visible: {type: Boolean, default: true},
-        isInitial: {type: Boolean, default: true},
-        isSaving: {type: Boolean, default: false},
-        uploadFieldName: {type: String, default: "gtfs"},
+        uploadFieldName: 'gtfs',
+        fileCount: 0,
+    },
+    computed: {
+      isInitial() {
+        return app.upload_status === STATUS_INITIAL;
+      },
+      isSaving() {
+        return app.upload_status === STATUS_SAVING;
+      },
+      isAnalyzing() {
+        return app.upload_status === STATUS_ANALYZING;
+      },
+      isSuccess() {
+        return app.upload_status === STATUS_SUCCESS;
+      },
+      isFailed() {
+        return app.upload_status === STATUS_FAILED;
+      },
+      gtfsData() {
+        return app.gtfsData;
+      }
     },
     methods: {
       reset() {
         // reset form to initial state
-        this.currentStatus = STATUS_INITIAL;
         this.uploadedFiles = [];
         this.uploadError = null;
+        this.gtfsData = null;
+      },
+      upload(formData, onSuccess, onError) {
+        var params = $.param({
+            i: enmodal.session_id
+        });
+        $.ajax({ url: "gtfs_upload?"+params,
+            async: true,
+            data: formData,
+            cache: false,
+            contentType: false,
+            processData: false,
+            method: 'POST',
+            success: function(data){
+              onSuccess([]);
+            }
+        });
       },
       save(formData) {
         // upload data to the server
-        this.currentStatus = STATUS_SAVING;
+        app.upload_status = STATUS_SAVING;
 
-        upload(formData)
-          .then(x => {
+        this.upload(formData, function(x) {
             this.uploadedFiles = [].concat(x);
-            this.currentStatus = STATUS_SUCCESS;
-          })
-          .catch(err => {
+            app.upload_status = STATUS_ANALYZING;
+            var params = $.param({
+                i: enmodal.session_id
+            });
+            $.ajax({ url: "gtfs_analyze?"+params,
+              async: true,
+              dataType: 'json',
+              success: function(data, status) {
+                app.upload_status = STATUS_SUCCESS;
+                app.gtfsData = data;
+                console.log(data);
+              }
+            });
+
+          }, function(err) {
             this.uploadError = err.response;
-            this.currentStatus = STATUS_FAILED;
+            app.upload_status = STATUS_FAILED;
           });
       },
       filesChange(fieldName, fileList) {
@@ -72,11 +113,11 @@ Vue.component('gtfs-import', {
     },
 });
 
-new Vue({
-    el: '#modal-gtfs-import',
+var app = new Vue({
+    el: '#app',
     data: {
-        visible: false,
-        isInitial: false,
-        isSaving: false
+      modal: 'city-picker',
+      upload_status: STATUS_INITIAL,
+      gtfsData: null,
     }
 });
