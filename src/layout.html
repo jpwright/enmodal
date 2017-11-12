@@ -17,6 +17,7 @@
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.1.0/dist/leaflet.css" />
     <link rel="stylesheet" href="static/css/bootstrap.min.css" />
+    <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.css"/>
 
     <script src="https://unpkg.com/leaflet@1.1.0/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.vectorgrid@1.2.0"></script>
@@ -81,6 +82,10 @@
             </div>
         </div>
     </template>
+
+    <template id="template-collapse-caret">
+        <a class="button collapse-caret" @click="$emit('collapse')"><i class="fa fa-caret-right" aria-hidden="true"></i></a>
+    </template>
     
     <template id="template-modal-gtfs-import">
         <div class="enm modal">
@@ -92,7 +97,7 @@
                             <form enctype="multipart/form-data" novalidate v-if="isInitial || isSaving || isAnalyzing">
                             Choose a .zip file containing valid GTFS data.
                             <div class="dropbox">
-                                <input type="file" :name="uploadFieldName" :disabled="isSaving || isAnalyzing" @change="filesChange($event.target.name, $event.target.files);" accept="image/*" class="input-file">
+                                <input type="file" name="gtfs" :disabled="isSaving || isAnalyzing" @change="filesChange($event.target.name, $event.target.files);" accept=".zip" class="input-file">
                                 <p v-if="isInitial">
                                     Drag a .zip file containing GTFS data here to begin, or click to browse.
                                 </p>
@@ -105,25 +110,48 @@
                             </div>
                             </form>
                             <div id="gtfs-upload-contents" v-if="isSuccess">
-                                Choose agencies and routes to import.
+                                <div>
+                                    Choose agencies and routes to import.
+                                </div>
+                                <div>
+                                    <a class="button" v-on:click="selectAll">Select All</a>
+                                    <a class="button" v-on:click="selectNone">Select None</a>
+                                </div>
                                 {% raw %}
                                 <div id="gtfs-agency-list">
-                                    <div class="gtfs-agency" v-for="agency in gtfsData">
-                                        <input type="checkbox" :id="agency.agency_id" :name="agency.agency_id" :value="agency.agency_id">
-                                        <label :for="agency.agency_id">{{ agency.agency_name }}</label>
-                                        <div class="gtfs-route" v-for="route in agency.routes">
-                                            <input type="checkbox" :id="route.route_id" :name="route.route_id" :value="route.route_id">
-                                            <label :for="route.route_id">
-                                            <div class="subway-line-long" v-bind:style="{ 'color': route.color_fg, 'background-color': route.color_bg }">
-                                                <div class="content">
-                                                    {{ route.route_long_name }}
+                                    <form id="gtfs-form">
+                                        <div class="gtfs-agency" v-for="service in gtfsImportMap.services">
+                                            <b-btn v-b-toggle="'collapse' + service.gtfs_id" variant="primary" class="collapse-caret">
+                                                <span class="when-closed"><i class="fa fa-caret-right" aria-hidden="true"></i></span>
+                                                <span class="when-opened"><i class="fa fa-caret-down" aria-hidden="true"></i></span>
+                                            </b-btn>
+
+                                            <input type="checkbox" class="agency" :data-agency-id="service.gtfs_id" :id="'route' + service.gtfs_id" :name="service.gtfs_id" :value="service.gtfs_id" v-on:click="toggleAgency(service.gtfs_id)"/>
+                                            <label :for="'route' + service.gtfs_id">{{ service.name }}</label>
+                                            <b-collapse :id="'collapse' + service.gtfs_id" class="mt-2" visible>
+                                                <div class="gtfs-routes" :data-agency-id="service.gtfs_id">
+                                                    <div class="gtfs-route" v-for="line in service.lines">
+                                                        <input type="checkbox" class="route" :data-agency-id="service.gtfs_id" :data-route-id="line.gtfs_id" :id="line.gtfs_id" :name="line.gtfs_id" :value="line.gtfs_id" />
+                                                        <label :for="line.gtfs_id">
+                                                            <div class="subway-line-long" v-bind:style="{ 'color': line.color_fg, 'background-color': line.color_bg }">
+                                                                <div class="content">
+                                                                {{ line.full_name }}
+                                                                </div>
+                                                            </div>
+                                                        </label>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            </label>
+                                            </b-collapse>
                                         </div>
-                                    </div>
+                                    </form>
+                                </div>
+                                <div>
+                                    <a class="button" v-on:click="start">Import</a>
                                 </div>
                                 {% endraw %}
+                            </div>
+                            <div v-if="isImporting">
+                                Importing...
                             </div>
                             <div v-if="isFailed">
                                 Failed
@@ -253,7 +281,9 @@
     </div>
     
     <script src="static/js/vue.min.js"></script>
-    <script src="static/js/enmodal.min.js"></script>
+    <script src="//unpkg.com/babel-polyfill@latest/dist/polyfill.min.js"></script>
+    <script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.js"></script>
+    <script src="static/js/enmodal.js"></script>
     
     <script>
         (function(i, s, o, g, r, a, m) {

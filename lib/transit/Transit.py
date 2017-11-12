@@ -33,7 +33,22 @@ class Map(object):
             if service.sid == sid:
                 return service
         return None
+
+    def get_service_by_gtfs_id(self, gtfs_id):
+        for service in self.services:
+            if service.gtfs_id == gtfs_id:
+                return service
+        if len(self.services) > 0:
+            return self.services[0]
+        return None
         
+    def get_line_by_gtfs_id(self, gtfs_id):
+        for service in self.services:
+            l = service.get_line_by_gtfs_id(gtfs_id)
+            if l is not None:
+                return l
+        return None
+
     def create_sid(self):
         self.sidf_state += 1
         return self.sidf_state
@@ -132,6 +147,8 @@ class Station(object):
         self.hexagons = []
         self.hexagons_known = False
         self.stop_walking_times = []
+
+        self.gtfs_id = None
         
     def set_hexagons(self, hexagons):
         self.hexagons = hexagons
@@ -177,6 +194,7 @@ class Stop(object):
     def __init__(self, sid, station_id):
         self.sid = sid
         self.station_id = station_id
+        self.gtfs_id = None
 
     def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
@@ -202,6 +220,8 @@ class Line(object):
 
         self.stops = []
         self.edges = []
+
+        self.gtfs_id = None
 
     def add_stop(self, stop):
         self.stops.append(stop)
@@ -238,6 +258,80 @@ class Line(object):
             if stop.station_id == s.sid:
                 return stop
         return None
+
+    def has_edge_for_stops(self, stops):
+        for edge in self.edges:
+            match = True
+            for stop in stops:
+                if not edge.has_stop(stop):
+                    match = False
+            if match:
+                return edge
+        return None
+
+    def neighbors(self, stop):
+        # Returns all neighbors of the input stop.
+
+        neighbors = []
+        for i in range(0, len(self.edges)):
+            edge = self.edges[i]
+            if (edge.stop_ids[0] == stop.sid):
+                neighbors.append(edge.stop_ids[1])
+            if (edge.stop_ids[1] == stop.sid):
+                neighbors.append(edge.stop_ids[0])
+        
+        return neighbors
+
+    def paths_between_stops(self, stop_1, stop_2):
+        
+        dfs_stops = []
+        dfs_paths = []
+        visited = {}
+        starter = stop_1
+
+        # recursive DFS to find all the paths
+        def dfs(v, target, l):
+            # print "dfs v="+str(v.sid)+" t="+str(target.sid)
+            # Add new stop
+            dfs_stops.append(v)
+            if v == target:
+                dfs_paths.append(dfs_stops[:])
+            else:
+                visited[v.sid] = 1
+                neighbors = l.neighbors(v)
+                #print "neighbors for stop "+str(v.sid)
+                #print neighbors
+                for i in range(0, len(neighbors)):
+                    if (neighbors[i] not in visited):
+                        w = l.get_stop_by_id(neighbors[i])
+                        dfs(w, target, l)
+                
+            dfs_stops.remove(v)
+        
+        dfs(stop_1, stop_2, self)
+
+        return dfs_paths
+
+    def condense(self):
+        # Remove all loops.
+        edges_removed = 1
+
+        while edges_removed > 0:
+            edges_to_remove = []
+            for edge in self.edges:
+                s1 = self.get_stop_by_id(edge.stop_ids[0])
+                s2 = self.get_stop_by_id(edge.stop_ids[1])
+                paths = self.paths_between_stops(s1, s2)
+                #print "Between stops: " + str(s1.sid) + " and " + str(s2.sid)
+                #print path
+                if len(paths) > 1:
+                    edges_to_remove.append(edge)
+
+            for edge in edges_to_remove:
+                self.edges.remove(edge)
+
+            edges_removed = len(edges_to_remove)
+
 
     def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
@@ -277,7 +371,9 @@ class Edge(object):
 
     def __init__(self, sid, stop_ids):
         self.sid = sid
-        self.stop_ids = stop_ids
+        self.stop_ids = []
+        for stop_id in stop_ids:
+            self.stop_ids.append(int(stop_id))
         
     def has_stop(self, stop):
         if stop.sid in self.stop_ids:
@@ -333,12 +429,20 @@ class Service(object):
         self.transfers = []
         self.mode = ""
 
+        self.gtfs_id = None
+
     def add_line(self, l):
         self.lines.append(l)
         
     def get_line_by_full_name(self, name):
         for line in self.lines:
             if line.full_name == name:
+                return line
+        return None
+
+    def get_line_by_gtfs_id(self, gtfs_id):
+        for line in self.lines:
+            if line.gtfs_id == gtfs_id:
                 return line
         return None
 

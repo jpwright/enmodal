@@ -3,6 +3,11 @@ port: 5050
 domain: http://localhost
 secret_key: F12Yr58j4zX T~Y%C!efJ]Dxe/,?KD
 use_logins = False
+
+gtfs_enabled = False
+# Folder to store uploads, relative to server.py
+upload_folder = enmodal/uploads
+
 redis_url = "redis://localhost:6379/0"
 
 [geocode]

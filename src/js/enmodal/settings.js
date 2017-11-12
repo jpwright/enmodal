@@ -86,3 +86,5 @@ HEXAGON_UNITS = {
 
 var DEBUG_BEZIER_CONTROLS = false;
 var DEBUG_PIN_PROJECTIONS = false;
+
+var GTFS_ENABLED = true;

@@ -16,8 +16,8 @@
         </div>
     </div>
     
-    <modal-city-picker id="modal-city-picker" v-if="modal === 'city-picker'" @close="modal = 'none'"></modal-city-picker>
-    <modal-gtfs-import id="modal-gtfs-import" v-if="modal === 'gtfs-import'" @close="modal = 'none'"></modal-gtfs-import>
+    <modal-city-picker id="modal-city-picker" v-if="modal === 'city-picker'" @close="modal='none'"></modal-city-picker>
+    <modal-gtfs-import id="modal-gtfs-import" v-if="modal === 'gtfs-import'" @close="modal='none'"></modal-gtfs-import>
 
     <!--
             <div class="starter-inner" id="starter-share" style="display: none;">
@@ -187,7 +187,7 @@
                 </div>
                 
                 <div class="tab-pane" id="tab-settings" role="tabpanel">
-                    <div id="option-section-data" class="option-section">
+                    <div id="option-section-settings" class="option-section">
                         <button-import-gtfs @click="modal = 'gtfs-import'"></button-import-gtfs>
                     </div>
                 </div>

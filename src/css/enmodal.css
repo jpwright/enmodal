@@ -27,9 +27,17 @@
     color: #fff;
 }
 
-.game-button-active {
+.enm a.button.active {
     background-color: rgba(255, 200, 200, 0.1);
     font-weight: bold;
+}
+
+.enm button.collapse-caret {
+    display: inline-block;
+    background: none;
+    border: none;
+    padding-top: 0em;
+    width: 20px;
 }
 
 /* form inputs */
@@ -80,4 +88,28 @@
 ::-webkit-scrollbar-thumb {
     border-radius: 6px;
     background-color: rgba(255, 255, 255, 0.5);
+}
+
+/* bootstrap-vue modifiers */
+.collapsed > .when-opened,
+:not(.collapsed) > .when-closed {
+  display: none;
+}
+
+.enm button.dropdown-button:hover {
+    border: 1px solid white;
+}
+
+.enm button:hover {
+    border: none;
+    background: none;
+}
+
+.enm button:active {
+    border: none;
+    background: none;
+}
+
+.enm button:focus {
+    outline: 0;
 }

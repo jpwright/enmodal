@@ -43,9 +43,11 @@ button.dropdown-button {
     width: 100%;
     text-align: left;
     background-color: rgba(0, 0, 0, 0);
+    border: 1px solid white;
 }
 
 button.dropdown-button:hover, button.dropdown-button:focus {
+    border: 1px solid white;
     color: #FFF;
 }
 
@@ -277,7 +279,7 @@ input.station-name-edit {
 }
 
 #custom-line-options-color-pickers {
-    width: auto;
+    width: 5em;
     float: left;
     height: auto;
     padding: 1em;

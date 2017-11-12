@@ -7,6 +7,35 @@ Vue.component('modal-city-picker', {
     },
 });
 
+Vue.component('collapse-caret', {
+    template: '#template-collapse-caret',
+    props: {
+        visible: {type: Boolean, default: true},
+        dataTargetProp: "",
+        dataTargetValue: "",
+    },
+    methods: {
+      reset() {
+        this.collapsed = false;
+      },
+      collapse() {
+        console.log(this.dataTargetProp);
+        console.log(this.dataTargetValue);
+        if (this.collapsed) {
+          this.collapsed = false;
+          $("["+this.dataTargetProp+"='"+this.dataTargetValue+"']").show();
+        } else {
+          this.collapsed = true;
+          $("["+this.dataTargetProp+"='"+this.dataTargetValue+"']").hide();
+        }
+      },
+    },
+    mounted() {
+      this.reset();
+    },
+});
+
+
 Vue.component('button-import-gtfs', {
   template: '#template-button-import-gtfs',
     props: {
@@ -14,7 +43,7 @@ Vue.component('button-import-gtfs', {
     },
 });
 
-const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_ANALYZING = 2, STATUS_SUCCESS = 3, STATUS_FAILED = 4;
+const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_ANALYZING = 2, STATUS_SUCCESS = 3, STATUS_FAILED = 4, STATUS_IMPORTING = 5;
 
 Vue.component('modal-gtfs-import', {
     template: '#template-modal-gtfs-import',
@@ -39,18 +68,21 @@ Vue.component('modal-gtfs-import', {
       isFailed() {
         return app.upload_status === STATUS_FAILED;
       },
-      gtfsData() {
-        return app.gtfsData;
+      isImporting() {
+        return app.upload_status === STATUS_IMPORTING;
+      },
+      gtfsImportMap() {
+        return app.gtfsImportMap;
       }
     },
     methods: {
-      reset() {
+      reset: function() {
         // reset form to initial state
         this.uploadedFiles = [];
         this.uploadError = null;
-        this.gtfsData = null;
+        this.gtfsImportMap = null;
       },
-      upload(formData, onSuccess, onError) {
+      upload: function(formData, onSuccess, onError) {
         var params = $.param({
             i: enmodal.session_id
         });
@@ -66,7 +98,7 @@ Vue.component('modal-gtfs-import', {
             }
         });
       },
-      save(formData) {
+      save: function(formData) {
         // upload data to the server
         app.upload_status = STATUS_SAVING;
 
@@ -81,7 +113,7 @@ Vue.component('modal-gtfs-import', {
               dataType: 'json',
               success: function(data, status) {
                 app.upload_status = STATUS_SUCCESS;
-                app.gtfsData = data;
+                app.gtfsImportMap = data;
                 console.log(data);
               }
             });
@@ -91,7 +123,7 @@ Vue.component('modal-gtfs-import', {
             app.upload_status = STATUS_FAILED;
           });
       },
-      filesChange(fieldName, fileList) {
+      filesChange: function(fieldName, fileList) {
         // handle file changes
         const formData = new FormData();
 
@@ -106,7 +138,66 @@ Vue.component('modal-gtfs-import', {
 
         // save it
         this.save(formData);
-      }
+      },
+      // These methods use jQuery hacks for now until component includes checkbox state
+      toggleAgency: function(agency) {
+        var agencyState = $("input:checkbox.agency[data-agency-id='"+agency+"']").prop("checked");
+        var checkBoxes = $("input:checkbox.route[data-agency-id='"+agency+"']");
+        checkBoxes.prop("checked", agencyState);
+      },
+      selectAll: function() {
+        console.log("select all");
+        $("input:checkbox.agency").prop('checked', true);
+        $("input:checkbox.route").prop('checked', true);
+      },
+      selectNone: function() {
+        console.log("select none");
+        $("input:checkbox.agency").prop('checked', false);
+        $("input:checkbox.route").prop('checked', false);
+      },
+      start: function() {
+        console.log("importing");
+        app.upload_status = STATUS_IMPORTING;
+
+        var services = [];
+        var lines = [];
+
+        $("input:checkbox.route").each(function() {
+          var state = $(this).prop("checked");
+          if (state) {
+            var agency = $(this).attr("data-agency-id");
+            var route = $(this).attr("data-route-id");
+            if (services.indexOf(agency) == -1) {
+              services.push(agency);
+            }
+            if (lines.indexOf(route) == -1) {
+              lines.push(route);
+            }
+          }
+        });
+
+        console.log(services);
+        console.log(lines);
+
+        var params = $.param({
+            i: enmodal.session_id
+        });
+        var data = {
+          "services": services,
+          "lines": lines
+        };
+        $.ajax({ url: "gtfs_import?"+params,
+          async: true,
+          data: JSON.stringify(data),
+          dataType: 'json',
+          contentType: "application/json",
+          method: 'POST',
+          success: function(data, status) {
+            app.modal = 'none'
+            handle_map_data(data);
+          }
+        });
+      },
     },
     mounted() {
       this.reset();
@@ -118,6 +209,6 @@ var app = new Vue({
     data: {
       modal: 'city-picker',
       upload_status: STATUS_INITIAL,
-      gtfsData: null,
+      gtfsImportMap: null,
     }
 });

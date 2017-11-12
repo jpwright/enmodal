@@ -125,7 +125,7 @@
                         var stop = line["stops"][i];
                         for (var j = 0; j < stations.length; j++) {
                             if (stations[j].sid == stop["station_id"]) {
-                                var node_comp = {id: stop["sid"], label: stations[j]["name"] + " (" + stop["station_id"] + ":" + stop["sid"].toString() + ")"};
+                                var node_comp = {id: stop["sid"], label: stations[j]["name"] + " (station" + stop["station_id"] + ":stop" + stop["sid"].toString() + ")"};
                                 node_comps.push(node_comp);
                             }
                         }

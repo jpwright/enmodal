@@ -30,6 +30,50 @@ function session_new() {
     });
 }
 
+function handle_map_data(jdata) {
+    console.log(jdata);
+    
+    enmodal.transit_map.sid = jdata.sid;
+    enmodal.transit_map.from_json(jdata);
+    
+    if (enmodal.transit_map.services.length == 0) {
+        session_new();
+    } else {
+
+        enmodal.transit_interface.active_service = enmodal.transit_map.primary_service();
+        enmodal.transit_interface.active_line = enmodal.transit_map.primary_service().lines[0];
+        enmodal.sidebar.update_service_selector(enmodal.transit_interface.active_service.sid, true);
+        enmodal.sidebar.refresh_service_editor();
+        enmodal.sidebar.update_line_selector(enmodal.transit_interface.active_line.sid);
+        enmodal.sidebar.update_line_editor();
+        enmodal.sidebar.refresh_line_editor();
+        enmodal.sidebar.update_line_diagram();
+        
+        // Updating service selector is enough to draw the service.
+        //enmodal.transit_interface.draw_service(enmodal.transit_interface.active_service, enmodal.transit_interface.layers.active, true, true);
+
+        // use user settings where appropriate
+        var user_settings = jdata.settings;
+        for (var i = 0; i < user_settings.station_pairs.length; i++) {
+            var sp = user_settings.station_pairs[i];
+            var station_1 = enmodal.transit_map.get_station_by_id(sp.station_ids[0]);
+            var station_2 = enmodal.transit_map.get_station_by_id(sp.station_ids[1]);
+            var sp_real = enmodal.transit_interface.get_station_pair(station_1, station_2);
+            if (sp_real != null) {
+                for (var j = 0; j < sp.pins.length; j++) {
+                    sp_real[0].add_pin(sp.pins[j].location[0], sp.pins[j].location[1]);
+                }
+            }
+        }
+        
+        enmodal.transit_interface.draw_transfers();
+        //enmodal.transit_interface.map.closePopup();
+        var bounds = enmodal.transit_map.geographic_bounds();
+        if (bounds != null) enmodal.leaflet_map.fitBounds(bounds);
+        enmodal.data.get_ridership();
+    }
+}
+
 function session_load() {
     // Initialize session and map
     var params = $.param({
@@ -46,53 +90,13 @@ function session_load() {
                 session_new();
             } else {
                 var jdata = JSON.parse(j.data);
-                console.log(jdata);
-                enmodal.session_id = j.private_key;
+                handle_map_data(jdata);
+                
                 window.history.pushState("", "", "?id="+enmodal.session_id);
                 enmodal.sharing.update(j.public_key, j.private_key);
-                
-                enmodal.transit_map.sid = jdata.sid;
-                enmodal.transit_map.from_json(jdata);
-                
+                enmodal.session_id = j.private_key;
                 if (j.title != null) {
                     $("#map-title-inner").html(j.title + '  <i class="fa fa-pencil" style="margin-left: 5px;" aria-hidden="true"></i>');
-                }
-                
-                if (enmodal.transit_map.services.length == 0) {
-                    session_new();
-                } else {
-
-                    enmodal.transit_interface.active_service = enmodal.transit_map.primary_service();
-                    enmodal.transit_interface.active_line = enmodal.transit_map.primary_service().lines[0];
-                    enmodal.sidebar.update_service_selector(enmodal.transit_interface.active_service.sid, true);
-                    enmodal.sidebar.refresh_service_editor();
-                    enmodal.sidebar.update_line_selector(enmodal.transit_interface.active_line.sid);
-                    enmodal.sidebar.update_line_editor();
-                    enmodal.sidebar.refresh_line_editor();
-                    enmodal.sidebar.update_line_diagram();
-                    
-                    // Updating service selector is enough to draw the service.
-                    //enmodal.transit_interface.draw_service(enmodal.transit_interface.active_service, enmodal.transit_interface.layers.active, true, true);
-
-                    // use user settings where appropriate
-                    var user_settings = jdata.settings;
-                    for (var i = 0; i < user_settings.station_pairs.length; i++) {
-                        var sp = user_settings.station_pairs[i];
-                        var station_1 = enmodal.transit_map.get_station_by_id(sp.station_ids[0]);
-                        var station_2 = enmodal.transit_map.get_station_by_id(sp.station_ids[1]);
-                        var sp_real = enmodal.transit_interface.get_station_pair(station_1, station_2);
-                        if (sp_real != null) {
-                            for (var j = 0; j < sp.pins.length; j++) {
-                                sp_real[0].add_pin(sp.pins[j].location[0], sp.pins[j].location[1]);
-                            }
-                        }
-                    }
-                    
-                    enmodal.transit_interface.draw_transfers();
-                    //enmodal.transit_interface.map.closePopup();
-                    var bounds = enmodal.transit_map.geographic_bounds();
-                    if (bounds != null) enmodal.leaflet_map.fitBounds(bounds);
-                    enmodal.data.get_ridership();
                 }
                 
                 $("#starter-city-picker").hide();
