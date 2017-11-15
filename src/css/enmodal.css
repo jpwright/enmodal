@@ -90,6 +90,11 @@
     background-color: rgba(255, 255, 255, 0.5);
 }
 
+/* bootstrap modifiers */
+.nav-tabs>li>a {
+    background: rgba(255, 255, 255, 0.6);
+}
+
 /* bootstrap-vue modifiers */
 .collapsed > .when-opened,
 :not(.collapsed) > .when-closed {
@@ -112,4 +117,11 @@
 
 .enm button:focus {
     outline: 0;
+}
+
+/* leaflet/esri modifiers */
+.enm .leaflet-pane.leaflet-stationMarker-pane,
+.enm .leaflet-pane.leaflet-inactiveStationMarker-pane,
+.enm .leaflet-pane.leaflet-overlay-pane {
+    z-index: 510;
 }

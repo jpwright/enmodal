@@ -17,34 +17,70 @@ function handle_map_click(e) {
     }
 }
 
-function save_image() {
-    var draw = SVG('svg-drawing').size(2000,2000);
-    
-    enmodal.transit_interface.preview_clear();
-    
-    var svg_overlay = $("div.leaflet-overlay-pane svg").html();
-    var svg_markers = $("div.leaflet-stationMarker-pane svg").html();
-    
-    draw.svg(svg_overlay);
-    draw.svg(svg_markers);
-    
-    var b64 = btoa(draw.svg());
-    var link = $('<a href="data:image/svg+xml;base64,\n'+b64+'" download="enmodal-'+enmodal.session_id+'.svg" style="display:none;"></a>').appendTo('body');
-    link[0].click();
+function set_basemap_style(basemap) {
+    if (enmodal.transit_interface.basemap) {
+        _leaflet_map.removeLayer(enmodal.transit_interface.basemap);
+    }
+    enmodal.transit_interface.basemap = L.esri.basemapLayer(basemap);
+    _leaflet_map.addLayer(enmodal.transit_interface.basemap);
+
+    var basemap_options = {
+        'DarkGray': {
+            'opacity': 1.0,
+            'background-color': '#474749'
+        },
+        'Gray': {
+            'opacity': 1.0,
+            'background-color': '#e8e8e8'
+        },
+        'Imagery': {
+            'opacity': 0.4,
+            'background-color': '#474749'
+        },
+        'Oceans': {
+            'opacity': 1.0,
+            'background-color': '#f1eedd'
+        }
+    };
+
+    if (basemap in basemap_options) {
+        var options = basemap_options[basemap];
+        $("#map.leaflet-container").css('background-color', options['background-color']);
+        _leaflet_map.getPane('tilePane').style.opacity = options['opacity'];
+    }
+}
+
+function set_basemap_labels(basemap, s) {
+
+    if (enmodal.transit_interface.basemapLabels) {
+        _leaflet_map.removeLayer(enmodal.transit_interface.basemapLabels);
+    }
+    if (s) {
+        if (basemap === 'ShadedRelief'
+         || basemap === 'Oceans'
+         || basemap === 'Gray'
+         || basemap === 'DarkGray'
+         || basemap === 'Imagery'
+         || basemap === 'Terrain'
+       ) {
+          enmodal.transit_interface.basemapLabels = L.esri.basemapLayer(basemap + 'Labels');
+          _leaflet_map.addLayer(enmodal.transit_interface.basemapLabels);
+        }
+    }
 }
 
 function init_leaflet_map() {
     // Create leaflet map
     var map = L.map('map', {
         fullscreenControl: true,
-        attributionControl: false
+        attributionControl: false,
     }).setView([40.713, -74.006], START_ZOOM);
 
-    L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+    /*L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
         attribution: '',
         maxZoom: MAX_ZOOM,
         minZoom: MIN_ZOOM
-    }).addTo(map);
+    }).addTo(map);*/
     
     map.on('click', handle_map_click);
 
@@ -327,6 +363,8 @@ $(function() {
         data: new DataLayers(),
         id_factory: _id_factory,
     };
+    set_basemap_style('DarkGray');
+    set_basemap_labels('DarkGray', true);
     init_document();
     if (enmodal.session_id != null) {
         session_load();

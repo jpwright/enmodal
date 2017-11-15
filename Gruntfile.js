@@ -35,6 +35,7 @@ module.exports = function(grunt) {
               'src/js/enmodal/data-layers.js',
               'src/js/enmodal/components.js',
               'src/js/enmodal/draw.js',
+              'src/js/enmodal/image.js',
               'src/js/enmodal/interface.js',
               'src/js/enmodal/markers.js',
               'src/js/enmodal/session.js',

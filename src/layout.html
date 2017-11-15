@@ -21,7 +21,9 @@
 
     <script src="https://unpkg.com/leaflet@1.1.0/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.vectorgrid@1.2.0"></script>
-    <script src="https://cdn.jsdelivr.net/leaflet.esri/2.0.0-beta.8/esri-leaflet.js"></script>
+    <script src="https://unpkg.com/esri-leaflet@2.1.1/dist/esri-leaflet.js"
+    integrity="sha512-ECQqaYZke9cSdqlFG08zSkudgrdF6I1d8ViSa7I3VIszJyVqw4ng1G8sehEXlumdMnFYfzY0tMgdQa4WCs9IUw=="
+    crossorigin=""></script>
     <script src="static/js/navbar-handlers.js"></script>
 </head>
 
@@ -45,7 +47,10 @@
     <script src='static/js/bezier.min.js'></script>
     <script src="static/js/chroma.min.js"></script>
     <script src="static/js/svg.min.js"></script>
-
+    <script type="text/javascript" src="http://canvg.github.io/canvg/rgbcolor.js"></script> 
+    <script type="text/javascript" src="http://canvg.github.io/canvg/StackBlur.js"></script>
+    <script type="text/javascript" src="http://canvg.github.io/canvg/canvg.js"></script>
+    <script src="https://unpkg.com/jspdf@latest/dist/jspdf.min.js"></script>
     <!--
     <script src='static/js/enmodal/settings.js'></script>
     <script src='static/js/enmodal/transit.js'></script>
@@ -162,8 +167,31 @@
             </div>
         </div>
     </template>
+
     <template id="template-button-import-gtfs">
         <a class="button" @click="$emit('click')">Import GTFS</a>
+    </template>
+
+    <template id="template-button-basemap-style">
+        <div>
+            <a class="button multi" @click="setBasemap('Gray')">Light</a>
+            <a class="button multi" @click="setBasemap('DarkGray')">Dark</a>
+            <a class="button multi" @click="setBasemap('Oceans')">Colorful</a>
+            <a class="button multi" @click="setBasemap('Imagery')">Satellite</a>
+        </div>
+    </template>
+
+    <template id="template-button-basemap-labels">
+        <div>
+            <a class="button multi" @click="setLabels(true)">On</a>
+            <a class="button multi" @click="setLabels(false)">Off</a>
+        </div>
+    </template>
+
+    <template id="template-button-export-pdf">
+        <div>
+            <a class="button" @click="exportPdf()">Export PDF</a>
+        </div>
     </template>
     <!-- -->
 

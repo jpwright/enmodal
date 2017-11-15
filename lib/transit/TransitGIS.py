@@ -293,7 +293,8 @@ def reverse_geocode(provider, lat, lng):
                     streets.append(component["short_name"])
                 if "locality" in place_types:
                     result.set_locality(component["long_name"])
-            result.set_streets(streets)
+            if len(streets) > 0:
+                result.set_streets(streets)
 
     return result
         

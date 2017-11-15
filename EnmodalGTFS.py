@@ -2,6 +2,7 @@ from flask import Flask, Blueprint, request, url_for, send_from_directory
 from werkzeug.utils import secure_filename
 import sys
 import os
+import codecs
 import csv
 import zipfile
 
@@ -122,11 +123,33 @@ def stop_to_station(m, stop):
     station = Transit.Station(m.create_sid(), name, [lat, lng])
     return station
 
+def remove_bom_inplace(path):
+    """Removes BOM mark, if it exists, from a file and rewrites it in-place"""
+    #https://www.stefangordon.com/remove-bom-mark-from-text-files-in-python/
+    buffer_size = 4096
+    bom_length = len(codecs.BOM_UTF8)
+ 
+    with open(path, "r+b") as fp:
+        chunk = fp.read(buffer_size)
+        if chunk.startswith(codecs.BOM_UTF8):
+            i = 0
+            chunk = chunk[bom_length:]
+            while chunk:
+                fp.seek(i)
+                fp.write(chunk)
+                i += len(chunk)
+                fp.seek(bom_length, os.SEEK_CUR)
+                chunk = fp.read(buffer_size)
+            fp.seek(-bom_length, os.SEEK_CUR)
+            fp.truncate()
+
 def gtfs_to_simple_map(zip_folder_location):
     m = Transit.Map(0)
 
+    remove_bom_inplace(os.path.join(zip_folder_location, 'agency.txt'))
     agency_file = open(os.path.join(zip_folder_location, 'agency.txt'), 'rb')
     agency_reader = csv.DictReader(agency_file)
+    remove_bom_inplace(os.path.join(zip_folder_location, 'routes.txt'))
     routes_file = open(os.path.join(zip_folder_location, 'routes.txt'), 'rb')
     routes_reader = csv.DictReader(routes_file)
 
@@ -164,14 +187,19 @@ def contains_sublist(lst, sublst):
 def gtfs_to_full_map(zip_folder_location, import_filter):
     m = Transit.Map(0)
 
+    remove_bom_inplace(os.path.join(zip_folder_location, 'agency.txt'))
     agency_file = open(os.path.join(zip_folder_location, 'agency.txt'), 'rb')
     agency_reader = csv.DictReader(agency_file)
+    remove_bom_inplace(os.path.join(zip_folder_location, 'stops.txt'))
     stops_file = open(os.path.join(zip_folder_location, 'stops.txt'), 'rb')
     stops_reader = csv.DictReader(stops_file)
+    remove_bom_inplace(os.path.join(zip_folder_location, 'routes.txt'))
     routes_file = open(os.path.join(zip_folder_location, 'routes.txt'), 'rb')
     routes_reader = csv.DictReader(routes_file)
+    remove_bom_inplace(os.path.join(zip_folder_location, 'trips.txt'))
     trips_file = open(os.path.join(zip_folder_location, 'trips.txt'), 'rb')
     trips_reader = csv.DictReader(trips_file)
+    remove_bom_inplace(os.path.join(zip_folder_location, 'stop_times.txt'))
     stop_times_file = open(os.path.join(zip_folder_location, 'stop_times.txt'), 'rb')
     stop_times_reader = csv.DictReader(stop_times_file)
     
@@ -309,6 +337,18 @@ def gtfs_to_full_map(zip_folder_location, import_filter):
     routes_file.close()
     trips_file.close()
     stop_times_file.close()
+
+    # Post-processing:
+    # Remove any unused stations
+    for service in m.services:
+        stations_to_remove = []
+        for station in service.stations:
+            ec = service.station_edge_count(station)
+            if ec == 0:
+                if station not in stations_to_remove:
+                    stations_to_remove.append(station)
+        for station in stations_to_remove:
+            service.remove_station(station)
 
     return m
 

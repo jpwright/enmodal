@@ -41,6 +41,8 @@ class TransitUI {
                 transfers: L.featureGroup(),
                 station_markers: L.featureGroup({pane: "inactiveStationMarkerPane"}),
             },
+            basemap: null,
+            basemapLabels: null,
             preview: L.featureGroup(),
             data: L.featureGroup(),
         };
@@ -1240,7 +1242,7 @@ class TransitUI {
             var station = line.stops[i].station;
             var station_marker = this.get_station_marker_by_station(station);
             var num_colors = num_unique_colors(this.active_service.station_lines(station));
-            station_marker.set_radius(Math.max(num_colors, 2) * 3);
+            station_marker.set_radius(Math.max(num_colors, 2) * 2.5);
         }
     }
     

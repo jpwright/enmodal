@@ -10,15 +10,15 @@ var ASYNC_OPTIONAL = false;
 
 // Drawing parameters
 var CURVE_THRESHOLD = 0.005; // Max overshoot from curve momentum.
-var MARKER_RADIUS_DEFAULT = 6.0;
+var MARKER_RADIUS_DEFAULT = 4.0;
 var MARKER_RADIUS_LARGE = 8.0;
 var MARKER_RADIUS_HUGE = 12.0;
 var MARKER_MERGE_DELTA = 4.0;
 var STATION_MARKER_LARGE_THRESHOLD = 3; // Number of groups needed to force a large station marker
 var STATION_MARKER_HUGE_THRESHOLD = 4;
 var STATION_MARKER_SCALE_THRESHOLD = 6;
-var TRACK_WIDTH = 6.0;
-var TRACK_OFFSET = 6.0;
+var TRACK_WIDTH = 4.0;
+var TRACK_OFFSET = 4.0;
 var TRANSFER_WIDTH = 3.0;
 var TRANSFER_PREVIEW_OPACITY = 0.75;
 var MAX_TRANSFER_DISTANCE_MILES = 0.25;

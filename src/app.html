@@ -188,7 +188,23 @@
                 
                 <div class="tab-pane" id="tab-settings" role="tabpanel">
                     <div id="option-section-settings" class="option-section">
-                        <button-import-gtfs @click="modal = 'gtfs-import'"></button-import-gtfs>
+                        <div class="option-section-heading">Basemap</div>
+                        <div>
+                            <button-basemap-style></button-basemap-style>
+                        </div>
+                        <div class="option-section-heading">Labels</div>
+                        <div>
+                            <button-basemap-labels></button-basemap-labels>
+                        </div>
+                        <div class="option-section-heading">Import</div>
+                        <div>
+                            <button-import-gtfs @click="modal = 'gtfs-import'"></button-import-gtfs>
+                        </div>
+                        <div class="option-section-heading">Export</div>
+                        <div>
+                            <button-export-pdf></button-export-pdf>
+                        </div>
+                        
                     </div>
                 </div>
 
@@ -206,5 +222,6 @@
     </div>
 
     <div id="svg-drawing" style="display:none;"></div>
+    <canvas id="canvas" width="1000px" height="600px" style="display:none;"></canvas>
     
 {% endblock %}

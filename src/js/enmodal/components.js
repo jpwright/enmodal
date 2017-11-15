@@ -43,6 +43,49 @@ Vue.component('button-import-gtfs', {
     },
 });
 
+Vue.component('button-export-pdf', {
+  template: '#template-button-export-pdf',
+    props: {
+        visible: {type: Boolean, default: true}
+    },
+    methods: {
+      exportPdf: function() {
+        save_pdf();
+      }
+    }
+});
+
+Vue.component('button-basemap-style', {
+  template: '#template-button-basemap-style',
+    props: {
+        visible: {type: Boolean, default: true}
+    },
+    methods: {
+      setBasemap: function(basemap) {
+        if (basemap != app.basemapStyle) {
+          set_basemap_style(basemap);
+          set_basemap_labels(basemap, app.basemapLabels);
+          app.basemapStyle = basemap;
+        }
+      }
+    }
+});
+
+Vue.component('button-basemap-labels', {
+  template: '#template-button-basemap-labels',
+    props: {
+        visible: {type: Boolean, default: true}
+    },
+    methods: {
+      setLabels: function(s) {
+        if (s != app.basemapLabels) {
+          set_basemap_labels(app.basemapStyle, s);
+          app.basemapLabels = s;
+        }
+      }
+    }
+});
+
 const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_ANALYZING = 2, STATUS_SUCCESS = 3, STATUS_FAILED = 4, STATUS_IMPORTING = 5;
 
 Vue.component('modal-gtfs-import', {
@@ -210,5 +253,7 @@ var app = new Vue({
       modal: 'city-picker',
       upload_status: STATUS_INITIAL,
       gtfsImportMap: null,
+      basemapStyle: 'DarkGray',
+      basemapLabels: true
     }
 });

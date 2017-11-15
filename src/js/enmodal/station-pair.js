@@ -331,7 +331,7 @@ class StationPair {
         for (var i = 0; i < this.line_spline_segments.length; i++) {
             var lss = this.line_spline_segments[i];
             var offset = this.lss_pos_color(lss)*2 - (this.num_lines_color()-1);
-            var path = this.generate_path(lss, lss.line.color_bg, offset, 6, opacity);
+            var path = this.generate_path(lss, lss.line.color_bg, offset, TRACK_WIDTH, opacity);
             if (path != null) this.paths.push(path);
             // for debug only
             //this.draw_paths();

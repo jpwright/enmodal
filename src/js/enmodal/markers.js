@@ -16,7 +16,7 @@ class StationMarker {
         var latlng = L.latLng(this.station.location[0], this.station.location[1]);
         var opacity = 1.0;
         if (!this.active) opacity = INACTIVE_OPACITY;
-        var marker = L.circleMarker(latlng, {draggable: true, color: "black", opacity: opacity, fillColor: "white", fillOpacity: opacity, zIndexOffset: 100, pane: "stationMarkerPane"}).setRadius(MARKER_RADIUS_DEFAULT).bindTooltip(this.station.name, this.tooltip_options);
+        var marker = L.circleMarker(latlng, {draggable: true, color: "black", opacity: opacity, fillColor: "white", fillOpacity: opacity, zIndexOffset: 100, pane: "stationMarkerPane"}).setRadius(this.radius).bindTooltip(this.station.name, this.tooltip_options);
         if (this.active) {
             marker.on('click', function(event) {
                 if (enmodal.transit_interface.active_tool == "transfer") {

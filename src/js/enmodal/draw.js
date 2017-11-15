@@ -34,7 +34,7 @@ class EdgePath {
         this.offset = offset;
         this.color = color;
         this.opacity = opacity;
-        this.track_width = 6;
+        this.track_width = TRACK_WIDTH;
         this.path = this.generate_path(this.color, this.opacity);
     }
 

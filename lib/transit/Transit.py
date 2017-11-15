@@ -269,6 +269,16 @@ class Line(object):
                 return edge
         return None
 
+    def edges_for_stop(self, stop):
+        edges = []
+        for edge in self.edges:
+            if edge.has_stop(stop):
+                edges.append(edge)
+        return edges
+
+    def edge_count_for_stop(self, stop):
+        return len(self.edges_for_stop(stop))
+
     def neighbors(self, stop):
         # Returns all neighbors of the input stop.
 
@@ -450,6 +460,13 @@ class Service(object):
         self.stations.append(s)
 
     def remove_station(self, s):
+        for line in self.lines:
+            stop = line.get_stop_from_station(station)
+            if stop is not None:
+                edges = line.edges_for_stop(stop)
+                for edge in edges:
+                    line.remove_edge(edge)
+                line.remove_stop(stop)
         self.stations.remove(s)
 
     def has_station(self, i):
@@ -481,6 +498,14 @@ class Service(object):
         
     def remove_transfer(self, t):
         self.transfers.remove(t)
+
+    def station_edge_count(self, station):
+        ec = 0
+        for line in self.lines:
+            stop = line.get_stop_from_station(station)
+            if stop is not None:
+                ec += line.edge_count_for_stop(stop)
+        return ec
     
     def get_stop_neighbors(self, line, stop):
         neighbors = {}
@@ -498,7 +523,7 @@ class Service(object):
                 stop = line.get_stop_from_station(s)
                 stop_neighbors = self.get_stop_neighbors(line, stop)
                 for neighbor in stop_neighbors:
-                    neighbor_station = self.find_station(neighbor.station_id)
+                    neighbor_station = self.get_station_by_id(neighbor.station_id)
                     if neighbor_station not in neighbors:
                         neighbors[neighbor_station] = stop_neighbors[neighbor]
         return neighbors
