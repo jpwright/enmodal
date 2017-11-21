@@ -1,0 +1,17 @@
+#sidebar {
+    position: absolute;
+    padding: 46px 12px 12px 12px;
+    right: 0px;
+    top: 0px;
+    bottom: 0px;
+    background: rgba(0, 0, 0, 0.75);
+    color: white;
+    z-index: 5000;
+    max-height: 100%;
+    width: 25%;
+    min-width: 310px;
+    display: flex;
+    display: -webkit-flex;
+    flex-direction: column;
+    height: 100vh;
+}

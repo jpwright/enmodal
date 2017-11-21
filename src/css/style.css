@@ -702,23 +702,6 @@ ul.ui-autocomplete {
     border: none;
 }
 
-#options {
-    position: absolute;
-    padding: 46px 12px 12px 12px;
-    right: 0px;
-    top: 0px;
-    bottom: 0px;
-    background: rgba(0, 0, 0, 0.65);
-    color: white;
-    z-index: 5000;
-    max-height: 100%;
-    width: 25%;
-    display: flex;
-    display: -webkit-flex;
-    flex-direction: column;
-    height: 100vh;
-}
-
 .nav-tabs a {
     font-size: 1em;
     color: rgb(58, 80, 114);

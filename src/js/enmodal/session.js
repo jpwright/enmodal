@@ -97,6 +97,7 @@ function session_load() {
                 enmodal.session_id = j.private_key;
                 if (j.title != null) {
                     $("#map-title-inner").html(j.title + '  <i class="fa fa-pencil" style="margin-left: 5px;" aria-hidden="true"></i>');
+                    enmodal.map_name = j.title;
                 }
                 
                 $("#starter-city-picker").hide();

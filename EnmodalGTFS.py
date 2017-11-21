@@ -2,6 +2,7 @@ from flask import Flask, Blueprint, request, url_for, send_from_directory
 from werkzeug.utils import secure_filename
 import sys
 import os
+import shutil
 import codecs
 import csv
 import zipfile
@@ -64,6 +65,8 @@ def route_gtfs_upload():
     
     if file and allowed_file(file.filename):
         filename = secure_filename(request.args.get('i') + ".zip")
+        if not os.path.isdir(UPLOAD_FOLDER):
+            os.mkdir(UPLOAD_FOLDER)
         file.save(os.path.join(UPLOAD_FOLDER, filename))
         return json.dumps({"result": "OK", "message": url_for('enmodal_gtfs.uploaded_file', filename=filename)})
     else:
@@ -388,10 +391,14 @@ def route_gtfs_import():
     m = a.session.map
     m.regenerate_all_ids()
 
+    zip_file_location = os.path.join(UPLOAD_FOLDER, request.args.get('i') + ".zip")
     zip_folder_location = os.path.join(UPLOAD_FOLDER, request.args.get('i'))
 
     m = gtfs_to_full_map(zip_folder_location, f)
                 
     a.session.map = m
+
+    os.remove(zip_file_location)
+    shutil.rmtree(zip_folder_location)
     
     return m.to_json()

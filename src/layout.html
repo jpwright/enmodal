@@ -6,6 +6,7 @@
     <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
     <link rel="stylesheet" href="static/css/style.css" />
     <link rel="stylesheet" href="static/css/enmodal.css" />
+    <link rel="stylesheet" href="static/css/sidebar.css" />
     <link rel="stylesheet" href="static/css/modal.css" />
     <link rel="stylesheet" href="static/css/animate.css" />
     <link rel="stylesheet" href="static/css/balloon.css" />
@@ -82,6 +83,43 @@
                     <div class="enm modal-row">
                         <input id="city-picker-input" class="large picker" type="text" placeholder="New York City" autocomplete="off" />
                         <a class="button large picker" @click="$emit('close')">Start</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="template-modal-pro-gate">
+        <div class="enm modal">
+            <div class="enm modal-middle">
+                <div class="enm modal-inner">
+                    <div class="enm modal-col">
+                        <div class="header">Beta Test Only<a class="button" @click="$emit('close')">close</a></div>
+                        <div class="body">
+                            <p>
+                                This feature isn't yet available in the alpha version of enmodal!
+                            </p>
+                            <p>
+                                We are running a closed beta for transit agencies and planning professionals while we work out the bugs before releasing to a general audience. If you're interested in signing up, please <a href="mailto:jason@jpwright.net?subject=interested%20in%20enmodal%20closed%20beta">contact us</a>.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="template-modal-exporting-pdf">
+        <div class="enm modal">
+            <div class="enm modal-middle">
+                <div class="enm modal-inner">
+                    <div class="enm modal-col">
+                        <div class="header">Exporting PDF...</div>
+                        <div class="body">
+                            <p style="text-align:center;">
+                                <i class="fa fa-3x fa-spinner fa-spin"></i>
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

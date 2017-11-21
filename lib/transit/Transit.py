@@ -461,7 +461,7 @@ class Service(object):
 
     def remove_station(self, s):
         for line in self.lines:
-            stop = line.get_stop_from_station(station)
+            stop = line.get_stop_from_station(s)
             if stop is not None:
                 edges = line.edges_for_stop(stop)
                 for edge in edges:

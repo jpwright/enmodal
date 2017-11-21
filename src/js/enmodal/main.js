@@ -331,6 +331,7 @@ function init_document() {
                     async: false,
                     dataType: 'json',
                     success: function(data, status) {
+                        enmodal.map_name = newText;
                     }
                 });
             }).keyup(function(e) {
@@ -360,6 +361,7 @@ $(function() {
         leaflet_map: _leaflet_map,
         transit_map: new Map(),
         transit_interface: new TransitUI(_leaflet_map),
+        map_name: null,
         data: new DataLayers(),
         id_factory: _id_factory,
     };

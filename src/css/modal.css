@@ -1,5 +1,8 @@
 .enm.modal {
     width: 75%;
+    max-width: -webkit-calc(100% - 310px);
+    max-width: -moz-calc(100% - 310px);
+    max-width: calc(100% - 310px);
     height: 100%;
     color: white;
     display: table;
@@ -15,7 +18,7 @@
 
 .enm.modal-inner {
     width: 80%;
-    background: rgba(0, 0, 0, 0.65);
+    background: rgba(0, 0, 0, 0.75);
     border: 1px solid #777;
     display: flex;
     margin: auto;

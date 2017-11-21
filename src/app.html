@@ -18,7 +18,8 @@
     
     <modal-city-picker id="modal-city-picker" v-if="modal === 'city-picker'" @close="modal='none'"></modal-city-picker>
     <modal-gtfs-import id="modal-gtfs-import" v-if="modal === 'gtfs-import'" @close="modal='none'"></modal-gtfs-import>
-
+    <modal-pro-gate id="modal-pro-gate" v-if="modal === 'pro-gate'" @close="modal='none'"></modal-pro-gate>
+    <modal-exporting-pdf id="modal-exporting-pdf" v-if="modal === 'exporting-pdf'"></modal-exporting-pdf>
     <!--
             <div class="starter-inner" id="starter-share" style="display: none;">
                 <div class="share-header">Sharing</div>
@@ -70,7 +71,7 @@
         <div id="scale-units"></div>
     </div>
     
-    <div id="options">
+    <div id="sidebar">
         <div id="options-container">
             <div id="option-section-tools" class="option-section">
 
@@ -198,7 +199,8 @@
                         </div>
                         <div class="option-section-heading">Import</div>
                         <div>
-                            <button-import-gtfs @click="modal = 'gtfs-import'"></button-import-gtfs>
+                            <!--<button-import-gtfs @click="modal = 'gtfs-import'"></button-import-gtfs>-->
+                            <button-import-gtfs @click="modal = 'pro-gate'"></button-import-gtfs>
                         </div>
                         <div class="option-section-heading">Export</div>
                         <div>

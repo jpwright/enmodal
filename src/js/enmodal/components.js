@@ -7,6 +7,20 @@ Vue.component('modal-city-picker', {
     },
 });
 
+Vue.component('modal-pro-gate', {
+    template: '#template-modal-pro-gate',
+    props: {
+        visible: {type: Boolean, default: true}
+    },
+});
+
+Vue.component('modal-exporting-pdf', {
+    template: '#template-modal-exporting-pdf',
+    props: {
+        visible: {type: Boolean, default: true}
+    },
+});
+
 Vue.component('collapse-caret', {
     template: '#template-collapse-caret',
     props: {
@@ -50,7 +64,10 @@ Vue.component('button-export-pdf', {
     },
     methods: {
       exportPdf: function() {
-        save_pdf();
+        app.modal = 'exporting-pdf';
+        save_pdf(function() {
+          app.modal = 'none';
+        });
       }
     }
 });

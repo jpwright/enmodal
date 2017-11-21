@@ -62,11 +62,13 @@ module.exports = function(grunt) {
       files: ['Gruntfile.js', 'src/js/enmodal/*.js'],
       options: {
         reporterOutput: "",
+        esnext: true,
         globals: {
           jQuery: true
         }
       }
     },
+
     watch: {
       files: ['<%= jshint.files %>', 'src/*.html', 'src/css/*.css'],
       tasks: ['copy', 'concat', 'uglify']
@@ -79,6 +81,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-uglify');
+  grunt.loadNpmTasks('grunt-vue');
 
   // Default task.
   grunt.registerTask('default', ['copy', 'concat', 'uglify', 'jshint']);
