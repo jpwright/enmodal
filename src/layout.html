@@ -126,6 +126,22 @@
         </div>
     </template>
 
+    <template id="template-modal-session-expired">
+        <div class="enm modal">
+            <div class="enm modal-middle">
+                <div class="enm modal-inner">
+                    <div class="enm modal-col">
+                        <div class="header">Session Expired</div>
+                        <div class="body">
+                            <p>Sadly, your session has expired. This could be because you stopped editing your map for a long time, or we had a server interruption that unfortunately impacted your session.</p>
+                            <p>To continue editing, just refresh the page (or wait 5 seconds).</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
     <template id="template-collapse-caret">
         <a class="button collapse-caret" @click="$emit('collapse')"><i class="fa fa-caret-right" aria-hidden="true"></i></a>
     </template>

@@ -21,6 +21,13 @@ Vue.component('modal-exporting-pdf', {
     },
 });
 
+Vue.component('modal-session-expired', {
+    template: '#template-modal-session-expired',
+    props: {
+        visible: {type: Boolean, default: true}
+    },
+});
+
 Vue.component('collapse-caret', {
     template: '#template-collapse-caret',
     props: {

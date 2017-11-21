@@ -416,7 +416,7 @@ class TransitUI {
                     $.ajax({ url: "edge_remove?"+params,
                         async: ASYNC_REQUIRED,
                         dataType: 'json',
-                        success: handle_server_error
+                        success: check_server_error
                     });
                 }
             }
@@ -434,7 +434,7 @@ class TransitUI {
             async: ASYNC_REQUIRED,
             dataType: 'json',
             success: function(data, status) {
-                handle_server_error(data);
+                check_server_error(data);
                 station.name = data.name;
                 if ("locality" in data) {
                     station.locality = data.locality;
@@ -463,7 +463,7 @@ class TransitUI {
                         async: false,
                         dataType: 'json',
                         success: function(data, status) {
-                            handle_server_error(data);
+                            check_server_error(data);
                             for (var i = 0; i < best_edges.length; i++) {
                                 var params = $.param({
                                     i: enmodal.session_id,
@@ -476,7 +476,7 @@ class TransitUI {
                                 $.ajax({ url: "edge_add?"+params,
                                     async: ASYNC_REQUIRED,
                                     dataType: 'json',
-                                    success: handle_server_error
+                                    success: check_server_error
                                 });
                             }
                         }
@@ -515,7 +515,7 @@ class TransitUI {
                 $.ajax({ url: "edge_remove?"+params,
                     async: ASYNC_REQUIRED,
                     dataType: 'json',
-                    success: handle_server_error
+                    success: check_server_error
                 });
             }
         }
@@ -533,7 +533,7 @@ class TransitUI {
                 $.ajax({ url: "edge_remove?"+params,
                     async: ASYNC_REQUIRED,
                     dataType: 'json',
-                    success: handle_server_error
+                    success: check_server_error
                 });
             }
         }
@@ -554,7 +554,7 @@ class TransitUI {
                 async: ASYNC_REQUIRED,
                 dataType: 'json',
                 success: function(data, status) {
-                    handle_server_error(data);
+                    check_server_error(data);
                 }
             });
         }
@@ -625,7 +625,7 @@ class TransitUI {
                     $.ajax({ url: "edge_add?"+params,
                         async: ASYNC_REQUIRED,
                         dataType: 'json',
-                        success: handle_server_error
+                        success: check_server_error
                     });
                 }
             }
@@ -659,7 +659,7 @@ class TransitUI {
             async: ASYNC_OPTIONAL,
             dataType: 'json',
             success: function(data, status) {
-                handle_server_error(data);
+                check_server_error(data);
                 station.name = data.name;
                 if ("locality" in data) {
                     station.locality = data.locality;
@@ -691,7 +691,7 @@ class TransitUI {
             async: ASYNC_REQUIRED,
             dataType: 'json',
             success: function(data, status) {
-                handle_server_error(data);
+                check_server_error(data);
                 enmodal.data.get_ridership();
             }
         });
@@ -753,7 +753,7 @@ class TransitUI {
                     $.ajax({ url: "edge_remove?"+params,
                         async: ASYNC_REQUIRED,
                         dataType: 'json',
-                        success: handle_server_error
+                        success: check_server_error
                     });
                 }
             }
@@ -784,7 +784,7 @@ class TransitUI {
                         $.ajax({ url: "edge_add?"+params,
                             async: ASYNC_REQUIRED,
                             dataType: 'json',
-                            success: handle_server_error
+                            success: check_server_error
                         });
                     }
                 }
@@ -838,7 +838,7 @@ class TransitUI {
                         $.ajax({ url: "stop_remove?"+params,
                             async: ASYNC_REQUIRED,
                             dataType: 'json',
-                            success: handle_server_error
+                            success: check_server_error
                         });
                     }
 
@@ -887,7 +887,7 @@ class TransitUI {
                             $.ajax({ url: "edge_remove?"+params,
                                 async: ASYNC_REQUIRED,
                                 dataType: 'json',
-                                success: handle_server_error
+                                success: check_server_error
                             });
                         }
                         j -= 1;
@@ -928,7 +928,7 @@ class TransitUI {
                                     $.ajax({ url: "edge_add?"+params,
                                         async: ASYNC_REQUIRED,
                                         dataType: 'json',
-                                        success: handle_server_error
+                                        success: check_server_error
                                     });
                                 }
                             }
@@ -966,7 +966,7 @@ class TransitUI {
                                 $.ajax({ url: "edge_add?"+params,
                                     async: ASYNC_REQUIRED,
                                     dataType: 'json',
-                                    success: handle_server_error
+                                    success: check_server_error
                                 });
                             }
                         }
@@ -982,7 +982,7 @@ class TransitUI {
                                 $.ajax({ url: "edge_remove?"+params,
                                     async: ASYNC_REQUIRED,
                                     dataType: 'json',
-                                    success: handle_server_error
+                                    success: check_server_error
                                 });
                             }
                         }
@@ -1008,7 +1008,7 @@ class TransitUI {
                     $.ajax({ url: "station_remove?"+params,
                         async: ASYNC_REQUIRED,
                         dataType: 'json',
-                        success: handle_server_error
+                        success: check_server_error
                     });
                 }
         
@@ -1082,7 +1082,7 @@ class TransitUI {
                 $.ajax({ url: "stop_remove?"+params,
                     async: ASYNC_REQUIRED,
                     dataType: 'json',
-                    success: handle_server_error
+                    success: check_server_error
                 });
             }
 
@@ -1104,7 +1104,7 @@ class TransitUI {
                         $.ajax({ url: "edge_remove?"+params,
                             async: ASYNC_REQUIRED,
                             dataType: 'json',
-                            success: handle_server_error
+                            success: check_server_error
                         });
                     }
                     j -= 1;
@@ -1145,7 +1145,7 @@ class TransitUI {
                             $.ajax({ url: "edge_add?"+params,
                                 async: ASYNC_REQUIRED,
                                 dataType: 'json',
-                                success: handle_server_error
+                                success: check_server_error
                             });
                         }
                     }
@@ -1182,7 +1182,7 @@ class TransitUI {
                             $.ajax({ url: "edge_add?"+params,
                                 async: ASYNC_REQUIRED,
                                 dataType: 'json',
-                                success: handle_server_error
+                                success: check_server_error
                             });
                         }
                     }
@@ -1198,7 +1198,7 @@ class TransitUI {
                             $.ajax({ url: "edge_remove?"+params,
                                 async: ASYNC_REQUIRED,
                                 dataType: 'json',
-                                success: handle_server_error
+                                success: check_server_error
                             });
                         }
                     }
@@ -1764,12 +1764,11 @@ class LineDelta {
 
 }
 
-function handle_server_error(data) {
+function check_server_error(data) {
     if ("error" in data) {
         console.log(data.error);
         if (data.error == "Invalid session") {
-            $("#session-expired").show();
-            $("#starter").show();
+            app.modal = 'session-expired';
             setTimeout(function() {
                 location.reload();
             }, 5000);
