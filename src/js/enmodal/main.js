@@ -333,6 +333,19 @@ function init_document() {
             });
         }
     });
+
+    // Ctrl+key handlers
+    $(document).keydown(function(e) {
+        console.log("keydown");
+        if (e.which === 89 && e.ctrlKey) {
+            console.log("ctrl+y");
+            redo();
+        }
+        else if (e.which === 90 && e.ctrlKey) {
+            console.log("ctrl+z");
+            undo();
+        }          
+    });
     
     new Clipboard('.share-link-copy-button');
 }
@@ -341,6 +354,8 @@ function init_document() {
 var _id_factory;
 var _leaflet_map;
 var enmodal;
+var _undo_buffer = [];
+var _undo_index = null;
 
 $(function() {
     // Create global variables and start the session
@@ -365,4 +380,5 @@ $(function() {
     } else if (window.location.pathname != "/view") {
         session_new();
     }
+    push_undo_buffer();
 });

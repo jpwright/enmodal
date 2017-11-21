@@ -88,3 +88,5 @@ var DEBUG_BEZIER_CONTROLS = false;
 var DEBUG_PIN_PROJECTIONS = false;
 
 var GTFS_ENABLED = true;
+
+var UNDO_BUFFER_SIZE = 20;

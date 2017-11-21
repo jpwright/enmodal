@@ -102,6 +102,8 @@ class TransitUI {
                 this.moving_station_marker = null;
                 this.purge_bad_transfers();
                 enmodal.sidebar.update_line_diagram();
+
+                push_undo_buffer();
             }
         });
 
@@ -126,6 +128,34 @@ class TransitUI {
             }
             */
         });
+    }
+
+    draw_map() {
+        this.layers.active.station_markers.clearLayers();
+        this.layers.active.line_paths.clearLayers();
+        this.layers.inactive.station_markers.clearLayers();
+        this.layers.inactive.line_paths.clearLayers();
+
+        this.station_markers = [];
+        this.purge_station_pairs();
+
+        for (var i = 0; i < enmodal.transit_map.services.length; i++) {
+            var service = enmodal.transit_map.services[i];
+            var layer;
+            if (service == enmodal.transit_interface.active_service) {
+                layer = enmodal.transit_interface.layers.active;
+            } else {
+                layer = enmodal.transit_interface.layers.inactive;
+            }
+            enmodal.transit_interface.draw_service(service, layer, true, true);
+            for (var j = 0; j < service.stations.length; j++) {
+                var station = service.stations[j];
+                // Update popup.
+                var station_marker = enmodal.transit_interface.get_station_marker_by_station(station);
+                station_marker.generate_popup();
+                station_marker.update_tooltip();
+            }
+        }
     }
     
     // Draw all stations and lines of a service onto a particular layer
@@ -339,7 +369,7 @@ class TransitUI {
     
     get_station_marker_by_station(station) {
         for (var i = 0; i < this.station_markers.length; i++) {
-            if (station == this.station_markers[i].station) {
+            if (station.sid == this.station_markers[i].station.sid) {
                 return this.station_markers[i];
             }
         }
@@ -495,6 +525,8 @@ class TransitUI {
         enmodal.data.get_ridership();
         enmodal.sidebar.update_line_diagram();
         
+        push_undo_buffer();
+
         return station;
     }
     
@@ -807,6 +839,8 @@ class TransitUI {
         enmodal.data.get_ridership();
         enmodal.sidebar.update_line_diagram();
 
+        push_undo_buffer();
+
     }
 
     remove_station(id, force_closure) {
@@ -1048,6 +1082,8 @@ class TransitUI {
         enmodal.data.get_ridership();
         enmodal.sidebar.update_line_diagram();
 
+        push_undo_buffer();
+
     }
     
     remove_line_from_station(station_id, line_id) {
@@ -1215,6 +1251,8 @@ class TransitUI {
 
         enmodal.data.get_ridership();
         enmodal.sidebar.update_line_diagram();
+
+        push_undo_buffer();
 
     }
     
@@ -1762,6 +1800,53 @@ class LineDelta {
         this.remove = remove;
     }
 
+}
+
+function push_undo_buffer() {
+    if (_undo_index < _undo_buffer.length - 1) {
+        _undo_buffer.splice(_undo_index, _undo_buffer.length - _undo_index - 1);
+    }
+    if (_undo_buffer.length == UNDO_BUFFER_SIZE) {
+        _undo_buffer.splice(0, 1);
+    }
+    _undo_buffer.push(enmodal.transit_map.to_json());
+    _undo_index = _undo_buffer.length - 1;
+}
+
+function undo() {
+    if (_undo_index === null) {
+        _undo_index = _undo_buffer.length;
+    }
+    if (_undo_index <= 0) return;
+
+    _undo_index -= 1;
+
+    var j = _undo_buffer[_undo_index];
+
+    var as = enmodal.transit_interface.active_service;
+    var al = enmodal.transit_interface.active_line;
+    enmodal.transit_map.from_json(JSON.parse(j));
+    enmodal.sidebar.update_service_selector(as.sid, false);
+    enmodal.sidebar.update_line_selector(al.sid);
+    
+    enmodal.transit_interface.draw_map();
+}
+
+function redo() {
+    if (_undo_index === null) return;
+    if (_undo_index >=  _undo_buffer.length - 1) return;
+
+    _undo_index += 1;
+
+    var j = _undo_buffer[_undo_index];
+
+    var as = enmodal.transit_interface.active_service;
+    var al = enmodal.transit_interface.active_line;
+    enmodal.transit_map.from_json(JSON.parse(j));
+    enmodal.sidebar.update_service_selector(as.sid, false);
+    enmodal.sidebar.update_line_selector(al.sid);
+    
+    enmodal.transit_interface.draw_map();
 }
 
 function check_server_error(data) {

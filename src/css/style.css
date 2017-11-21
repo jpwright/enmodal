@@ -356,7 +356,7 @@ input.station-name-edit {
 }
 
 #route-diagram {
-    background: rgba(255, 255, 255, 0.10);
+    background: rgba(50, 50, 50, 0.75);
     top: 0px;
     height: 100%;
     width: 100%;
