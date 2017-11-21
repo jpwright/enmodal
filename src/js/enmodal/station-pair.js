@@ -103,7 +103,7 @@ class StationPair {
             }
         }
         for (var j = 0; j < used_lines.length; j++) {
-            if (used_lines[j] == lss_line.line) {
+            if (used_lines[j] == ss.line) {
                 return j;
             }
         }
@@ -128,6 +128,7 @@ class StationPair {
     
     average_sss() {
         var a = [];
+        var k;
         // Sum all the control points
         for (var i = 0; i < this.line_spline_segments.length; i++) {
             var lss = this.line_spline_segments[i];
@@ -138,11 +139,11 @@ class StationPair {
                     var controls = []; //JSON.parse(JSON.stringify(ss.controls));
                     var centers = []; //JSON.parse(JSON.stringify(ss.centers));
                     // Add centers
-                    for (var k = 0; k < ss.centers.length; k++) {
+                    for (k = 0; k < ss.centers.length; k++) {
                         centers.push(new BezierCenter(ss.centers[k].lat, ss.centers[k].lng));
                     }
                     // Add controls
-                    for (var k = 0; k < ss.controls.length; k++) {
+                    for (k = 0; k < ss.controls.length; k++) {
                         controls.push(new BezierControlPoint(ss.controls[k].lat, ss.controls[k].lng));
                     }
                     a.push(new SplineSegment(controls, centers));
@@ -153,7 +154,7 @@ class StationPair {
                         a[j].centers[k].lng += ss.centers[k].lng;
                     }*/
                     // Add controls
-                    for (var k = 0; k < ss.controls.length; k++) {
+                    for (k = 0; k < ss.controls.length; k++) {
                         a[j].controls[k].lat += ss.controls[k].lat;
                         a[j].controls[k].lng += ss.controls[k].lng;
                     }
@@ -161,17 +162,17 @@ class StationPair {
             }
         }
         // Divide by number of lines
-        for (var j = 0; j < a.length; j++) {
-            var s = a[j];
+        for (i = 0; i < a.length; i++) {
+            var s = a[i];
             // Divide centers
             /*for (var k = 0; k < s.centers.length; k++) {
                 a[j].centers[k].lat = a[j].centers[k].lat / this.line_spline_segments.length;
                 a[j].centers[k].lng = a[j].centers[k].lng / this.line_spline_segments.length;
             }*/
             // Divide controls
-            for (var k = 0; k < s.controls.length; k++) {
-                a[j].controls[k].lat = a[j].controls[k].lat / this.line_spline_segments.length;
-                a[j].controls[k].lng = a[j].controls[k].lng / this.line_spline_segments.length;
+            for (k = 0; k < s.controls.length; k++) {
+                a[i].controls[k].lat = a[i].controls[k].lat / this.line_spline_segments.length;
+                a[i].controls[k].lng = a[i].controls[k].lng / this.line_spline_segments.length;
             }
         }
         this.group_sss = a;
@@ -184,13 +185,14 @@ class StationPair {
         var best_p = null;
         for (var i = 0; i < sss.length; i++) {
             var ss = sss[i];
+            var curve;
             if (ss.controls.length == 1) {
-                var curve = new Bezier(ss.centers[0].lat, ss.centers[0].lng, ss.controls[0].lat, ss.controls[0].lng, ss.centers[1].lat, ss.centers[1].lng);
+                curve = new Bezier(ss.centers[0].lat, ss.centers[0].lng, ss.controls[0].lat, ss.controls[0].lng, ss.centers[1].lat, ss.centers[1].lng);
             } else {
-                var curve = new Bezier(ss.centers[0].lat, ss.centers[0].lng, ss.controls[0].lat, ss.controls[0].lng, ss.controls[1].lat, ss.controls[1].lng, ss.centers[1].lat, ss.centers[1].lng);
+                curve = new Bezier(ss.centers[0].lat, ss.centers[0].lng, ss.controls[0].lat, ss.controls[0].lng, ss.controls[1].lat, ss.controls[1].lng, ss.centers[1].lat, ss.centers[1].lng);
             }
             var p = curve.project({x: lat, y: lng});
-            if (best_p == null || p.d < min_distance) {
+            if (best_p === null || p.d < min_distance) {
                 min_distance = p.d;
                 best_p = p;
             }
@@ -227,9 +229,9 @@ class StationPair {
     
     generate_path(lss, color, offset, weight, opacity) {  
         var path = null;
+        var self = this;
         if (this.service.mode == "bus") {
             if (this.increment_draw_counter() || !this.street_path_is_valid) {
-                var self = this;
                 var params = $.param({
                     i: enmodal.session_id,
                     service_id: enmodal.transit_interface.active_service.sid,
@@ -293,10 +295,11 @@ class StationPair {
         var new_pt = null;
         for (var i = 0; i < sss.length; i++) {
             var ss = sss[i];
+            var curve;
             if (ss.controls.length == 1) {
-                var curve = new Bezier(ss.centers[0].lat, ss.centers[0].lng, ss.controls[0].lat, ss.controls[0].lng, ss.centers[1].lat, ss.centers[1].lng);
+                curve = new Bezier(ss.centers[0].lat, ss.centers[0].lng, ss.controls[0].lat, ss.controls[0].lng, ss.centers[1].lat, ss.centers[1].lng);
             } else {
-                var curve = new Bezier(ss.centers[0].lat, ss.centers[0].lng, ss.controls[0].lat, ss.controls[0].lng, ss.controls[1].lat, ss.controls[1].lng, ss.centers[1].lat, ss.centers[1].lng);
+                curve = new Bezier(ss.centers[0].lat, ss.centers[0].lng, ss.controls[0].lat, ss.controls[0].lng, ss.controls[1].lat, ss.controls[1].lng, ss.centers[1].lat, ss.centers[1].lng);
             }
             var steps = curve.getLUT(BEZIER_LUT_STEPS);
             
@@ -332,7 +335,7 @@ class StationPair {
             var lss = this.line_spline_segments[i];
             var offset = this.lss_pos_color(lss)*2 - (this.num_lines_color()-1);
             var path = this.generate_path(lss, lss.line.color_bg, offset, TRACK_WIDTH, opacity);
-            if (path != null) this.paths.push(path);
+            if (path !== null) this.paths.push(path);
             // for debug only
             //this.draw_paths();
             if (DEBUG_BEZIER_CONTROLS) {
@@ -442,7 +445,7 @@ class StationPair {
             station_ids.push(this.stations[i].sid);
         }
         var pins = [];
-        for (var i = 0; i < this.pins.length; i++) {
+        for (i = 0; i < this.pins.length; i++) {
             pins.push(this.pins[i].toJSON());
         }
         return {"sid": this.sid, "station_ids": station_ids, "pins": pins};

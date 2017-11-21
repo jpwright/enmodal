@@ -39,10 +39,11 @@ class EdgePath {
     }
 
     generate_path(color, opacity) {
-        if (this.control_points.length == 0) {
-            var path = L.polyline([L.latLng(this.stop_points[0][0], this.stop_points[0][1]), L.latLng(this.stop_points[1][0], this.stop_points[1][1])], {weight: this.track_width, color: color, opacity: opacity});
-        } else if (this.control_points[0].length == 0) {
-            var path = L.polyline([L.latLng(this.stop_points[0][0], this.stop_points[0][1]), L.latLng(this.stop_points[1][0], this.stop_points[1][1])], {weight: this.track_width, color: color, opacity: opacity});
+        var path;
+        if (this.control_points.length === 0) {
+            path = L.polyline([L.latLng(this.stop_points[0][0], this.stop_points[0][1]), L.latLng(this.stop_points[1][0], this.stop_points[1][1])], {weight: this.track_width, color: color, opacity: opacity});
+        } else if (this.control_points[0].length === 0) {
+            path = L.polyline([L.latLng(this.stop_points[0][0], this.stop_points[0][1]), L.latLng(this.stop_points[1][0], this.stop_points[1][1])], {weight: this.track_width, color: color, opacity: opacity});
         } else {
             var bezier_options = [
                                     'M',
@@ -57,7 +58,7 @@ class EdgePath {
                 bezier_options.push.apply(bezier_options, new_options);
             }
             var curve_options = {"color": color, "weight": this.track_width, "opacity": opacity, "fill": false, "smoothFactor": 1.0, "offset": this.offset*(this.track_width/2), "clickable": false, "pointer-events": "none", "className": "no-hover"};
-            var path = L.curve(bezier_options, curve_options);
+            path = L.curve(bezier_options, curve_options);
         }
         return path;
     }

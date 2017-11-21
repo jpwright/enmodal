@@ -7,17 +7,17 @@ $(function() {
             dataType: 'json',
             success: function(data, status) {
                 console.log("register");
-                if (data["result"] == "OK") {
+                if (data.result == "OK") {
                     $(".form-group").removeClass("has-error");
                     $("#register-submit").hide();
                     $("#dropdown-register-problem").fadeOut();
                     $("#dropdown-register-done").fadeIn();
                 } else {
                     $(".form-group").removeClass("has-error");
-                    for (var i = 0; i < data["fields"].length; i++) {
-                        $("#"+data["fields"][i]).addClass("has-error");
+                    for (var i = 0; i < data.fields.length; i++) {
+                        $("#"+data.fields[i]).addClass("has-error");
                     }
-                    $("#dropdown-register-problem").text(data["message"]);
+                    $("#dropdown-register-problem").text(data.message);
                     $("#dropdown-register-problem").fadeIn();
                 }
             }
@@ -32,8 +32,8 @@ $(function() {
             dataType: 'json',
             success: function(data, status) {
                 console.log("login");
-                if (data["result"] == "OK") {
-                    $("#logged-in-user-email").text(data["email"]);
+                if (data.result == "OK") {
+                    $("#logged-in-user-email").text(data.email);
                     $("#nav-user-logged-in").show();
                     $("#nav-user-logged-out").hide();
                     if (UNAUTH_PAGE_ACCESS) {
@@ -43,7 +43,7 @@ $(function() {
                     $("#login-reset-password").hide();
                     $("#login-resend-validation").hide();
                     $("#login-problem").hide();
-                    if (data["message"] == "pending registration") {
+                    if (data.message == "pending registration") {
                         $("#login-resend-validation").fadeIn();
                     } else {
                         $("#login-problem").fadeIn();
@@ -61,13 +61,13 @@ $(function() {
             dataType: 'json',
             success: function(data, status) {
                 console.log("login");
-                if (data["result"] == "OK") {
+                if (data.result == "OK") {
                     $("#login-resend-validation").hide();
                     $("#login-problem").hide();
                     $("#login-reset-password").fadeIn();
                 } else {
                     $("#login-resend-validation").hide();
-                    $("#login-problem").text(data["message"]);
+                    $("#login-problem").text(data.message);
                     $("#login-problem").fadeIn();
                 }
             }
@@ -82,7 +82,7 @@ $(function() {
             dataType: 'json',
             success: function(data, status) {
                 //console.log("resend-registration");
-                if (data["result"] == "OK") {
+                if (data.result == "OK") {
                     $("#login-resend-validation").text("A new confirmation will be sent to you shortly.");
                 }
             }

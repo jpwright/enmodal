@@ -30,7 +30,7 @@ class Map {
     get_station_by_id(id) {
         for (var i = 0; i < this.services.length; i++) {
             var station = this.services[i].get_station_by_id(id);
-            if (station != null) return station;
+            if (station !== null) return station;
         }
         return null;
     }
@@ -68,7 +68,7 @@ class Map {
                 }
             }
         }
-        if (num_stations == 0) return null;
+        if (num_stations === 0) return null;
         
         var bounds = L.latLngBounds(L.latLng(lat_min, lng_min), L.latLng(lat_max, lng_max));
         return bounds;
@@ -104,7 +104,7 @@ class Station {
      */
 
     constructor(name, location, preview) {
-        if (preview === undefined || preview == false) {
+        if (preview === undefined || preview === false) {
             this.sid = _id_factory.id();
         } else {
             this.sid = 0;
@@ -146,7 +146,7 @@ class Stop {
      */
 
     constructor(station, preview) {
-        if (preview === undefined || preview == false) {
+        if (preview === undefined || preview === false) {
             this.sid = _id_factory.id();
         } else {
             this.sid = 0;
@@ -162,7 +162,7 @@ class Stop {
     from_json(j, service) {
         this.sid = j.sid;
         this.station = service.get_station_by_id(j.station_id);
-        if (this.station == undefined) {
+        if (this.station === undefined) {
             console.log(j);
         }
     }
@@ -282,7 +282,7 @@ class Line {
     length() {
         var distance = 0.0;
         for (var i = 0; i < this.edges.length; i++) {
-            distance + this.edges[i].length();
+            distance += this.edges[i].length();
         }
         return distance;
     }
@@ -319,7 +319,7 @@ class Line {
         visited[source.sid] = 1;
 
         // TODO optimize this iterator...
-        for (var i = 0; i < this.stops.length; i++) {
+        for (i = 0; i < this.stops.length; i++) {
             var neighbors = this.neighbors(this.stops[i]);
             for (var j = 0; j < neighbors.length; j++) {
                 var alt = distance[this.stops[i].sid] + 1;
@@ -367,7 +367,7 @@ class Line {
         var inner_stops = [];
 
         // If we don't have any stops, we don't have any outer stops.
-        if (this.stops.length == 0) {
+        if (this.stops.length === 0) {
             return [];
         }
 
@@ -397,7 +397,7 @@ class Line {
         }
         
         // If we still have no outer stops (maybe a loop in the line) just give the first stop.
-        if (outer_stops.length == 0) return [this.stops[0]];
+        if (outer_stops.length === 0) return [this.stops[0]];
 
         return outer_stops;
     }
@@ -472,7 +472,7 @@ class Line {
                 }
             }
         }
-        for (var i = 0; i < edges_removed.length; i++) {
+        for (i = 0; i < edges_removed.length; i++) {
             this.remove_edge(edges_removed[i]);
         }
         return edges_removed;
@@ -502,7 +502,7 @@ class Line {
             this.add_stop(s);
         }
         this.edges = [];
-        for (var i = 0; i < j.edges.length; i++) {
+        for (i = 0; i < j.edges.length; i++) {
             var e = new Edge([]);
             e.sid = j.edges[i].sid;
             e.from_json(j.edges[i], this);
@@ -521,7 +521,7 @@ class Edge {
      */
 
     constructor(stops, preview) {
-        if (preview === undefined || preview == false) {
+        if (preview === undefined || preview === false) {
             this.sid = _id_factory.id();
         } else {
             this.sid = 0;
@@ -654,7 +654,7 @@ class Service {
             for (var j = 0; j < stops_1.length; j++) {
                 for (var k = 0; k < stops_2.length; k++) {
                     var edge = this.lines[i].get_edge_by_stops([stops_1[j], stops_2[k]]);
-                    if (edge != null) {
+                    if (edge !== null) {
                         return true;
                     }
                 }
@@ -783,7 +783,7 @@ class Service {
                     var drawmaps = sv.drawmaps(v, w, l);
                     var target = dfs_stops[dfs_stops.length-1];
                     var drawmap = sv.choose_drawmap(drawmaps, l, visited);
-                    if (drawmap != null) {
+                    if (drawmap !== null) {
                         for (var j = 1; j < drawmap.stops.length - 1; j++) {
                             target.push(drawmap.stops[j].station);
                             a += 1;
@@ -800,7 +800,7 @@ class Service {
             return a;
         }
         
-        if (start_stop != null) {
+        if (start_stop !== null) {
             dfs(start_stop, this, line, 0);
         }
         
@@ -810,15 +810,15 @@ class Service {
             var branch_stop_start = line.get_stops_by_station(branch[0])[0];
             var branch_stop_end = line.get_stops_by_station(branch[branch.length-1])[0];
             var edge = line.get_edge_by_stops([branch_stop_start, branch_stop_end]);
-            if (edge != null && visited_edge_sids.indexOf(edge.sid) == -1) {
+            if (edge !== null && visited_edge_sids.indexOf(edge.sid) == -1) {
                 var drawmaps = this.drawmaps(branch_stop_end, branch_stop_start, line);
-                var visited = {};
+                var br_visited = {};
                 for (var j = 0; j < branch.length; j++) {
-                    visited[branch[j].sid] = 1;
+                    br_visited[branch[j].sid] = 1;
                 }
-                var drawmap = this.choose_drawmap(drawmaps, line, visited);
-                if (drawmap != null) {
-                    for (var j = 1; j < drawmap.stops.length; j++) {
+                var drawmap = this.choose_drawmap(drawmaps, line, br_visited);
+                if (drawmap !== null) {
+                    for (j = 1; j < drawmap.stops.length; j++) {
                         branch.push(drawmap.stops[j].station);
                     }
                 } else {
@@ -941,21 +941,20 @@ class Service {
                 var stop_1_overlap = line_to_check.overlapping_stops(stop_1);
                 var stop_2_overlap = line_to_check.overlapping_stops(stop_2);
 
-                if (stop_1_overlap != null && stop_2_overlap != null) {
+                if (stop_1_overlap !== null && stop_2_overlap !== null) {
                     // Initialize visited stops.
-                    var visited = {};
+                    visited = {};
                     var visited_stops_count = 0;
                     for (var j = 0; j < line_to_check.stops.length; j++) {
                         visited[line_to_check.stops[j].sid] = 0;
                     }
                     // Initialize DFS variables.
-                    var dfs_stops = [[]];
-                    var dfs_branch = [];
-                    var visited = {};
-                    var visited_edge_sids = [];
+                    dfs_stops = [[]];
+                    dfs_branch = [];
+                    visited_edge_sids = [];
                     dfs(stop_1_overlap, this, line_to_check, 0);
                     //dfs(stop_1_overlap, stop_1_overlap, stop_2_overlap, this, line_to_check, 0);
-                    for (var j = 0; j < dfs_stops.length; j++) {
+                    for (j = 0; j < dfs_stops.length; j++) {
                         var branch = dfs_stops[j];
                         var stop_2_index = branch.indexOf(stop_2_overlap);
                         if (stop_2_index != -1) {
@@ -968,7 +967,7 @@ class Service {
         }
 
         var line_sid_to_shortest_drawmap_length = {};
-        for (var i = 0; i < drawmaps.length; i++) {
+        for (i = 0; i < drawmaps.length; i++) {
             var drawmap = drawmaps[i];
             var sid = drawmap.line.sid;
             if (!(sid in line_sid_to_shortest_drawmap_length)) {
@@ -1062,15 +1061,15 @@ class Service {
             this.add_station(s);
         }
         this.lines = [];
-        for (var i = 0; i < j.lines.length; i++) {
+        for (i = 0; i < j.lines.length; i++) {
             var l = new Line(j.lines[i].name);
             l.sid = j.lines[i].sid;
             l.from_json(j.lines[i], this);
             this.add_line(l);
         }
         this.transfers = [];
-        if (j.transfers != null) {
-            for (var i = 0; i < j.transfers.length; i++) {
+        if (j.transfers !== null) {
+            for (i = 0; i < j.transfers.length; i++) {
                 var t = new Transfer([]);
                 t.from_json(j.transfers[i], this);
                 this.transfers.push(t);

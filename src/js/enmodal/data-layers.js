@@ -19,21 +19,22 @@ class DataLayers {
     draw_layer_ridership() {
         var min_ridership = -1;
         var max_ridership = 0;
+        var station, ridership;
         for (var i = 0; i < enmodal.transit_interface.active_service.stations.length; i++) {
-            var station = enmodal.transit_interface.active_service.stations[i];
-            var ridership = station.ridership;
+            station = enmodal.transit_interface.active_service.stations[i];
+            ridership = station.ridership;
             if (ridership > max_ridership) max_ridership = ridership;
             if (ridership < min_ridership || min_ridership == -1) min_ridership = ridership;
         }
-        for (var i = 0; i < enmodal.transit_interface.active_service.stations.length; i++) {
-            var station = enmodal.transit_interface.active_service.stations[i];
-            var ridership = station.ridership;
+        for (i = 0; i < enmodal.transit_interface.active_service.stations.length; i++) {
+            station = enmodal.transit_interface.active_service.stations[i];
+            ridership = station.ridership;
             var r = 39.0*(ridership-min_ridership)/(max_ridership-min_ridership) + 1;
             enmodal.transit_interface.layers.data.addLayer(L.circleMarker(station.location, {color: 'red', radius: r}));
         }
         //enmodal.transit_interface.map.addLayer(enmodal.transit_interface.data_layer);
         $("#scale-boxes").empty();
-        for (var i = 0; i < 10; i++) {
+        for (i = 0; i < 10; i++) {
             $("#scale-boxes").append('<div class="scale-box"><div class="scale-inner" style="width: '+((i+1)*2).toString()+'px; height: '+((i+1)*2).toString()+'px; top: '+(20-(i+1)).toString()+'px;"></div>');
         }
         $("#scale-low").text(Math.round(min_ridership));
@@ -61,7 +62,7 @@ class DataLayers {
                 for (var i in data) {
                     var ridership = data[i];
                     var station = enmodal.transit_interface.active_service.get_station_by_id(parseInt(i));
-                    if (station != null) {
+                    if (station !== null) {
                         station.ridership = ridership;
                         $("#stationriders-"+station.sid.toString()).text(Math.round(station.ridership).toString());
                     }
@@ -71,7 +72,7 @@ class DataLayers {
     }
     
     quantiles(geojson, num_breaks, feature_name) {
-        var property_array = []
+        var property_array = [];
         for (var i = 0; i < geojson.features.length; i++) {
             property_array.push(geojson.features[i].properties[feature_name]);
         }
@@ -101,7 +102,7 @@ class DataLayers {
         var bounds = initial_bounds.pad(0.5); // Pad for maximum scrollability
         
         var do_it = true;
-        if (this.hexagon_bounds != null && this.hexagon_zoom != null) {
+        if (this.hexagon_bounds !== null && this.hexagon_zoom !== null) {
             if (this.hexagon_bounds.contains(initial_bounds) && enmodal.transit_interface.map.getZoom() == this.hexagon_zoom) {
                 do_it = false;
             }

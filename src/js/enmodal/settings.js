@@ -39,9 +39,9 @@ var DEBUG_MODE = false;
 // Map rendering parameters
 var SHARED_STRETCH_THRESHOLD = 8; // Max number of "local" stations in a shared stretch.
 
-var TRANSFER_BUTTON_DEFAULT = "Start Transfer"
-var TRANSFER_BUTTON_START = "Click a station"
-var TRANSFER_BUTTON_END = "Click another station"
+var TRANSFER_BUTTON_DEFAULT = "Start Transfer";
+var TRANSFER_BUTTON_START = "Click a station";
+var TRANSFER_BUTTON_END = "Click another station";
 
 // Instructions for calculate_ridership function
 var RIDERSHIP_ADD = 0;

@@ -253,7 +253,7 @@ Vue.component('modal-gtfs-import', {
           contentType: "application/json",
           method: 'POST',
           success: function(data, status) {
-            app.modal = 'none'
+            app.modal = 'none';
             handle_map_data(data);
           }
         });

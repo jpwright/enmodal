@@ -4,9 +4,9 @@ function session_new() {
         async: false,
         dataType: 'json',
         success: function(data, status) {
-            enmodal.session_id = data["private_key"];
+            enmodal.session_id = data.private_key;
             window.history.pushState("", "", "?id="+enmodal.session_id);
-            enmodal.sharing.update(data["public_key"], data["private_key"]);
+            enmodal.sharing.update(data.public_key, data.private_key);
         }
     });
         
@@ -36,7 +36,7 @@ function handle_map_data(jdata) {
     enmodal.transit_map.sid = jdata.sid;
     enmodal.transit_map.from_json(jdata);
     
-    if (enmodal.transit_map.services.length == 0) {
+    if (enmodal.transit_map.services.length === 0) {
         session_new();
     } else {
 
@@ -59,7 +59,7 @@ function handle_map_data(jdata) {
             var station_1 = enmodal.transit_map.get_station_by_id(sp.station_ids[0]);
             var station_2 = enmodal.transit_map.get_station_by_id(sp.station_ids[1]);
             var sp_real = enmodal.transit_interface.get_station_pair(station_1, station_2);
-            if (sp_real != null) {
+            if (sp_real !== null) {
                 for (var j = 0; j < sp.pins.length; j++) {
                     sp_real[0].add_pin(sp.pins[j].location[0], sp.pins[j].location[1]);
                 }
@@ -69,7 +69,7 @@ function handle_map_data(jdata) {
         enmodal.transit_interface.draw_transfers();
         //enmodal.transit_interface.map.closePopup();
         var bounds = enmodal.transit_map.geographic_bounds();
-        if (bounds != null) enmodal.leaflet_map.fitBounds(bounds);
+        if (bounds !== null) enmodal.leaflet_map.fitBounds(bounds);
         enmodal.data.get_ridership();
     }
 }
@@ -86,7 +86,7 @@ function session_load() {
             //console.log(data);
             var j = JSON.parse(data);
             //console.log(j);
-            if (j["error"] != undefined) {
+            if (j.error !== undefined) {
                 session_new();
             } else {
                 var jdata = JSON.parse(j.data);
@@ -95,7 +95,7 @@ function session_load() {
                 window.history.pushState("", "", "?id="+enmodal.session_id);
                 enmodal.sharing.update(j.public_key, j.private_key);
                 enmodal.session_id = j.private_key;
-                if (j.title != null) {
+                if (j.title !== null) {
                     $("#map-title-inner").html(j.title + '  <i class="fa fa-pencil" style="margin-left: 5px;" aria-hidden="true"></i>');
                     enmodal.map_name = j.title;
                 }
@@ -127,7 +127,7 @@ function session_save() {
                 async: true,
                 dataType: 'json',
                 success: function(data, status) {
-                    if (data["result"] == "OK") {
+                    if (data.result == "OK") {
                         $("#tool-save").html('Save');
                         $("#tool-save").attr('data-balloon', 'Saved!');
                         $("#tool-save").attr('data-balloon-visible','');
@@ -135,7 +135,7 @@ function session_save() {
                             $("#tool-save").removeAttr('data-balloon');
                             $("#tool-save").removeAttr('data-balloon-visible');
                         }, 3000);
-                    } else if (data["message"] == "Anonymous user") {
+                    } else if (data.message == "Anonymous user") {
                         $("#tool-save").html('Save');
                         $("#tool-save").attr('data-balloon', 'You must be logged in to save.');
                         $("#tool-save").attr('data-balloon-visible','');
@@ -162,6 +162,6 @@ function session_json() {
     var ret = {
         "map": enmodal.transit_map,
         "settings": enmodal.transit_interface.settings()
-    }
+    };
     return JSON.stringify(ret);
 }

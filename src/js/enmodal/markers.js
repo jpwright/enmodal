@@ -95,7 +95,7 @@ class StationMarker {
                 active_line_is_different = false;
             }
         }
-        if (enmodal.transit_interface.active_line == null) active_line_is_different = false;
+        if (enmodal.transit_interface.active_line === null) active_line_is_different = false;
         content += ' </div>';
 
         if (active_line_is_different) {

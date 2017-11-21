@@ -1,5 +1,5 @@
 function handle_map_click(e) {
-    if (enmodal.transit_interface.active_line != null && enmodal.transit_interface.active_tool == "station") {
+    if (enmodal.transit_interface.active_line !== null && enmodal.transit_interface.active_tool == "station") {
         var pp = enmodal.transit_interface.pin_projection(e.latlng.lat, e.latlng.lng);
         if (!pp[0]) {
             enmodal.transit_interface.add_new_station(e.latlng.lat, e.latlng.lng);
@@ -8,7 +8,7 @@ function handle_map_click(e) {
             sp.add_pin(pp[1].x, pp[1].y);
         }
     }
-    if (enmodal.transit_interface.active_line == null && enmodal.transit_interface.active_tool == "station") {
+    if (enmodal.transit_interface.active_line === null && enmodal.transit_interface.active_tool == "station") {
         L.popup().setLatLng(e.latlng).setContent("Create a line to start building").openOn(enmodal.leaflet_map);
     }
     if (enmodal.transit_interface.active_tool == "transfer") {
@@ -27,26 +27,26 @@ function set_basemap_style(basemap) {
     var basemap_options = {
         'DarkGray': {
             'opacity': 1.0,
-            'background-color': '#474749'
+            'background_color': '#474749'
         },
         'Gray': {
             'opacity': 1.0,
-            'background-color': '#e8e8e8'
+            'background_color': '#e8e8e8'
         },
         'Imagery': {
             'opacity': 0.4,
-            'background-color': '#474749'
+            'background_color': '#474749'
         },
         'Oceans': {
             'opacity': 1.0,
-            'background-color': '#f1eedd'
+            'background_color': '#f1eedd'
         }
     };
 
     if (basemap in basemap_options) {
         var options = basemap_options[basemap];
-        $("#map.leaflet-container").css('background-color', options['background-color']);
-        _leaflet_map.getPane('tilePane').style.opacity = options['opacity'];
+        $("#map.leaflet-container").css('background-color', options.background_color);
+        _leaflet_map.getPane('tilePane').style.opacity = options.opacity;
     }
 }
 
@@ -56,16 +56,8 @@ function set_basemap_labels(basemap, s) {
         _leaflet_map.removeLayer(enmodal.transit_interface.basemapLabels);
     }
     if (s) {
-        if (basemap === 'ShadedRelief'
-         || basemap === 'Oceans'
-         || basemap === 'Gray'
-         || basemap === 'DarkGray'
-         || basemap === 'Imagery'
-         || basemap === 'Terrain'
-       ) {
-          enmodal.transit_interface.basemapLabels = L.esri.basemapLayer(basemap + 'Labels');
-          _leaflet_map.addLayer(enmodal.transit_interface.basemapLabels);
-        }
+        enmodal.transit_interface.basemapLabels = L.esri.basemapLayer(basemap + 'Labels');
+        _leaflet_map.addLayer(enmodal.transit_interface.basemapLabels);
     }
 }
 
@@ -99,7 +91,7 @@ function init_document() {
         enmodal.transit_interface.remove_line_from_station(station_id, line_id);
     });
     $(document).on('click', '.station-name', function() {
-        if (!$(this).has("input").length > 0) {
+        if ($(this).has("input").length === 0) {
             var text = $(this).text();
             var sn = $(this);
             $(this).text('');
@@ -258,7 +250,7 @@ function init_document() {
             enmodal.sidebar.line_editor_save();
         }
     });
-    if (enmodal.transit_interface.active_line != null) enmodal.sidebar.refresh_line_editor();
+    if (enmodal.transit_interface.active_line !== null) enmodal.sidebar.refresh_line_editor();
 
     // Tool selector
 
@@ -315,7 +307,7 @@ function init_document() {
     
     // Map name editor
     $(document).on('click', '#map-title-inner', function() {
-        if (!$(this).has("input").length > 0) {
+        if ($(this).has("input").length === 0) {
             var text = $(this).text().trim();
             var sn = $(this);
             $(this).text('');
@@ -368,7 +360,7 @@ $(function() {
     set_basemap_style('DarkGray');
     set_basemap_labels('DarkGray', true);
     init_document();
-    if (enmodal.session_id != null) {
+    if (enmodal.session_id !== null) {
         session_load();
     } else if (window.location.pathname != "/view") {
         session_new();

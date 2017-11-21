@@ -51,7 +51,7 @@ function create_image(callback) {
 
     enmodal.transit_interface.preview_clear();
     var bounds = enmodal.transit_map.geographic_bounds();
-    if (bounds != null) _leaflet_map.fitBounds(bounds);
+    if (bounds !== null) _leaflet_map.fitBounds(bounds);
 
 	//_leaflet_map.setView(center, zoom);
 
@@ -63,7 +63,7 @@ function create_image(callback) {
 		    	// Add enmodal footer
 		    	ctx.fillStyle = 'rgba(0,0,0,0.75)';
 		    	ctx.fillRect(0, 1964, 2000, 36);
-		    	ctx.font = '12px sans-serif'
+		    	ctx.font = '12px sans-serif';
 		    	ctx.fillStyle = 'white';
 		    	ctx.fillText(enmodal.map_name, 12, 1988);
 		    	ctx.textAlign = 'right';

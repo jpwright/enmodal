@@ -23,7 +23,7 @@ class Sidebar {
                 }
             }
         }
-        for (var i = 0; i < used_names.length; i++) {
+        for (i = 0; i < used_names.length; i++) {
             if (used_names[i] != 1) {
                 if (i < 26) {
                     return String.fromCharCode(65 + i);
@@ -114,7 +114,7 @@ class Sidebar {
 
     update_line_editor() {
         var line_name = $("#custom-line-name").val();
-        if (line_name != undefined) line_name = line_name.substring(0, 40);
+        if (line_name !== undefined) line_name = line_name.substring(0, 40);
         $("#custom-line-marker-content").text(line_name);
 
         var line_color_bg = $("#color-picker-bg").val();
@@ -130,7 +130,7 @@ class Sidebar {
             var line = enmodal.transit_interface.active_service.lines[i];
             $("#dropdown-line-menu").prepend("<li class=\"line-selector-item\"><a class=\"line-selector-option\" transit-line-id=\""+line.sid.toString()+"\" href=\"#\"> <div class=\"subway-line-long\" style=\"background-color: "+line.color_bg+"; color: "+line.color_fg+";\"><div class=\"content\">"+line.name+"</div></div> "+line.full_name+"</a></li>");
         }
-        if (enmodal.transit_interface.active_line != null) {
+        if (enmodal.transit_interface.active_line !== null) {
             $("#custom-line-options #color-picker-bg").spectrum("set", enmodal.transit_interface.active_line.color_bg);
             $("#custom-line-options #color-picker-fg").spectrum("set", enmodal.transit_interface.active_line.color_fg);
         } else {
@@ -143,12 +143,12 @@ class Sidebar {
         var line = enmodal.transit_interface.active_line;
 
         var custom_line_name = $("#custom-line-name").val();
-        if (custom_line_name != undefined) custom_line_name = custom_line_name.substring(0, 40);
+        if (custom_line_name !== undefined) custom_line_name = custom_line_name.substring(0, 40);
         var custom_line_color_bg = $("#custom-line-options #color-picker-bg").val();
         var custom_line_color_fg = $("#custom-line-options #color-picker-fg").val();
         var issue = false;
 
-        if (custom_line_name.length == 0) {
+        if (custom_line_name.length === 0) {
             $('#custom-line-name').addClass('issue');
             $('#custom-line-error').text('Enter a name.');
             issue = true;
@@ -175,11 +175,11 @@ class Sidebar {
     update_line_diagram() {
         var line = enmodal.transit_interface.active_line;
         
-        if (line == null) {
+        if (line === null) {
             $("#route-diagram").empty();
             return;
         }
-        if (line.stops.length == 0) {
+        if (line.stops.length === 0) {
             $("#route-diagram").empty();
             return;
         }
@@ -246,7 +246,7 @@ class Sidebar {
             }
 
 
-            for (var j = start_index; j < stop_group.length; j++) {
+            for (j = start_index; j < stop_group.length; j++) {
                 var stop = stop_group[j];
 
                 // Add a leading connector if this is the start of a branch.
@@ -282,7 +282,7 @@ class Sidebar {
                 stop_info_div.append(stop_connectors);
                 // Add an empty connector just to make sure each stop row has the height it needs
                 stop_connectors.append('<div class="subway-line-long subway-line-mini subway-line-marker-diagram subway-line-marker-diagram-fake" style="font-size: 1em;"><div class="content"></div></div>');
-                var connecting_lines = []
+                var connecting_lines = [];
                 for (var k = 0; k < enmodal.transit_interface.active_service.lines.length; k++) {
                     if (enmodal.transit_interface.active_service.lines[k].sid != line.sid) {
                         if (enmodal.transit_interface.active_service.lines[k].has_station(stop.station)) {
@@ -290,7 +290,7 @@ class Sidebar {
                         }
                     }
                 }
-                for (var k = 0; k < enmodal.transit_interface.active_service.transfers.length; k++) {
+                for (k = 0; k < enmodal.transit_interface.active_service.transfers.length; k++) {
                     if (enmodal.transit_interface.active_service.transfers[k].has_station(stop.station)) {
                         var transfer_stations = enmodal.transit_interface.active_service.transfers[k].stations;
                         for (var l = 0; l < transfer_stations.length; l++) {
@@ -305,7 +305,7 @@ class Sidebar {
                         }
                     }
                 }
-                for (var k = 0; k < connecting_lines.length; k++) {
+                for (k = 0; k < connecting_lines.length; k++) {
                     stop_connectors.append('<div class="subway-line-long subway-line-mini subway-line-marker-diagram" style="font-size: 1em; background-color: '+connecting_lines[k].color_bg+'; color: '+connecting_lines[k].color_fg+';"><div class="content">'+connecting_lines[k].name+'</div></div>');
                 }
 
@@ -406,7 +406,7 @@ class Sidebar {
         var custom_service_name = $("#custom-service-name").val().substring(0, 20);
         var issue = false;
 
-        if (custom_service_name.length == 0) {
+        if (custom_service_name.length === 0) {
             $('#custom-service-name').addClass('issue');
             $('#custom-service-error').text('Enter a name.');
             issue = true;
