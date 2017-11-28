@@ -89,6 +89,43 @@
         </div>
     </template>
 
+    <template id="template-modal-sharing">
+        <div class="enm modal">
+            <div class="enm modal-middle">
+                <div class="enm modal-inner">
+                    <div class="enm modal-col">
+                        <div class="header">Sharing<a class="button" @click="$emit('close')">close</a></div>
+                        <div class="body">
+                            <div>
+                                <p>Public link</p>
+                                <div class="share-link-content" id="share-link-public">
+                                    <div class="share-link-input">
+                                        <input type="text" id="share-link-public-input" readonly>
+                                    </div>
+                                    <a class="share-link-copy-button button" data-clipboard-target="#share-link-public-input">copy</a>
+                                </div>
+                                <p>This link is a read-only copy of your map that can be shared publicly.</p>
+                            </div>
+                            <div>
+                                <p>Private link</p>
+                                <div class="share-link-content" id="share-link-private">
+                                    <div class="share-link-input">
+                                        <input type="text" id="share-link-private-input" readonly>
+                                    </div>
+                                    <a class="share-link-copy-button button" data-clipboard-target="#share-link-private-input">copy</a>
+                                </div>
+                                <p>This link allows you to edit your map later. Bookmark it and keep it secret!</p>
+                            </div>
+                            <div>
+                                <strong>Don't forget to save your map before sharing!</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
     <template id="template-modal-pro-gate">
         <div class="enm modal">
             <div class="enm modal-middle">
@@ -246,6 +283,10 @@
         <div>
             <a class="button" @click="exportPdf()">Export PDF</a>
         </div>
+    </template>
+
+    <template id="template-button-sharing">
+        <a class="button" @click="$emit('click')">Share</a>
     </template>
     <!-- -->
 

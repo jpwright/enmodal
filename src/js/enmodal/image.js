@@ -65,7 +65,9 @@ function create_image(callback) {
 		    	ctx.fillRect(0, 1964, 2000, 36);
 		    	ctx.font = '12px sans-serif';
 		    	ctx.fillStyle = 'white';
-		    	ctx.fillText(enmodal.map_name, 12, 1988);
+		    	if (enmodal.map_name !== null) {
+		    		ctx.fillText(enmodal.map_name, 12, 1988);
+		    	}
 		    	ctx.textAlign = 'right';
 		    	ctx.fillText("created with enmodal -- http://enmodal.co", 1988, 1988);
 		    	callback(canvas);

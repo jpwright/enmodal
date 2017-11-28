@@ -21,6 +21,13 @@ Vue.component('modal-exporting-pdf', {
     },
 });
 
+Vue.component('modal-sharing', {
+    template: '#template-modal-sharing',
+    props: {
+        visible: {type: Boolean, default: true}
+    },
+});
+
 Vue.component('modal-session-expired', {
     template: '#template-modal-session-expired',
     props: {
@@ -59,6 +66,13 @@ Vue.component('collapse-caret', {
 
 Vue.component('button-import-gtfs', {
   template: '#template-button-import-gtfs',
+    props: {
+        visible: {type: Boolean, default: true}
+    },
+});
+
+Vue.component('button-sharing', {
+  template: '#template-button-sharing',
     props: {
         visible: {type: Boolean, default: true}
     },

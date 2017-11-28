@@ -18,6 +18,7 @@
     
     <modal-city-picker id="modal-city-picker" v-if="modal === 'city-picker'" @close="modal='none'"></modal-city-picker>
     <modal-gtfs-import id="modal-gtfs-import" v-if="modal === 'gtfs-import'" @close="modal='none'"></modal-gtfs-import>
+    <modal-sharing id="modal-sharing" v-if="modal === 'sharing'" @close="modal='none'"></modal-sharing>
     <modal-pro-gate id="modal-pro-gate" v-if="modal === 'pro-gate'" @close="modal='none'"></modal-pro-gate>
     <modal-exporting-pdf id="modal-exporting-pdf" v-if="modal === 'exporting-pdf'"></modal-exporting-pdf>
     <modal-session-expired id="modal-session-expired" v-if="modal === 'session-expired'"></modal-session-expired>
@@ -216,7 +217,7 @@
             <div id="option-section-status" class="option-section">
                 <a id="tool-save" class="tool-button button" data-balloon-pos="up">Save</a>
                 <div id="save-message" style="display: none;">Saved!</div>
-                <a id="tool-share" class="tool-button button">Share</a>
+                <button-sharing @click="modal = 'sharing'"></button-sharing>
                 <a href="http://twitter.com/enmodal" target="_blank" class="tool-button button"><i class="fa fa-lg fa-twitter" aria-hidden="true"></i></a>
                 <a href="https://gratipay.com/enmodal/" target="_blank" class="tool-button button"><i class="fa fa-lg fa-gratipay" aria-hidden="true"></i></a>
                 <div class="attribution"><a href="http://leafletjs.com/">Leaflet</a> | Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ</div>
