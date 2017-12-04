@@ -362,6 +362,7 @@ $(function() {
     _id_factory = new IdFactory();
     _leaflet_map = init_leaflet_map();
     enmodal = {
+        public_key: null,
         session_id: get_url_parameter("id"),
         sidebar: new Sidebar(),
         sharing: new Sharing(),
@@ -372,6 +373,9 @@ $(function() {
         data: new DataLayers(),
         id_factory: _id_factory,
     };
+    $("a#share").click(function() {
+        enmodal.sharing.update(enmodal.public_key, enmodal.session_id);
+    });
     set_basemap_style('DarkGray');
     set_basemap_labels('DarkGray', true);
     init_document();

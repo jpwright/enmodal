@@ -317,6 +317,8 @@ class StationPair {
         var splice_point = Math.floor(new_pt/BEZIER_LUT_STEPS);
         this.pins.splice(splice_point, 0, new_pin);
         this.draw_lines();
+
+        push_undo_buffer();
     }
     
     remove_pin(pin) {
@@ -324,6 +326,8 @@ class StationPair {
         if (pin_index > -1) {
             this.pins.splice(pin_index, 1);
         }
+
+        push_undo_buffer();
     }
     
     generate_paths(active) {
@@ -404,6 +408,7 @@ class StationPair {
         });
         m.on('dragend', function(e) {
             enmodal.transit_interface.dragging_pin = false;
+            push_undo_buffer();
         });
         return m;
     }

@@ -1809,7 +1809,14 @@ function push_undo_buffer() {
     if (_undo_buffer.length == UNDO_BUFFER_SIZE) {
         _undo_buffer.splice(0, 1);
     }
-    _undo_buffer.push(enmodal.transit_map.to_json());
+
+    var map_json = enmodal.transit_map.to_json();
+    var m = JSON.parse(map_json);
+    m.settings = enmodal.transit_interface.settings();
+
+    var j = JSON.stringify(m);
+
+    _undo_buffer.push(j);
     _undo_index = _undo_buffer.length - 1;
 }
 
@@ -1823,13 +1830,8 @@ function undo() {
 
     var j = _undo_buffer[_undo_index];
 
-    var as = enmodal.transit_interface.active_service;
-    var al = enmodal.transit_interface.active_line;
-    enmodal.transit_map.from_json(JSON.parse(j));
-    enmodal.sidebar.update_service_selector(as.sid, false);
-    enmodal.sidebar.update_line_selector(al.sid);
-    
-    enmodal.transit_interface.draw_map();
+    var jdata = JSON.parse(j);
+    handle_map_data(jdata);
 }
 
 function redo() {
@@ -1840,13 +1842,8 @@ function redo() {
 
     var j = _undo_buffer[_undo_index];
 
-    var as = enmodal.transit_interface.active_service;
-    var al = enmodal.transit_interface.active_line;
-    enmodal.transit_map.from_json(JSON.parse(j));
-    enmodal.sidebar.update_service_selector(as.sid, false);
-    enmodal.sidebar.update_line_selector(al.sid);
-    
-    enmodal.transit_interface.draw_map();
+    var jdata = JSON.parse(j);
+    handle_map_data(jdata);
 }
 
 function check_server_error(data) {

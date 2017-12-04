@@ -7,7 +7,7 @@ from flask_redis import FlaskRedis
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__))))
-from Enmodal import enmodal
+from EnmodalCore import enmodal
 from EnmodalMap import enmodal_map
 from EnmodalSessions import *
 from EnmodalGTFS import enmodal_gtfs
@@ -38,6 +38,8 @@ SESSIONS_CONN_STRING = "host='"+SESSIONS_HOST+"' port='"+SESSIONS_PORT+"' dbname
 SESSIONS_SECRET_KEY_PUBLIC = int(config.get('sessions', 'secret_key_public'), 16)
 SESSIONS_SECRET_KEY_PRIVATE = int(config.get('sessions', 'secret_key_private'), 16)
 SESSION_EXPIRATION_TIME = int(config.get('sessions', 'expiration_time'))
+UPLOAD_FOLDER = config.get('flask', 'upload_folder')
+SCREENSHOT_FOLDER = config.get('flask', 'screenshot_folder')
 
 # set up app object
 app = Flask(__name__, static_folder='dist', template_folder='dist', static_url_path='/static')
@@ -85,4 +87,10 @@ def run_server():
     cherrypy.engine.block()
 
 if __name__ == "__main__":
+
+    if not os.path.isdir(UPLOAD_FOLDER):
+        os.mkdir(UPLOAD_FOLDER)
+    if not os.path.isdir(UPLOAD_FOLDER):
+        os.mkdir(UPLOAD_FOLDER)
+
     run_server()

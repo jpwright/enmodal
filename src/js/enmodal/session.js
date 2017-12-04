@@ -4,6 +4,7 @@ function session_new() {
         async: false,
         dataType: 'json',
         success: function(data, status) {
+            enmodal.public_key = data.public_key;
             enmodal.session_id = data.private_key;
             window.history.pushState("", "", "?id="+enmodal.session_id);
             enmodal.sharing.update(data.public_key, data.private_key);
@@ -33,6 +34,8 @@ function session_new() {
 function handle_map_data(jdata) {
     console.log(jdata);
     
+    enmodal.transit_interface.station_pairs = [];
+
     enmodal.transit_map.sid = jdata.sid;
     enmodal.transit_map.from_json(jdata);
     
@@ -93,7 +96,7 @@ function session_load() {
                 handle_map_data(jdata);
                 
                 window.history.pushState("", "", "?id="+enmodal.session_id);
-                enmodal.sharing.update(j.public_key, j.private_key);
+                enmodal.public_key = j.public_key;
                 enmodal.session_id = j.private_key;
                 if (j.title !== null) {
                     $("#map-title-inner").html(j.title + '  <i class="fa fa-pencil" style="margin-left: 5px;" aria-hidden="true"></i>');

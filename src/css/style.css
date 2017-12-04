@@ -959,6 +959,20 @@ ul.dropdown-lr {
         height: auto;
         margin: auto;
     }
+
+  .enm.modal-row { 
+    flex-wrap: wrap;  
+  }
+  .enm.modal input.large.picker { 
+    flex-basis: 100%; 
+    font-size: 2em;
+  }
+  .enm.modal .enm.modal-row a.button.large.picker {
+    margin-left: 0;
+    margin-top: 10px;
+    width: 100%;
+  }
+
 }
 
 
