@@ -48,6 +48,7 @@
     <script src='static/js/bezier.min.js'></script>
     <script src="static/js/chroma.min.js"></script>
     <script src="static/js/svg.min.js"></script>
+    <script src="static/js/filesaver.min.js"></script>
     <script type="text/javascript" src="http://canvg.github.io/canvg/rgbcolor.js"></script> 
     <script type="text/javascript" src="http://canvg.github.io/canvg/StackBlur.js"></script>
     <script type="text/javascript" src="http://canvg.github.io/canvg/canvg.js"></script>
@@ -259,8 +260,44 @@
         </div>
     </template>
 
+    <template id="template-modal-json-import">
+        <div class="enm modal">
+            <div class="enm modal-middle">
+                <div class="enm modal-inner">
+                    <div class="enm modal-col">
+                        <div class="header">JSON Import<a class="button" @click="$emit('close')">close</a></div>
+                        <div class="body">
+                            <form enctype="multipart/form-data" novalidate v-if="isInitial || isSaving">
+                            Choose a .json file created with enmodal.
+                            <div class="dropbox">
+                                <input type="file" name="json" :disabled="isSaving" @change="filesChange($event.target.name, $event.target.files);" accept=".json" class="input-file">
+                                <p v-if="isInitial">
+                                    Drag a .json file here, or click to browse.
+                                </p>
+                                <p v-if="isSaving">
+                                    Uploading...
+                                </p>
+                            </div>
+                            </form>
+                            <div id="json-upload-contents" v-if="isSuccess">
+                                
+                            </div>
+                            <div v-if="isFailed">
+                                Failed
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
     <template id="template-button-import-gtfs">
         <a class="button" @click="$emit('click')">Import GTFS</a>
+    </template>
+
+    <template id="template-button-import-json">
+        <a class="button" @click="$emit('click')">Import JSON</a>
     </template>
 
     <template id="template-button-basemap-style">
@@ -282,6 +319,12 @@
     <template id="template-button-export-pdf">
         <div>
             <a class="button" @click="exportPdf()">Export PDF</a>
+        </div>
+    </template>
+
+    <template id="template-button-export-json">
+        <div>
+            <a class="button" @click="exportJson()">Export JSON</a>
         </div>
     </template>
 

@@ -54,3 +54,9 @@ function get_latlng(s) {
     var c = s.split(",");
     return [parseFloat(c[0]), parseFloat(c[1])];
 }
+
+function save_json() {
+    var json = session_json();
+    var blob = new Blob([json], {type: "text/plain;charset=utf-8"});
+    saveAs(blob, "enmodal.json");
+}

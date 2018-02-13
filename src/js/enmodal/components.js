@@ -71,6 +71,13 @@ Vue.component('button-import-gtfs', {
     },
 });
 
+Vue.component('button-import-json', {
+  template: '#template-button-import-json',
+    props: {
+        visible: {type: Boolean, default: true}
+    },
+});
+
 Vue.component('button-sharing', {
   template: '#template-button-sharing',
     props: {
@@ -89,6 +96,18 @@ Vue.component('button-export-pdf', {
         save_pdf(function() {
           app.modal = 'none';
         });
+      }
+    }
+});
+
+Vue.component('button-export-json', {
+  template: '#template-button-export-json',
+    props: {
+        visible: {type: Boolean, default: true}
+    },
+    methods: {
+      exportJson: function() {
+        save_json(function() {});
       }
     }
 });
@@ -285,11 +304,68 @@ Vue.component('modal-gtfs-import', {
     },
 });
 
+Vue.component('modal-json-import', {
+    template: '#template-modal-json-import',
+    props: {
+        visible: {type: Boolean, default: true},
+        uploadFieldName: 'json',
+        fileCount: 0,
+    },
+    computed: {
+      isInitial() {
+        return app.json_import_status === STATUS_INITIAL;
+      },
+      isSaving() {
+        return app.json_import_status === STATUS_SAVING;
+      },
+      isSuccess() {
+        return app.json_import_status === STATUS_SUCCESS;
+      },
+      isFailed() {
+        return app.json_import_status === STATUS_FAILED;
+      }
+    },
+    methods: {
+      reset: function() {
+        // reset form to initial state
+        this.uploadedFiles = [];
+        this.uploadError = null;
+        this.jsonImportMap = null;
+      },
+      upload: function(formData, onSuccess, onError) {
+      },
+      save: function(formData) {
+        console.log("importing");
+        app.json_import_status = STATUS_SAVING;
+      },
+      filesChange: function(fieldName, fileList) {
+        // handle file changes
+        const formData = new FormData();
+
+        if (!fileList.length) return;
+
+        // append the files to FormData
+        Array
+          .from(Array(fileList.length).keys())
+          .map(x => {
+            formData.append(fieldName, fileList[x], fileList[x].name);
+          });
+
+        // save it
+        this.save(formData);
+      },
+    },
+    mounted() {
+      this.reset();
+    },
+});
+
 var app = new Vue({
     el: '#app',
     data: {
       modal: 'city-picker',
       upload_status: STATUS_INITIAL,
+      json_import_status: STATUS_INITIAL,
       gtfsImportMap: null,
       basemapStyle: 'DarkGray',
       basemapLabels: true

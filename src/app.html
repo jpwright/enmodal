@@ -18,6 +18,7 @@
     
     <modal-city-picker id="modal-city-picker" v-if="modal === 'city-picker'" @close="modal='none'"></modal-city-picker>
     <modal-gtfs-import id="modal-gtfs-import" v-if="modal === 'gtfs-import'" @close="modal='none'"></modal-gtfs-import>
+    <modal-json-import id="modal-json-import" v-if="modal === 'json-import'" @close="modal='none'"></modal-json-import>
     <modal-sharing id="modal-sharing" v-if="modal === 'sharing'" @close="modal='none'"></modal-sharing>
     <modal-pro-gate id="modal-pro-gate" v-if="modal === 'pro-gate'" @close="modal='none'"></modal-pro-gate>
     <modal-exporting-pdf id="modal-exporting-pdf" v-if="modal === 'exporting-pdf'"></modal-exporting-pdf>
@@ -203,10 +204,12 @@
                         <div>
                             <!--<button-import-gtfs @click="modal = 'gtfs-import'"></button-import-gtfs>-->
                             <button-import-gtfs @click="modal = 'pro-gate'"></button-import-gtfs>
+                            <button-import-json @click="modal = 'json-import'"></button-import-json>
                         </div>
                         <div class="option-section-heading">Export</div>
                         <div>
                             <button-export-pdf></button-export-pdf>
+                            <button-export-json></button-export-json>
                         </div>
                         
                     </div>
