@@ -4,30 +4,30 @@ enmodal is a browser-based service for transit planning and analysis. users can 
 
 ## Set up
 
-This guide is written for Ubuntu (16.04.2). enmodal is not tested on other platforms, though it may be possible to get it running.
+enmodal is designed to run on an Ubuntu 16+ server, but likely can run on Windows and macOS without too much trouble (installation instructions for those platforms are in the works).
 
-### Clone this repo
+### Ubuntu
+
+#### Clone this repo
 
     git clone https://github.com/jpwright/enmodal.git && cd enmodal
-
-### Create config file
-
-Copy `settings.cfg.example` to `settings.cfg` and edit fields to appropriate values.
     
-### Set up Python
+#### Set up Python
+
+Note: enmodal requires python 2.7 and is not compatible with python 3.
 
     sudo apt-get install python-setuptools python-dev build-essential
     sudo easy_install pip
     sudo pip install --upgrade virtualenv
     
-### Install virtualenv and set up Python requirements
+#### Install virtualenv and set up Python requirements
 
     pip install virtualenv
     virtualenv venv
     source venv/bin/activate
     pip install -r requirements.txt
 
-### Install Postgres (9.6) and PostGIS (2.3)
+#### Install Postgres (9.6) and PostGIS (2.3)
 
     sudo add-apt-repository "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main"
     wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
@@ -36,42 +36,48 @@ Copy `settings.cfg.example` to `settings.cfg` and edit fields to appropriate val
     sudo apt-get install postgresql-server-dev-9.6
     sudo apt-get install postgresql-9.6-postgis-2.3 postgresql-9.6-postgis-scripts
 
-### Set up Postgres user
+#### Set up Postgres user
 
     sudo su -
     sudo -u postgres psql postgres
+
+Then within the `psql` command:
+
     \password postgres
 
-### Run database setup tool
+Set a password and use it in your `settings.cfg` file below.
+
+#### Create config file
+
+Copy `settings.cfg.example` to a new file called `settings.cfg`. Most fields can be left at their default values, except:
+
+- Set the `sessions` database password based on whatever you chose in the previous step.
+- If you want support for reverse geocoding, you'll need to set up an account with either [Mapbox](https://www.mapbox.com/developers/) or [Google](https://developers.google.com/maps/documentation/javascript/get-api-key) and supply an API key. (The Mapzen API is no longer functional.)
+
+#### Run database setup tool
 
     python tools/set_up_db.py
 
-### Install PostGIS extensions
+#### Install PostGIS extensions
 
     sudo -u postgres psql -c "CREATE EXTENSION postgis; CREATE EXTENSION postgis_topology;" dggrid
-
-### Set up Valhalla
-
-Note: best to follow the [Valhalla setup guide](https://github.com/valhalla/valhalla/)
-
-    sudo add-apt-repository -y ppa:valhalla-core/valhalla
-    sudo apt-get update
-    sudo apt-get install -y valhalla-bin
-    cd valhalla
-    valhalla_route_service valhalla.json 1 &
     
-### Install NPM and grunt
+#### Install NPM and grunt
 
     sudo apt-get install nodejs-legacy npm
     npm install grunt grunt-contrib-jshint grunt-contrib-watch grunt-contrib-copy grunt-contrib-concat grunt-contrib-uglify --save-dev
     sudo npm install -g grunt-cli
     sudo npm install
     grunt --force
+
+#### Start the server
+
+    python server.py
+
+#### Open your browser
+
+Navigate to `http://localhost:5050` in your browser and get started!
     
 ## Populating dggrid database
 
-I generated the dggrid database (which contains the hexagonal bins of population and employment data), but the process to do this is extremely cumbersome, not yet documented, and took like weeks of CPU time.
-
-If you want to attempt this anyway, contact me (<jpwright0@gmail.com>) for assistance.
-
-If you want to use the data but not bother with that lengthy generation process, contact me and I can transfer a very large zip file of the database.
+Generating the dggrid database (which contains the hexagonal bins of population and employment data) is cumbersome and not yet documented. A copy of the database will eventually be made available for download. The scripts to generate the database yourself are in the `tools` directory.

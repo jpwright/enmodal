@@ -8,7 +8,7 @@ $(function() {
             for (var i = 0; i < data.maps.length; i++) {
                 var map = data.maps[i];
                 var cache_string = (Math.random()+1).toString(36).slice(2, 5);
-                $("#user-maps").append('<a href="'+map.url+'" target="_blank"><div class="user-map"><img src="static/img/map-screenshots/'+map.id+'.png?d='+cache_string+'" onerror="if (this.src != \'static/img/map.png\') this.src = \'static/img/map.png\';" /><br />'+map.title+'</div></a>');
+                $("#user-maps").append('<a href="'+map.url+'" target="_blank"><div class="user-map"><img src="static/img/map-screenshots/'+map.id+'.png?d='+cache_string+'" onerror="if (this.src != \'static/img/map.png\') this.src = \'static/img/map.png\';" /><div class="map-title">'+map.title+'</div><div class="map-actions"><a class="button" data-toggle="modal" data-target="#map-delete-confirm"><i class="fa fa-trash-o" aria-hidden="true"></i> Delete</a></div></div></a>');
             }
         }
     });

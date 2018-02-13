@@ -52,10 +52,28 @@
     background-color: rgba(255, 255, 255, 0.10);
 }
 
+.map-title {
+    margin: 10px;
+    color: #fff;
+}
+
+.map-title:hover {
+    text-decoration: none;
+}
+
+.map-actions {
+    text-align: right;
+}
+
 .user-map img {
     width: 200px;
 }
 
 .user-map:hover {
     background: rgba(255, 255, 255, 0.20);
+}
+
+.user-map a:hover {
+    text-decoration: none;
+}
 }

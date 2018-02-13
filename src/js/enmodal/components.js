@@ -337,6 +337,26 @@ Vue.component('modal-json-import', {
       save: function(formData) {
         console.log("importing");
         app.json_import_status = STATUS_SAVING;
+        var params = $.param({
+            i: enmodal.session_id
+        });
+        $.ajax({ url: "session_import_json?"+params,
+            async: true,
+            data: formData,
+            cache: false,
+            contentType: false,
+            processData: false,
+            method: 'POST',
+            success: function(data){
+              var j = JSON.parse(data);
+              if (j.result == "OK") {
+                handle_map_data(JSON.parse(j.data));
+                app.modal = 'none';
+              } else {
+                app.json_import_status = STATUS_FAILED;
+              }
+            }
+        });
       },
       filesChange: function(fieldName, fileList) {
         // handle file changes
