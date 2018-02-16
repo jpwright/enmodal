@@ -6,7 +6,8 @@ use_logins: False
 
 gtfs_enabled: False
 # Folder to store uploads, relative to server.py
-upload_folder: uploads
+upload_folder = enmodal/uploads
+screenshot_folder = enmodal/dist/img/map-screenshots
 
 redis_url = "redis://localhost:6379/0"
 
