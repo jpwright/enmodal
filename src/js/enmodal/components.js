@@ -334,29 +334,24 @@ Vue.component('modal-json-import', {
       },
       upload: function(formData, onSuccess, onError) {
       },
-      save: function(formData) {
+      save: function(file) {
         console.log("importing");
         app.json_import_status = STATUS_SAVING;
-        var params = $.param({
-            i: enmodal.session_id
-        });
-        $.ajax({ url: "session_import_json?"+params,
-            async: true,
-            data: formData,
-            cache: false,
-            contentType: false,
-            processData: false,
-            method: 'POST',
-            success: function(data){
-              var j = JSON.parse(data);
-              if (j.result == "OK") {
-                handle_map_data(JSON.parse(j.data));
+
+        var reader = new FileReader();
+        reader.onload = (function(theFile) {
+            return function(e) {
+                // Render thumbnail.
+                var data = JSON.parse(e.target.result);
+                var jdata = data.map;
+                jdata.settings = data.settings;
+                handle_map_data(jdata);
+                app.json_import_status = STATUS_INITIAL;
                 app.modal = 'none';
-              } else {
-                app.json_import_status = STATUS_FAILED;
-              }
-            }
-        });
+            };
+        })(file);
+
+        var d = reader.readAsText(file);
       },
       filesChange: function(fieldName, fileList) {
         // handle file changes
@@ -364,15 +359,8 @@ Vue.component('modal-json-import', {
 
         if (!fileList.length) return;
 
-        // append the files to FormData
-        Array
-          .from(Array(fileList.length).keys())
-          .map(x => {
-            formData.append(fieldName, fileList[x], fileList[x].name);
-          });
-
         // save it
-        this.save(formData);
+        this.save(fileList[0]);
       },
     },
     mounted() {
