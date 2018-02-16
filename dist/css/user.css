@@ -1,0 +1,79 @@
+#user-tab-content {
+    margin-top: 12px;
+}
+
+#user-tab-content input {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 0;
+    color: white;
+    padding: 5px;
+    max-width: 300px;
+}
+
+#user-tab-content .has-error input {
+    background-color: rgba(50, 0, 0, 0.5);
+}
+
+#user-tab-content button {
+    border: 1px solid white;
+    border-radius: 5px;
+    cursor: pointer;
+    display: inline-block;
+    color: #fff;
+    text-decoration: none;
+    padding: 5px;
+    min-width: 50px;
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.10);
+}
+
+#change-password-done {
+    width: 300px;
+    max-width: 100%;
+}
+
+#change-password-problem {
+    width: 300px;
+    max-width: 100%;
+}
+
+.user-map {
+    float: left;
+    margin-top: 12px;
+    margin-right: 12px;
+    padding: 12px;
+    border: 1px solid white;
+    border-radius: 5px;
+    cursor: pointer;
+    display: inline-block;
+    color: #fff;
+    text-decoration: none;
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.10);
+}
+
+.map-title {
+    margin: 10px;
+    color: #fff;
+}
+
+.map-title:hover {
+    text-decoration: none;
+}
+
+.map-actions {
+    text-align: right;
+}
+
+.user-map img {
+    width: 200px;
+}
+
+.user-map:hover {
+    background: rgba(255, 255, 255, 0.20);
+}
+
+.user-map a:hover {
+    text-decoration: none;
+}
+}

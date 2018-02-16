@@ -1,0 +1,127 @@
+/* links */
+.enm a {
+    color: rgb(58, 80, 114);
+}
+
+.enm a:hover {
+    color: rgb(58, 80, 114);
+    text-decoration: underline;
+}
+
+/* buttons */
+.enm a.button, .enm label.button {
+    cursor: pointer;
+    color: #fff;
+    border: 1px solid white;
+    border-radius: 5px;
+    text-decoration: none;
+    background-color: rgba(255, 255, 255, 0.10);
+    padding: 5px;
+    text-align: center;
+    display: inline-block;
+    font-weight: normal;
+}
+
+.enm a.button:hover, .enm label.button:hover {
+    background: rgba(255, 255, 255, 0.20);
+    color: #fff;
+}
+
+.enm a.button.active {
+    background-color: rgba(255, 200, 200, 0.1);
+    font-weight: bold;
+}
+
+.enm button.collapse-caret {
+    display: inline-block;
+    background: none;
+    border: none;
+    padding-top: 0em;
+    width: 20px;
+}
+
+/* form inputs */
+
+.enm .dropbox {
+    outline: 1px dashed #aaa; /* the dash box */
+    outline-offset: -10px;
+    background-color: rgba(255, 255, 255, 0.10);
+    padding: 40px;
+    min-height: 200px; /* minimum height */
+    position: relative;
+    cursor: pointer;
+}
+
+.enm .input-file {
+    opacity: 0; /* invisible but it's there! */
+    width: 100%;
+    height: 200px;
+    position: absolute;
+    cursor: pointer;
+}
+
+.enm .dropbox:hover {
+    background-color: rgba(255, 255, 255, 0.20);
+}
+
+.enm .dropbox p {
+    font-size: 1.2em;
+    text-align: center;
+    padding: 50px 0;
+}
+
+.enm label {
+    font-weight: normal;
+}
+
+/* scrollbars */
+
+::-webkit-scrollbar-track {
+    background-color: none;
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+    background-color: none;
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: 6px;
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+/* bootstrap modifiers */
+.nav-tabs>li>a {
+    background: rgba(255, 255, 255, 0.6);
+}
+
+/* bootstrap-vue modifiers */
+.collapsed > .when-opened,
+:not(.collapsed) > .when-closed {
+  display: none;
+}
+
+.enm button.dropdown-button:hover {
+    border: 1px solid white;
+}
+
+.enm button.enm:hover {
+    border: none;
+    background: none;
+}
+
+.enm button.enm:active {
+    border: none;
+    background: none;
+}
+
+.enm button.enm:focus {
+    outline: 0;
+}
+
+/* leaflet/esri modifiers */
+.enm .leaflet-pane.leaflet-stationMarker-pane,
+.enm .leaflet-pane.leaflet-inactiveStationMarker-pane,
+.enm .leaflet-pane.leaflet-overlay-pane {
+    z-index: 510;
+}

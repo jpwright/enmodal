@@ -1,0 +1,978 @@
+html, body {
+    padding: 0;
+    margin: 0;
+    font-family: sans-serif;
+    background-color: #232227 !important;
+    overflow-x: hidden;
+}
+
+img:hover {
+    width:100%;
+    height:100%;
+}
+
+#content {
+    color: white;
+    padding: 12px;
+    margin-top: 34px;
+}
+
+[data-balloon]:before, [data-balloon]:after {
+    z-index: 10000 !important;
+}
+
+#alpha-warning {
+    z-index: 8000;
+    width: 100%;
+    height: 100%;
+    padding: 10% 15%;
+    background-color: rgba(255, 255, 255, 0.9);
+    position: absolute;
+    top: 0;
+    left: 0;
+    text-align: center;
+}
+
+#map {
+    position: absolute;
+    top: 34px;
+    bottom: 0;
+    width: 100%;
+}
+
+.dropdown-selector {
+    width: 100%;
+}
+
+button.dropdown-button {
+    width: 100%;
+    text-align: left;
+    background-color: rgba(0, 0, 0, 0);
+    border: 1px solid white;
+}
+
+button.dropdown-button:hover, button.dropdown-button:focus {
+    border: 1px solid white;
+    color: #FFF;
+}
+
+.dropdown-menu {
+    width: 100%;
+}
+
+.leaflet-tooltip {
+    background: rgba(0, 0, 0, 0.75);
+    color: white;
+    padding: 5px;
+    text-align: center;
+    width: 160px;
+}
+
+.tooltip-hide {
+    display: none;
+}
+
+.station-popup {
+    width: 250px;
+    bottom: 0px;
+}
+
+.station-content {
+    padding: 5px;
+}
+
+.station-popup .leaflet-popup-content {
+    margin: 0px;
+    padding-top: 10px;
+    -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Chrome/Safari/Opera */
+    -khtml-user-select: none; /* Konqueror */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+    user-select: none;
+}
+
+.station-popup .leaflet-popup-close-button {
+    margin-top: 12px;
+}
+
+.station-popup .leaflet-popup-content-wrapper {
+    border-radius: 0px;
+    padding: 0px;
+}
+
+.station-popup .leaflet-popup-content-wrapper, .station-popup .leaflet-popup-tip {
+    background: black;
+    color: white;
+}
+
+.station-name {
+    font-size: 1.5em;
+    font-weight: bold;
+    padding: 5px;
+    border-top: 5px solid white;
+}
+
+input.station-name-edit {
+    background-color: black;
+    color: white;
+    font-weight: bold;
+    font-size: 1em;
+    height: 1em;
+    width: 200px;
+    margin: 0px;
+    padding: 5px;
+}
+
+.station-info {
+    font-size: 1em;
+}
+
+.station-buttons {
+}
+
+.station-content-button {
+    cursor: pointer;
+    display: inline-block;
+    margin: 2px;
+    padding: 5px;
+    background-color: #333333;
+}
+
+.station-delete {
+    float: right;
+}
+
+.station-build {
+    float: right;
+}
+
+.station-transfer {
+    float: right;
+    text-align: center;
+}
+
+.subway-lines {
+    overflow: visible;
+}
+
+.subway-line-group {
+    display: inline-block;
+    border-radius: 4px;
+    padding: 4px;
+    margin: 4px;
+    border: 1px solid #999;
+    vertical-align: top;
+    overflow: visible;
+}
+
+.subway-line-long {
+    -webkit-border-radius: 1em;
+    -moz-border-radius: 1em;
+    border-radius: 1em;
+    border: 2px solid rgba(0, 0, 0, 0);
+    box-sizing: border-box;
+    padding: 0.25em;
+    font-weight: bold;
+    line-height: 1em;
+    position: relative;
+    display: inline-block;
+    top: 0px;
+    white-space: nowrap;
+}
+
+
+.subway-line-long .content {
+    position: relative;
+    height: 1em;
+    min-width: 1em;
+    display: inline-block;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.subway-line-mini.subway-line-long {
+
+    -webkit-border-radius: 1em;
+    -moz-border-radius: 1em;
+    border-radius: 1em;
+    border: 2px solid rgba(0, 0, 0, 0);
+    box-sizing: border-box;
+    padding: 0.125em;
+    font-weight: bold;
+    font-size: 0.75em;
+    line-height: 1em;
+    position: relative;
+    display: inline-block;
+    top: -0.25em;
+    white-space: nowrap;
+}
+
+.subway-line-mini.subway-line-long .content {
+    position: relative;
+    height: 0.5em;
+    min-width: 1em;
+    display: inline-block;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.subway-line-mega {
+    -webkit-border-radius: 1.25em;
+    -moz-border-radius: 1.25em;
+    border-radius: 1.25em;
+    border: 2px solid rgba(0, 0, 0, 0);
+    box-sizing: border-box;
+    padding: 0.25em;
+    font-weight: bold;
+    font-size: 1.25em;
+    line-height: 1.25em;
+    position: relative;
+    display: inline-block;
+    top: 0px;
+    white-space: nowrap;
+}
+
+
+.subway-line-mega .content {
+    position: relative;
+    height: 1.25em;
+    min-width: 1.25em;
+    display: inline-block;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.subway-line-mini.subway-line-long.subway-line-marker-diagram {
+    margin-left: 2px;
+    top: 0em;
+}
+
+.subway-line-mini.subway-line-long.subway-line-marker-diagram.subway-line-marker-diagram-fake {
+    width: 0;
+    border: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.subway-line-mini.subway-line-long.subway-line-marker-diagram.subway-line-marker-diagram-fake .content {
+    width: 0;
+}
+
+.subway-clickable {
+    cursor: pointer;
+}
+
+.subway-deletable {
+    cursor: pointer;
+}
+
+.station-popup-line-marker {
+    margin: 2px;
+}
+
+#custom-line-marker {
+    position: relative;
+    float: left;
+    left: -50%;
+}
+
+.custom-options {
+    width: 100%;
+    font-size: small;
+    position: relative;
+}
+
+#custom-line-options-color-pickers {
+    width: 5em;
+    float: left;
+    height: auto;
+    padding: 1em;
+}
+
+#custom-line-options-column-inputs {
+    width: auto;
+    float: left;
+    padding-top: 1em;
+}
+
+.custom-options-label {
+    margin: 5px;
+    line-height: 1.6em;
+}
+
+.custom-options-label input {
+    width: 75%;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 0;
+    color: white;
+    padding: 5px;
+}
+
+.custom-options-label input:focus {
+    outline-width: 0;
+}
+
+.custom-options-label input.issue {
+    background-color: rgba(50, 0, 0, 0.5);
+}
+
+#custom-service-options {
+    overflow: hidden;
+}
+
+#custom-service-options .service-mode-button {
+    border: 1px solid white;
+    border-radius: 5px;
+    font-size: 0.9em;
+    margin-right: 0.5em;
+    background: rgba(255, 255, 255, 0.10);
+    outline: none;
+}
+
+#custom-service-options .active {
+    background: rgba(255, 255, 255, 0.30);
+    color: #fff;
+}
+
+#custom-service-options .service-mode-button:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.20);
+}
+
+#custom-service-mode {
+    padding-top: 5px;
+    padding-left: 5px;
+}
+
+#route-header {
+    padding: 10px;
+    margin-top: 10px;
+    border: 1px solid white;
+    border-radius: 5px;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+}
+
+#route-diagram {
+    background: rgba(50, 50, 50, 0.75);
+    top: 0px;
+    height: 100%;
+    width: 100%;
+    box-sizing: content-box;
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+    background-color: none;
+}
+
+.custom-scroll::-webkit-scrollbar {
+    width: 6px;
+    background-color: none;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+    border-radius: 6px;
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+.custom-scroll-dark::-webkit-scrollbar-track {
+    background-color: none;
+}
+
+.custom-scroll-dark::-webkit-scrollbar {
+    width: 6px;
+    background-color: none;
+}
+
+.custom-scroll-dark::-webkit-scrollbar-thumb {
+    border-radius: 6px;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+#route-diagram-container-container {
+    padding: 5px;
+    width: 100%;
+    height: 100%;
+    box-sizing: content-box;
+}
+
+#route-diagram-container {
+    width: 100%;
+    height: 100%;
+}
+
+.route-diagram-name {
+    font-size: 12px;
+    display: inline-block;
+}
+
+.route-diagram-transfers {
+    display: inline-block;
+    margin-left: 5px;
+}
+
+.route-diagram-stop {
+    position: relative;
+    clear: both;
+    width: 100%;
+    line-height: 1.8em;
+}
+
+.route-diagram-station-marker {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border-radius: 0.5em;
+    border: 3px solid black;
+    background-color: white;
+    position: absolute;
+    top: 0.3em;
+    left: 0.5em;
+    z-index: 501;
+}
+
+.route-diagram-stop-info {
+    padding-left: 2em;
+    cursor: pointer;
+}
+
+.route-diagram-stop-info:hover {
+    background-color: rgba(200,200,200,0.2);
+}
+
+.route-diagram-stop-name {
+    float: left;
+    margin-right: 0.5em;
+}
+
+.route-diagram-stop-connectors {
+    display: table-cell;
+    width: 100%;
+    min-width: 50px;
+}
+
+.route-diagram-branch {
+    display: inline-block;
+    position: relative;
+    width: 100%;
+}
+
+.route-diagram-branch-connectors {
+    position: absolute;
+    height: 100%;
+}
+
+.route-diagram-connector {
+    position: absolute;
+    float: left;
+    height: 100%;
+    width: 0.4em;
+    left: 0.8em;
+    top: 1.2em;
+    z-index: 500;
+    border-radius: 0.2em;
+}
+
+.route-diagram-connector-branch {
+    position: absolute;
+    float: left;
+    width: 0.4em;
+    height: 100%;
+    padding-top: 0.5em;
+    padding-bottom: 0.8em;
+    z-index: 500;
+    border-radius: 0.2em;
+}
+
+.route-diagram-connector-internal {
+    height: 100%;
+    width: 100%;
+    float: left;
+    z-index: 500;
+    border-radius: 0.2em;
+}
+
+.route-diagram-connector-top-joint {
+    position: absolute;
+    float: left;
+    height: 0.4em;
+    width: 0.8em;
+    top: 0.5em;
+    border-radius: 0.4em;
+    z-index: 500;
+    border-radius: 0.2em;
+}
+
+.route-diagram-connector-bottom-joint {
+    position: absolute;
+    float: left;
+    height: 0.4em;
+    width: 0.8em;
+    bottom: 0.8em;
+    border-radius: 0.4em;
+    z-index: 500;
+    border-radius: 0.2em;
+}
+
+#scale {
+    width: auto;
+    min-width: 170px;
+    height: 70px;
+    background: rgba(0, 0, 0, 0.65);
+    color: white;
+    z-index: 900;
+    position: absolute;
+    left: 10px;
+    bottom: 10px;
+    padding-left: 5px;
+    padding-right: 5px;
+    display: none;
+}
+
+.scale-box {
+    width: 20px;
+    height: 20px;
+    margin-top: 5px;
+    display: inline-block;
+}
+
+.scale-inner {
+    background-color: rgba(255, 100, 100, 0.5); 
+    border-radius: 50%; 
+    margin: auto;
+    position: absolute;
+}
+
+#scale-bounds {
+    width: auto;
+    display: block;
+    text-align: center;
+    padding: 5px;
+}
+
+.scale-bound {
+    width: 100%;
+    padding-left: 5px;
+    padding-right: 5px;
+    display: inline-block;
+    position: absolute;
+    left: 0;
+}
+
+#scale-low {
+    text-align: left;
+}
+
+#scale-mid {
+    text-align: center;
+}
+
+#scale-high {
+    text-align: right;
+}
+
+#scale-units {
+    margin-top: 12px;
+    text-align: center;
+    font-size: 0.8em;
+    color: #aaaaaa;
+}
+
+#starter {
+    width: 66%;
+    height: 100%;
+    margin-left: 5%;
+    color: white;
+    display: table;
+    z-index: 900;
+    position: absolute;
+    top: 0;
+}
+
+.share-link-content input {
+    color: #222;
+    font-size: 1em;
+    height: 2.2em;
+    padding-left: 0.4em;
+    margin-right: 1em;
+    width: 90%;
+    float: left;
+}
+
+.share-body {
+    padding: 10px;
+}
+
+.share-footer {
+    width: 100%;
+    margin-top: 1em;
+}
+
+#share-ok {
+    display: block;
+    margin: auto;
+}
+
+ul.ui-autocomplete {
+    z-index: 950;
+}
+
+#starter-middle {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.starter-inner {
+    margin: 10px;
+    width: auto;
+    background: rgba(0, 0, 0, 0.65);
+    border: 1px solid #777;
+}
+
+#starter-share {
+    height: 21em;
+}
+
+.game-start-choice-large {
+    border: 1px solid white;
+    display: block;
+    cursor: pointer;
+    text-align: center;
+    font-size: 2em;
+    height: 100px;
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.share-link {
+    margin-bottom: 10px;
+}
+
+.share-link-header {
+    font-size: 1.2em;
+}
+
+.share-link-footer {
+    color: #aaaaaa;
+}
+
+#navbar {
+    z-index: 5001;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 34px;
+    background: rgba(20, 20, 20, 1.0);
+    color: white;
+      -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome and Opera */
+}
+
+#navbar .nav {
+    float: right!important;
+    margin: 0 -15px;
+}
+
+#navbar .nav .open .dropdown-menu {
+    position: static;
+    float: none;
+    width: auto;
+    margin-top: 0;
+    background-color: white;
+    border: 0;
+    -webkit-box-shadow: none;
+    box-shadow: none;
+}
+
+#navbar .dropdown {
+    max-width: 250px;
+    line-height: 1.42857143;
+    float: left;
+}
+
+#navbar button {
+    border: none;
+}
+
+.nav-tabs a {
+    font-size: 1em;
+    color: rgb(58, 80, 114);
+}
+
+.dropdown-menu {
+    /* max-height: 25vh; */
+    overflow-y: auto;
+    color: rgb(25, 25, 25);
+}
+
+ul.dropdown-lr {
+  width: 300px;
+}
+
+#options-container {
+    overflow: visible;
+    display: flex;
+    display: -webkit-flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+#options-container .tab-content>.active {
+    display: -webkit-flex;
+    display: flex;
+}
+
+#options-container .collapse.in {
+    display: -webkit-flex;
+    display: flex;
+}
+
+.option-section {
+    overflow: hidden;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+}
+
+#option-section-lines {
+    display: flex;
+    display: -webkit-flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+#option-section-services {
+    display: flex;
+    display: -webkit-flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+#option-section-user {
+    flex: 0 0 auto;
+    margin-bottom: 10px;
+    overflow: visible;
+}
+
+.option-section-heading {
+    font-size: 0.9em;
+    padding: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    margin: 10px 0;
+
+}
+
+#nav-enmodal-logo {
+    float: left;
+    margin-left: 12px;
+    line-height: 34px;
+}
+
+#nav-user-logged-in {
+    float: right;
+    margin-right: 12px;
+    text-align: right;
+}
+
+#nav-user-logged-in div {
+    display: inline-block;
+    margin-left: 10px;
+}
+
+#nav-user-logged-out {
+    float: right;
+    margin-right: 12px;
+}
+
+.dropdown-toggle.tool-button.game-button-small {
+    padding: 5px;
+}
+
+.dropdown-toggle.tool-button.game-button-small:hover {
+    background: rgba(255, 255, 255, 0.20);
+    color: #fff;
+}
+
+#option-section-tools {
+    flex: 0 0 auto;
+    margin-bottom: 10px;
+}
+
+#option-section-route {
+    display: flex;
+    display: -webkit-flex;
+    overflow-y: scroll;
+}
+
+#option-section-route:after {
+    content: '';
+    display: block;
+    clear: both;
+}
+
+#option-section-status {
+    padding-top: 10px;
+    flex: 0 0 auto;
+    display: block;
+    overflow: visible;
+}
+
+.data-layer-selector {
+    display: block;
+    background: rgba(255, 255, 255, 0.10);
+    padding: 12px;
+    cursor: pointer;
+}
+
+.data-layer-selector:hover {
+    background: rgba(255, 255, 255, 0.20);
+}
+
+.data-layer-selector.data-layer-selected {
+    background: rgba(255, 255, 255, 0.30);
+    border: 1px solid white;
+}
+
+#options-container .option-accordion {
+    margin-bottom: 10px;
+}
+
+#options-container .option-accordion a {
+    background-color: rgba(58, 80, 114, 0.20);
+    border: 1px solid white;
+    border-radius: 5px;
+    cursor: pointer;
+    display: inline-block;
+    color: #fff;
+    text-decoration: none;
+    padding: 5px;
+    text-align: center;
+    color: white;
+    width: 100%;
+    line-height: 1.42857143;
+}
+
+#game-outcome {
+    font-size: 2em;
+}
+
+.game-icon {
+    display: inline-block;
+    width: 50px;
+}
+
+.game-icon-description {
+    font-size: 0.4em;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    padding-left: 60px;
+}
+
+#tool-save {
+    display: inline-block;
+    width: 50px;
+}
+
+#save-message {
+    display: inline-block;
+    background-color: rgba(255, 200, 200, 0.1);
+    padding: 5px;
+    border-radius: 5px;
+}
+
+.attribution {
+    font-size: 0.6em;
+    color: #aaaaaa;
+    margin-top: 5px;
+}
+
+.attribution a {
+    color: #bbbbbb;
+}
+
+#map.leaflet-container {
+    background-color: #474749;
+}
+
+.leaflet-tooltip.station-marker-tooltip {
+  width: auto;
+  background: black;
+  color: white;
+  padding: 5px;
+  border: none;
+  box-shadow: none;
+}
+.leaflet-tooltip.station-marker-tooltip::before {
+  border: none;
+}
+
+.no-hover:hover {
+    cursor: grab;
+    cursor: -moz-grab;
+    cursor: -webkit-grab;
+}
+
+@media (min-width: 767px) {
+.alpha-warning-large {
+    font-size: 5vw;
+}
+.alpha-warning-small {
+    font-size: 2vw;
+}
+}
+
+@media (max-width: 767px) {
+    .alpha-warning-large {
+        font-size: 8vw;
+    }
+    .alpha-warning-small {
+        font-size: 5vw;
+    }
+    #options {
+        display: none;
+    }
+    #starter {
+        width: 90%;
+        margin: 5%;
+    }
+    #starter-city-picker {
+        height: 16em;
+    }
+    #game-start-city-picker {
+        display: block;
+        float: none;
+        width: 100%;
+        height: auto;
+    }
+    #game-start-scratch {
+        display: block;
+        float: none;
+        width: 50%;
+        height: auto;
+        margin: auto;
+    }
+
+  .enm.modal-row { 
+    flex-wrap: wrap;  
+  }
+  .enm.modal input.large.picker { 
+    flex-basis: 100%; 
+    font-size: 2em;
+  }
+  .enm.modal .enm.modal-row a.button.large.picker {
+    margin-left: 0;
+    margin-top: 10px;
+    width: 100%;
+  }
+
+}
+
+

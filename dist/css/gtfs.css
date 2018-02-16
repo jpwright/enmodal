@@ -1,0 +1,12 @@
+.enm #gtfs-agency-list {
+	max-height: 50vh;
+	overflow-y: scroll;
+}
+
+.enm .gtfs-agency {
+	margin: 10px;
+}
+
+.enm .gtfs-route {
+	margin-left: 45px;
+}

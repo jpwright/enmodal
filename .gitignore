@@ -26,5 +26,5 @@ valhalla/demos
 valhalla/tiles
 valhalla/valhalla_tiles
 tools/cache/
-dist/*
+dist/
 uploads/*

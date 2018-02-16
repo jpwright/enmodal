@@ -1,0 +1,76 @@
+.enm.modal {
+    width: 75%;
+    max-width: -webkit-calc(100% - 310px);
+    max-width: -moz-calc(100% - 310px);
+    max-width: calc(100% - 310px);
+    height: 100%;
+    color: white;
+    display: table;
+    z-index: 900;
+    position: absolute;
+    top: 0;
+}
+
+.enm.modal-middle {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.enm.modal-inner {
+    width: 80%;
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid #777;
+    display: flex;
+    margin: auto;
+}
+
+.enm.modal-row {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    padding: 10px;
+}
+
+.enm.modal-col {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.enm.modal .header {
+    font-size: 1.5em;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 10px;
+}
+
+.enm.modal .header a.button {
+    float: right;
+    font-size: 14px;
+}
+
+.enm.modal .body {
+    padding: 10px;
+}
+
+.enm.modal input.large {
+    color: #222;
+    font-size: 3em;
+    height: 2em;
+}
+
+.enm.modal input.large.picker {
+    padding-left: 0.4em;
+    width: 78%;
+}
+
+.enm.modal a.button.large {
+    font-size: 2em;
+    line-height: 2.5em;
+}
+
+.enm.modal a.button.large.picker {
+    width: 20%;
+    margin-left: 2%;
+}
+
