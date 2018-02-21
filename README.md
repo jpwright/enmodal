@@ -82,7 +82,7 @@ Download this repository as a ZIP file (see Download options above) and unzip to
 
 Note: enmodal requires python 2.7 and is not compatible with python 3. Fortunately, your Mac comes with a copy of python 2.7 installed, so you're good.
 
-Open up a Terminal, navigate to the directory in which you unzipped enmodal (recommend [this tutorial] if navigating through directories in Terminal is unfamiliar to you), and run the following commands:
+Open up a Terminal, navigate to the directory in which you unzipped enmodal (recommend [this tutorial](https://learn.co/lessons/bash-navigation-osx) if navigating through directories in Terminal is unfamiliar to you), and run the following commands:
 
     sudo easy_install pip
     sudo pip install virtualenv
