@@ -70,6 +70,69 @@ In the same Command Prompt window, run:
 
 Navigate to `http://localhost:5050` in your browser and get started!
 
+### Mac
+
+#### Clone this repo
+
+Download this repository as a ZIP file (see Download options above) and unzip to a directory called `enmodal`. Alternatively, install [Git](https://git-scm.com/) and clone the repository:
+
+    git clone https://github.com/jpwright/enmodal.git
+    
+#### Set up Python
+
+Note: enmodal requires python 2.7 and is not compatible with python 3.
+
+Open up a Terminal, navigate to the directory in which you unzipped enmodal (recommend [this tutorial] if navigating through directories in Terminal is unfamiliar to you), and run the following commands:
+
+    sudo easy_install pip
+    sudo pip install virtualenv
+    
+#### Install virtualenv and set up Python requirements
+
+    virtualenv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+
+#### Install PostgreSQL and PostGIS
+
+Recommend using [Postgres.app](http://postgresapp.com/) to accomplish this.
+
+Install Postgres.app and open the application. Click "Initialize" then "Start" to start the Postgres server. Double click on any of the databases shown in the window.
+
+A terminal window should appear. Run these commands:
+
+    CREATE DATABASE sessions;
+    CREATE DATABASE dggrid;
+
+Now close the window and double click on the "dggrid" database that appears. Run these commands:
+
+    CREATE EXTENSION postgis;
+    CREATE EXTENSION postgis_topology;
+
+#### Create config file
+
+Copy `settings.cfg.example` to a new file called `settings.cfg`. Most fields can be left at their default values, except:
+
+- Set the `dggrid` `user` to your macOS username (this is the default value if you used Postgres.app)
+- Set the `dggrid` `password` to be blank (this is the default value if you used Postgres.app)
+- Set the `sessions` `user` to your macOS username (this is the default value if you used Postgres.app)
+- Set the `sessions` `password` to be blank (this is the default value if you used Postgres.app)
+- If you want support for reverse geocoding, you'll need to set up an account with either [Mapbox](https://www.mapbox.com/developers/) or [Google](https://developers.google.com/maps/documentation/javascript/get-api-key) and supply an API key. (The Mapzen API is no longer functional.)
+
+#### Run database setup tool
+
+In your original Terminal window:
+
+    python tools/set_up_db.py
+
+#### Start the server
+
+    python server.py
+
+#### Open your browser
+
+Navigate to `http://localhost:5050` in your browser and get started!
+
 ### Ubuntu
 
 #### Clone this repo
