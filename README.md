@@ -4,7 +4,7 @@ enmodal is a browser-based service for transit planning and analysis. users can 
 
 ## Set up
 
-Skip to: [Windows](#windows), [Ubuntu](#ubuntu)
+Skip to: [Windows](#windows), [Mac](#mac), [Ubuntu](#ubuntu)
 
 ### Windows
 
