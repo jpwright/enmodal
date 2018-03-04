@@ -66,7 +66,7 @@ class EnmodalSessionManager(object):
         public_session = self.get_by_public_key(h)
         if public_session is not None:
             public_session.keep_alive()
-            a = EnmodalSessionAuthentication(public_session, False)
+            a = EnmodalSessionAuthentication(public_session, True)
             return a
         private_session = self.get_by_private_key(h)
         if private_session is not None:
