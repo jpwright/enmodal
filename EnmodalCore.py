@@ -408,7 +408,7 @@ def route_edge_add():
                 line_to_use.add_edge(edge)
                 return edge.to_json()
             else:
-                return json.dumps({"error": "Stops Not Found"})
+                return json.dumps({"error": "No Stops"})
 
     return json.dumps({"error": "Invalid ID"})
 
