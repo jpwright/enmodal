@@ -22,9 +22,9 @@ var ZIP_FILE = settings["d"];
 var CBP_FILE = settings["e"];
 
 var config = {
-    user: 'postgres',
+    user: 'user',
     database: 'transit',
-    password: 'nostrand',
+    password: '123456789',
     host: 'localhost',
     port: 5432,
     max: 10,
