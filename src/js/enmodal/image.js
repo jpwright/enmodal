@@ -18,7 +18,7 @@ function save_svg(canvas, callback) {
     //link[0].click();
 
 
-    canvg(document.getElementById('canvas'), draw.svg());
+    canvgv2(document.getElementById('canvas'), draw.svg());
     var d = document.getElementById('canvas').toDataURL("image/png");
     $('#svg-drawing').empty();
 
@@ -69,7 +69,7 @@ function create_image(callback) {
 		    		ctx.fillText(enmodal.map_name, 12, 1988);
 		    	}
 		    	ctx.textAlign = 'right';
-		    	ctx.fillText("created with enmodal -- http://enmodal.co", 1988, 1988);
+		    	ctx.fillText("created with enmodal -- http://enmodal.io", 1988, 1988);
 		    	callback(canvas);
 		    });
 		});

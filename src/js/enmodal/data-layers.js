@@ -51,6 +51,8 @@ class DataLayers {
     }
     
     get_ridership() {
+        // Disabled
+        /*
         var params = $.param({
             i: enmodal.session_id
         });
@@ -69,6 +71,7 @@ class DataLayers {
                 }
             }
         });
+        */
     }
     
     quantiles(geojson, num_breaks, feature_name) {

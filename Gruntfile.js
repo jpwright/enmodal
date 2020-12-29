@@ -27,6 +27,7 @@ module.exports = function(grunt) {
     concat: {
       options: {
         banner: '<%= banner %>',
+        sourceMap: true,
         stripBanners: true
       },
       dist: {
@@ -51,7 +52,10 @@ module.exports = function(grunt) {
     },
     uglify: {
       options: {
-        banner: '<%= banner %>'
+        banner: '<%= banner %>',
+        sourceMap: true,
+        sourceMapIncludeSources: true,
+        sourceMapIn: 'dist/js/enmodal.js.map'
       },
       dist: {
         src: '<%= concat.dist.dest %>',
@@ -80,7 +84,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-contrib-concat');
-  grunt.loadNpmTasks('grunt-contrib-uglify');
+  grunt.loadNpmTasks('grunt-contrib-uglify-es');
   grunt.loadNpmTasks('grunt-vue');
 
   // Default task.

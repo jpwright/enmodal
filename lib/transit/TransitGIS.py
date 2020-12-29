@@ -6,25 +6,20 @@ import json
 import re
 import os
 import copy
+import geopy
+from geopy.geocoders import ArcGIS
+from streetaddress import StreetAddressFormatter, StreetAddressParser
+ap = StreetAddressParser()
 
 import Transit
-import ConfigParser
+import configparser
 
 import sys
 
-config = ConfigParser.RawConfigParser()
+config = configparser.RawConfigParser()
 config.read(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'settings.cfg')))
-DGGRID_HOST = config.get('dggrid', 'host')
-DGGRID_PORT = config.get('dggrid', 'port')
-DGGRID_DBNAME = config.get('dggrid', 'dbname')
-DGGRID_USER = config.get('dggrid', 'user')
-DGGRID_PASSWORD = config.get('dggrid', 'password')
-DGGRID_CONN_STRING = "host='"+DGGRID_HOST+"' port='"+DGGRID_PORT+"' dbname='"+DGGRID_DBNAME+"' user='"+DGGRID_USER+"' password='"+DGGRID_PASSWORD+"'"
 
 REVERSE_GEOCODE_PROVIDER = config.get('geocode', 'reverse_geocode_provider')
-MAPZEN_KEY = config.get('geocode', 'mapzen_key')
-MAPBOX_KEY = config.get('geocode', 'mapbox_key')
-GOOGLE_KEY = config.get('geocode', 'google_key')
 
 class HexagonRegion(object):
     
@@ -165,136 +160,22 @@ class ReverseGeocodeResult(object):
         self.locality = locality
         self.has_locality = True
 
-def hexagons_bb(bb):
-    
-    region = HexagonRegion()
-        
-    conn = psycopg2.connect(DGGRID_CONN_STRING)
-    cursor = conn.cursor()
-     
-    query = "SELECT gid, ST_AsGeoJSON(center), coalesce(population,0) as p, coalesce(employment,0) as e FROM dggrid WHERE ST_Within(center, ST_MakeEnvelope("+str(bb.min_lng)+", "+str(bb.min_lat)+", "+str(bb.max_lng)+", "+str(bb.max_lat)+")) LIMIT 20000;"
-    print query
-    cursor.execute(query)
-    #cursor.execute("SELECT gid FROM dggrid WHERE ST_DWithin(geo, 'POINT("+lng+" "+lat+")', 0.01) LIMIT 1000;")
-    #cursor.execute("SELECT * FROM dggrid ORDER BY geo <-> st_setsrid(st_makepoint("+lng+","+lat+"),4326) LIMIT 100;")
-    
-    rows = cursor.fetchall()
-    
-    if (len(rows) > 0):
-        query = "SELECT gid, ST_AsGeoJSON(geo), coalesce(population,0) as p, coalesce(employment,0) as e FROM dggrid WHERE gid="+str(rows[0][0])+" LIMIT 1;"
-        print query
-        cursor.execute(query)
-        hexagon_row = cursor.fetchone()
-        hexagon_template = Hexagon(int(hexagon_row[0]), json.loads(hexagon_row[1]), int(hexagon_row[2]), int(hexagon_row[3]))
-        
-        for row in rows:
-            h = copy.deepcopy(hexagon_template)
-            c = json.loads(row[1])
-            h.shift_center(c['coordinates'][0], c['coordinates'][1])
-            h.gid = int(row[0])
-            h.population = int(row[2])
-            h.employment = int(row[3])
-            region.add_hexagon(h)
-    cursor.close()
-    conn.close()
-    
-    return region
-
-def hexagons_gids(gids):
-    
-    region = HexagonRegion()
-        
-    conn = psycopg2.connect(DGGRID_CONN_STRING)
-    cursor = conn.cursor()
-     
-    query = "SELECT gid, ST_AsGeoJSON(center), coalesce(population,0) as p, coalesce(employment,0) as e FROM dggrid WHERE gid IN %s LIMIT 20000;"
-    #print query
-    cursor.execute(query, [tuple(gids)])
-    #cursor.execute("SELECT gid FROM dggrid WHERE ST_DWithin(geo, 'POINT("+lng+" "+lat+")', 0.01) LIMIT 1000;")
-    #cursor.execute("SELECT * FROM dggrid ORDER BY geo <-> st_setsrid(st_makepoint("+lng+","+lat+"),4326) LIMIT 100;")
-    
-    rows = cursor.fetchall()
-    
-    for hexagon_row in rows:
-        hexagon_template = Hexagon(int(hexagon_row[0]), json.loads(hexagon_row[1]), int(hexagon_row[2]), int(hexagon_row[3]))
-        
-        for row in rows:
-            h = copy.deepcopy(hexagon_template)
-            c = json.loads(row[1])
-            h.shift_center(c['coordinates'][0], c['coordinates'][1])
-            h.gid = int(row[0])
-            h.population = int(row[2])
-            h.employment = int(row[3])
-            region.add_hexagon(h)
-    cursor.close()
-    conn.close()
-    
-    return region
-
 def reverse_geocode(provider, lat, lng):
     
     result = ReverseGeocodeResult(lat, lng)
     
-    if provider == "mapzen":
-        mapzen_uri = "https://search.mapzen.com/v1/reverse?api_key="+MAPZEN_KEY+"&point.lat="+lat+"&point.lon="+lng+"&size=1&layers=address"
-        geocode = requests.get(mapzen_uri)
-        geocode_content = json.loads(geocode.content)
-        
-        if (len(geocode_content["features"]) < 1):
-            # Flag an error?
-            print "Error in reverse geocoding"
-        else:
-            properties = geocode_content["features"][0]["properties"]
-            if ("street" in properties):
-                streets = [properties["street"]]
-                result.set_streets(streets)
-            if ("locality" in properties):
-                locality = properties["locality"]
-                result.set_locality(locality)
-            if ("borough" in properties):
-                locality = properties["borough"]
-                result.set_locality(locality)
-            if ("neighbourhood" in properties):
-                neighborhood = properties["neighbourhood"]
-                result.set_neighborhood(neighborhood)
-                
-    if provider == "mapbox":
-        mapbox_uri = "https://api.mapbox.com/geocoding/v5/mapbox.places/"+str(lng)+","+str(lat)+".json?access_token="+MAPBOX_KEY+"&types=locality,neighborhood,address"
-        geocode = requests.get(mapbox_uri)
-        geocode_content = json.loads(geocode.content)
-        if (len(geocode_content["features"]) < 1):
-            # Flag an error?
-            print "Error in reverse geocoding"
-        else:
-            for feature in geocode_content["features"]:
-                place_type = feature["place_type"][0]
-                if place_type == "address":
-                    result.set_streets([feature["text"]])
-                if place_type == "neighborhood":
-                    result.set_neighborhood(feature["text"])
-                if place_type == "locality":
-                    result.set_locality(feature["text"])
-    
-    if provider == "google":
-        google_uri = "https://maps.googleapis.com/maps/api/geocode/json?latlng="+str(lat)+","+str(lng)+"&key="+GOOGLE_KEY
-        geocode = requests.get(google_uri)
-        geocode_content = json.loads(geocode.content)
-        if (len(geocode_content["results"]) < 1):
-            # Flag an error?
-            print "Error in reverse geocoding"
-        else:
-            address = geocode_content["results"][0]
-            streets = []
-            for component in address["address_components"]:
-                place_types = component["types"]
-                if "neighborhood" in place_types:
-                    result.set_neighborhood(component["long_name"])
-                if "route" in place_types:
-                    streets.append(component["short_name"])
-                if "locality" in place_types:
-                    result.set_locality(component["long_name"])
-            if len(streets) > 0:
-                result.set_streets(streets)
+    if provider == "arcgis":
+        geolocator = ArcGIS()
+        query = str(lat) + ", " + str(lng)
+        print(query)
+        location = geolocator.reverse(query)
+        print(location)
+        address = ap.parse(location.address)
+        if (address['street_name'] is not None and address['street_type'] is not None):
+            result.set_streets([address['street_name'] + " " + address['street_type']])
+        elif (address['street_name'] is not None):
+            result.set_streets([address['street_name']])
+
 
     return result
         
@@ -373,7 +254,7 @@ def valhalla_route(station_1_lat, station_1_lng, station_2_lat, station_2_lng):
             }
     
     valhalla_uri = "http://localhost:8002/route"
-    print post_data
+    print(post_data)
     
     geocode = requests.post(valhalla_uri, data = json.dumps(post_data))
     geocode_content = json.loads(geocode.content)
@@ -395,13 +276,13 @@ def mapzen_route(service, line):
         locations.append({"lat": station.location[0], "lon": station.location[1]})
     
     mapzen_uri = 'https://valhalla.mapzen.com/route?json={"locations":'+json.dumps(locations)+',"costing":"auto_shorter","directions_options":{"units":"miles"}}&api_key=mapzen-t6h4cff'
-    print mapzen_uri
+    print(mapzen_uri)
     
     geocode = requests.get(mapzen_uri)
     geocode_content = json.loads(geocode.content)
     #print json.dumps(geocode_content)
     legs = geocode_content["trip"]["legs"]
-    print mapzen_decode(legs[0]["shape"])
+    print(mapzen_decode(legs[0]["shape"]))
     
     return 0
 
@@ -422,7 +303,7 @@ def osm_route(service, line):
         node_1 = osm_data.findNode(location_1[0], location_1[1])
         node_2 = osm_data.findNode(location_2[0], location_2[1])
 
-        print "Routing from %d to %d" % (node_1, node_2)
+        print("Routing from %d to %d" % (node_1, node_2))
         result, route = router.doRoute(node_1, node_2)
 
         if result == 'success':

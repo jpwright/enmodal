@@ -16,6 +16,7 @@ class StationMarker {
         var latlng = L.latLng(this.station.location[0], this.station.location[1]);
         var opacity = 1.0;
         if (!this.active) opacity = INACTIVE_OPACITY;
+        //var marker = L.circleMarker(latlng, {draggable: true, color: "black", opacity: opacity, fillColor: "white", fillOpacity: opacity, zIndexOffset: 100, pane: "stationMarkerPane"}).bindTooltip(this.station.name, this.tooltip_options);
         var marker = L.circleMarker(latlng, {draggable: true, color: "black", opacity: opacity, fillColor: "white", fillOpacity: opacity, zIndexOffset: 100, pane: "stationMarkerPane"}).setRadius(this.radius).bindTooltip(this.station.name, this.tooltip_options);
         if (this.active) {
             marker.on('click', function(event) {
@@ -76,6 +77,7 @@ class StationMarker {
         var content = '<div class="station-name" id="station-'+this.station.sid.toString()+'" data-balloon="Click to rename" data-balloon-pos="left">'+this.station.name;
         content += '   <i class="fa fa-pencil" style="margin-left: 5px;" aria-hidden="true"></i>';
         content += '</div>';
+        /*
         content += '<div class="station-content"><div class="station-info">'+this.station.neighborhood+'<br />';
         content += '<i class="fa fa-user" aria-hidden="true"></i> <span id="stationriders-'+this.station.sid.toString()+'">';
         if (this.station.ridership == -1) {
@@ -84,6 +86,7 @@ class StationMarker {
             content += Math.round(this.station.ridership).toString();
         }
         content += '</span></div>';
+        */
         content += '<div class="station-info subway-lines">';
 
         var lines = enmodal.transit_interface.active_service.station_lines(this.station);

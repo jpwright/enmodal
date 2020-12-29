@@ -13,8 +13,8 @@ import json
 import psycopg2
 import psycopg2.extras
 
-import ConfigParser
-config = ConfigParser.RawConfigParser()
+import configparser
+config = configparser.RawConfigParser()
 config.read(os.path.abspath(os.path.join(os.path.dirname(__file__), 'settings.cfg')))
 
 SESSIONS_HOST = config.get('sessions', 'host')
@@ -40,7 +40,7 @@ def uploaded_file(filename):
 
 def save_session(s, user_id, take_snapshot):
     sid = s.sid
-    print "saving with sid "+str(sid)
+    print("saving with sid "+str(sid))
     sdata = str(s.map.to_json())
     sdt = datetime.datetime.now()
 
@@ -92,7 +92,7 @@ def route_session_load():
     if (cursor.rowcount == 0):
         return json.dumps({"error": "Invalid ID"})
 
-    print sid
+    print(sid)
     row = cursor.fetchone()
     sdata = row[0]
     title = row[1]
@@ -129,11 +129,10 @@ def route_session_push():
     if e:
         return e
 
-    print 'received session push'
-    data = request.get_data()
-    charset = request.mimetype_params.get('charset') or 'UTF-8'
-    jd = LZString().decompressFromUTF16(data.decode(charset, 'utf-16'))
-    print 'decompressed session push'
+    print('received session push')
+    data = request.get_data(as_text=True)
+    jd = LZString().decompressFromBase64(data)
+    print('decompressed session push')
     jdl = json.loads(jd)
     d = jdl['map']
     #print d
@@ -171,7 +170,7 @@ def route_session_import_json():
     if e:
         return e
 
-    print request.files
+    print(request.files)
 
     # check if the post request has the file part
     if 'json' not in request.files:
@@ -188,10 +187,10 @@ def route_session_import_json():
         if not os.path.isdir(UPLOAD_FOLDER):
             os.mkdir(UPLOAD_FOLDER)
         file.save(os.path.join(UPLOAD_FOLDER, filename))
-        print os.path.join(UPLOAD_FOLDER, filename)
+        print(os.path.join(UPLOAD_FOLDER, filename))
         with open(os.path.join(UPLOAD_FOLDER, filename), "r") as f:
             r = f.read()
-            print r
+            print(r)
             printable = set(string.printable)
             r = filter(lambda x: x in printable, r)
             jdl = json.loads(r)

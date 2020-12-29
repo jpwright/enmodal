@@ -116,7 +116,7 @@ class Map(object):
                 purged = [x for x in self.settings.station_pairs if self.valid_station_pair(x)]
                 self.settings.station_pairs = purged
             except:
-                print "invalid settings!"
+                print("invalid settings!")
                 pass
         
 
@@ -360,8 +360,8 @@ class Line(object):
                 self.add_stop(s)
                 stop_ids.append(s.sid)
             else:
-                print "bad stop"
-                print stop
+                print("bad stop")
+                print(stop)
         self.edges = []
         for edge in j['edges']:
             if int(edge['stop_ids'][0]) in stop_ids and int(edge['stop_ids'][1]) in stop_ids:
@@ -369,8 +369,8 @@ class Line(object):
                 e.from_json(edge)
                 self.add_edge(e)
             else:
-                print "bad edge on line "+self.name
-                print edge
+                print("bad edge on line "+self.name)
+                print(edge)
 
 class Edge(object):
     """An Edge is a connection between two Stops.

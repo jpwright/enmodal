@@ -82,9 +82,9 @@ def map_analysis(m):
             station_to_hexagon[station] = station.hexagons
 
     end = time.time()
-    print "Analyzing hexagons took "+str(end-start)
+    print("Analyzing hexagons took "+str(end-start))
     ridership = {}
-    print "Using "+str(condensed_region.num_hexagons())+" hexagons"
+    print("Using "+str(condensed_region.num_hexagons())+" hexagons")
 
     start = time.time()
     for hexagon in condensed_region.hexagons:
@@ -137,7 +137,7 @@ def map_analysis(m):
 #                            ridership[station.sid] += demand
 
     end = time.time()
-    print "Calculating ridership took "+str(end-start)
+    print("Calculating ridership took "+str(end-start))
     return Model(ridership, condensed_region)
 
 def dfs(service, visited, station):

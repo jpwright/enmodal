@@ -11,16 +11,13 @@ import os
 import datetime
 from lzstring import LZString
 import gzip
-from cStringIO import StringIO as IO
+from io import StringIO as IO
 import functools
 import gc
 import base64
 import threading
 import multiprocessing
 import time
-
-import cherrypy
-from paste.translogger import TransLogger
 
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'lib', 'transit')))
@@ -31,11 +28,11 @@ import TransitSettings
 from EnmodalMap import enmodal_map
 from EnmodalSessions import *
 
-import ConfigParser
+import configparser
 
-config = ConfigParser.RawConfigParser()
+config = configparser.RawConfigParser()
 config.read(os.path.abspath(os.path.join(os.path.dirname(__file__), 'settings.cfg')))
-PORT = int(config.get('flask', 'port'))
+PORT = int(config.get('flask', 'port_http'))
 
 SESSIONS_HOST = config.get('sessions', 'host')
 SESSIONS_PORT = config.get('sessions', 'port')

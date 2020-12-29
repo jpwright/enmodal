@@ -1,28 +1,19 @@
 [flask]
-port: 5050
+port_http: 5050
 domain: http://localhost
 secret_key: F12Yr58j4zX T~Y%C!efJ]Dxe/,?KD
 use_logins: False
 
 gtfs_enabled: False
 # Folder to store uploads, relative to server.py
-upload_folder = enmodal/uploads
-screenshot_folder = enmodal/dist/img/map-screenshots
-
-redis_url = "redis://localhost:6379/0"
+upload_folder = uploads
+screenshot_folder = dist/img/map-screenshots
 
 [geocode]
 reverse_geocode_provider: mapbox
 mapzen_key: MAPZEN_KEY
 mapbox_key: MAPBOX_KEY
 google_key: GOOGLE_KEY
-
-[dggrid]
-host: localhost
-port: 5432
-dbname: dggrid
-user: postgres
-password: DB_PASSWORD
 
 [sessions]
 host: localhost

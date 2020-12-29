@@ -120,7 +120,7 @@ function session_save() {
     $.ajax({ url: "session_push?"+params,
         async: true,
         type: "POST",
-        data: LZString.compressToUTF16(session_json()),
+        data: LZString.compressToBase64(session_json()),
         dataType: 'text',
         success: function(data, status) {
             var params = $.param({

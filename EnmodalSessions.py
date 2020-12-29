@@ -7,9 +7,9 @@ import json
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'lib', 'transit')))
 import Transit
 
-import ConfigParser
+import configparser
 
-config = ConfigParser.RawConfigParser()
+config = configparser.RawConfigParser()
 config.read(os.path.abspath(os.path.join(os.path.dirname(__file__), 'settings.cfg')))
 
 SESSIONS_HOST = config.get('sessions', 'host')
@@ -55,7 +55,7 @@ class EnmodalSessionManager(object):
         
         # Whenever we add a new session, check for old ones to remove.
         purged = self.purge()
-        print str(len(self.sessions))+" active sessions, "+str(purged)+" purged."
+        print(str(len(self.sessions))+" active sessions, "+str(purged)+" purged.")
 
     def remove_by_sid(self, sid):
         s = self.get_by_sid(sid)

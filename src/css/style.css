@@ -356,7 +356,6 @@ input.station-name-edit {
 }
 
 #route-diagram {
-    background: rgba(50, 50, 50, 0.75);
     top: 0px;
     height: 100%;
     width: 100%;
@@ -747,6 +746,7 @@ ul.dropdown-lr {
     display: -webkit-flex;
     flex-direction: column;
     overflow-y: auto;
+    height: 0px;
 }
 
 #option-section-services {
@@ -810,6 +810,7 @@ ul.dropdown-lr {
     display: flex;
     display: -webkit-flex;
     overflow-y: scroll;
+    background: rgba(50, 50, 50, 0.75);
 }
 
 #option-section-route:after {

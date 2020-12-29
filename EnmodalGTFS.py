@@ -19,8 +19,8 @@ import json
 import psycopg2
 import psycopg2.extras
 
-import ConfigParser
-config = ConfigParser.RawConfigParser()
+import configparser
+config = configparser.RawConfigParser()
 config.read(os.path.abspath(os.path.join(os.path.dirname(__file__), 'settings.cfg')))
 
 SESSIONS_HOST = config.get('sessions', 'host')
@@ -51,7 +51,7 @@ def route_gtfs_upload():
     if e:
         return e
 
-    print request.files
+    print(request.files)
 
     # check if the post request has the file part
     if 'gtfs' not in request.files:
@@ -206,7 +206,7 @@ def gtfs_to_full_map(zip_folder_location, import_filter):
     stop_times_file = open(os.path.join(zip_folder_location, 'stop_times.txt'), 'rb')
     stop_times_reader = csv.DictReader(stop_times_file)
     
-    print "Reading agencies"
+    print("Reading agencies")
     agencies = []
     for agency in agency_reader:
         name = "Service"
@@ -219,15 +219,15 @@ def gtfs_to_full_map(zip_folder_location, import_filter):
             s.gtfs_id = agency['agency_name']
 
         if (s.gtfs_id in import_filter['services']):
-            print "Adding service: "+s.gtfs_id
+            print("Adding service: "+s.gtfs_id)
             m.add_service(s)
 
-    print "Reading stops"
+    print("Reading stops")
     stops = {}
     for stop in stops_reader:
         stops[stop['stop_id']] = stop
     
-    print "Reading trips"
+    print("Reading trips")
     route_id_to_trip_id = {}
     trip_id_to_route_id = {}
     for trip in trips_reader:
@@ -239,7 +239,7 @@ def gtfs_to_full_map(zip_folder_location, import_filter):
                 route_id_to_trip_id[route_id] = [trip['trip_id']]
             trip_id_to_route_id[trip['trip_id']] = route_id
             
-    print "Reading stop times"
+    print("Reading stop times")
     trip_id_to_stop_ids = {}
     for stop_time in stop_times_reader:
         trip_id = stop_time['trip_id']
@@ -250,7 +250,7 @@ def gtfs_to_full_map(zip_folder_location, import_filter):
                 trip_id_to_stop_ids[trip_id] = [stop_time['stop_id']]
     
     stops_to_station_ids = {}
-    print "Reading routes"
+    print("Reading routes")
     for route in routes_reader:
         
         # Only use routes with at least 1 trip and not filtered out
@@ -385,7 +385,7 @@ def route_gtfs_import():
         return e
     
     f = request.get_json()
-    print f
+    print(f)
 
     a = session_manager.auth_by_key(h)
     m = a.session.map

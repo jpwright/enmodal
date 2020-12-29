@@ -3,12 +3,14 @@
     <link rel="stylesheet" href="static/css/app.css" />
     <link rel="stylesheet" href="static/css/gtfs.css" />
     
+    <!--
     <div id="alpha-warning">
         <span class="alpha-warning-large">warning! you are viewing an <em>alpha release</em> of enmodal.</span>
         <br />
         <br />
         <span class="alpha-warning-small">maps you create will not be permanently saved. the ridership engine is not to be trusted. there will be bugs.<br /><a href="#" id="alpha-acknowledge" onclick="$('#alpha-warning').hide();">i'm ok with this</a></span>
     </div>
+    -->
     <div id="map"></div>
     <div id="map-title">
         <div id="map-title-inner" data-balloon="Click to rename" data-balloon-pos="down">
@@ -82,9 +84,11 @@
                     <li class="nav-item active">
                         <a class="nav-link active" id="tool-station" data-toggle="tab" href="#tab-build" role="tab" aria-expanded="true"><i class="fa fa-map-marker"></i>  Build</a>
                     </li>
+                    <!--
                     <li class="nav-item">
                         <a class="nav-link" id="tool-data" data-toggle="tab" href="#tab-visualize" role="tab"><i class="fa fa-th"></i>  Visualize</a>
                     </li>
+                    -->
                     <li class="nav-item">
                         <a class="nav-link" id="tool-settings" data-toggle="tab" href="#tab-settings" role="tab"><i class="fa fa-gear"></i>  Settings</a>
                     </li>
@@ -203,7 +207,7 @@
                         <div class="option-section-heading">Import</div>
                         <div>
                             <!--<button-import-gtfs @click="modal = 'gtfs-import'"></button-import-gtfs>-->
-                            <button-import-gtfs @click="modal = 'pro-gate'"></button-import-gtfs>
+                            <button-import-gtfs></button-import-gtfs>
                             <button-import-json @click="modal = 'json-import'"></button-import-json>
                         </div>
                         <div class="option-section-heading">Export</div>
