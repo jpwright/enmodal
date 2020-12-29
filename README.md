@@ -39,10 +39,10 @@ Open Command Prompt and navigate to the `enmodal` directory. (If you are unfamil
 
 Run the following commands to set up the Python environment:
 
-    pip install virtualenv
-    virtualenv venv
+    python -m pip install virtualenv
+    python -m venv venv
     venv\Scripts\activate.bat
-    pip install -r requirements.txt
+    python -m pip install -r requirements.txt
 
 Leave Command Prompt open as you'll need it future steps.
 
