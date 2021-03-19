@@ -15,7 +15,7 @@ geopy==1.22.0
 graphviz==0.14
 idna==2.9
 itsdangerous==1.1.0
-Jinja2==2.11.2
+Jinja2==2.11.3
 lzstring==1.0.4
 MailGun-V3==0.3.2
 MarkupSafe==1.1.1
